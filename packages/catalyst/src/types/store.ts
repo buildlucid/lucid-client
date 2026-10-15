@@ -22,8 +22,12 @@ export type StoreInterface<S extends StoreState, A extends StoreActions> = {
 	readonly refs: Refs;
 };
 
-export type StoreModuleResult<S extends StoreState, A extends StoreActions> = {
-	state?: Partial<StoreStateSignals<S>>;
+export type StoreModuleSetupInterface<S extends StoreState> = Pick<
+	StoreInterface<S, StoreActions>,
+	"refs" | "state"
+>;
+
+export type StoreModuleResult<A extends StoreActions> = {
 	actions: A;
 	effects?: {
 		global?: StoreEffects;
@@ -32,9 +36,13 @@ export type StoreModuleResult<S extends StoreState, A extends StoreActions> = {
 	cleanup?: () => void;
 };
 
-export type StoreModule<S extends StoreState, A extends StoreActions> = (
-	store: StoreInterface<S, A>,
-) => StoreModuleResult<S, A>;
+export type StoreModule<
+	S extends StoreState = StoreState,
+	A extends StoreActions = StoreActions,
+> = {
+	state?: () => Partial<StoreStateSignals<S>>;
+	setup: (store: StoreModuleSetupInterface<S>) => StoreModuleResult<A>;
+};
 
 export type Store<
 	S extends StoreState = StoreState,

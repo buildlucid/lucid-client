@@ -1,22 +1,17 @@
-import { createSignal } from "@lucidclient/catalyst";
-import type { StoreModule } from "@lucidclient/catalyst/types";
+import { createSignal, defineStoreModule } from "@lucidclient/catalyst";
 
-type BindState = {
-	storeState: number;
-};
-// biome-ignore lint/complexity/noBannedTypes: <explanation>
-type BindActions = {};
-
-const bindsStore: StoreModule<BindState, BindActions> = (store) => ({
-	state: {
+const bindsStore = defineStoreModule({
+	state: () => ({
 		storeState: createSignal(69),
-	},
-	actions: {
-		incrementStoreState: () => {
-			const [_, setStoreState] = store.state.storeState;
-			setStoreState((prev) => prev + 1);
+	}),
+	setup: (store) => ({
+		actions: {
+			incrementStoreState: () => {
+				const [, setStoreState] = store.state.storeState;
+				setStoreState((previous) => previous + 1);
+			},
 		},
-	},
+	}),
 });
 
 export default bindsStore;

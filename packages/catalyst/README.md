@@ -15,23 +15,28 @@ npm install @lucidclient/catalyst
 ## Getting started
 
 ```ts
-import Catalyst, { storeModule } from "@lucidclient/catalyst";
+import Catalyst, { createSignal, storeModule } from "@lucidclient/catalyst";
 import { dom, events } from "@lucidclient/catalyst/reactions";
 
-storeModule("counter", (store) => ({
-    actions: {
-        increment: () => {
-            const [, setCount] = store.state.count;
-            setCount((count) => count + 1);
+storeModule("counter", {
+    state: () => ({
+        count: createSignal(0),
+    }),
+    setup: (store) => ({
+        actions: {
+            increment: () => {
+                const [, setCount] = store.state.count;
+                setCount((count) => count + 1);
+            },
         },
-    },
-}));
+    }),
+});
 
 Catalyst.start({ reactions: [events, dom] });
 ```
 
 ```html
-<div data-store="counter" data-state--count="0">
+<div data-store="counter">
     <button data-events--click="@increment">
         Count: <span data-dom--text="$count"></span>
     </button>
@@ -58,37 +63,45 @@ signal in both directions.
 ></div>
 ```
 
-Store modules add typed state and application logic:
+Store modules add typed state and application logic. State and actions are
+inferred from their definitions, so they do not need explicit generic types:
 
 ```ts
-import { createSignal, storeModule } from "@lucidclient/catalyst";
+import {
+    createSignal,
+    defineStoreModule,
+    storeModule,
+} from "@lucidclient/catalyst";
 
-type ProfileState = {
-    name: string;
-    active: boolean;
-    visits: number;
-    status: string;
-};
-
-type ProfileActions = {
-    toggle: () => void;
-};
-
-storeModule<ProfileState, ProfileActions>("profile", (store) => ({
-    state: {
+const profileModule = defineStoreModule({
+    state: () => ({
+        name: createSignal("Ada"),
+        active: createSignal(true),
+        visits: createSignal(3),
         status: createSignal("ready"),
-    },
-    actions: {
-        toggle: () => {
-            const [, setActive] = store.state.active;
-            setActive((active) => !active);
+    }),
+    setup: (store) => ({
+        actions: {
+            toggle: () => {
+                const [, setActive] = store.state.active;
+                setActive((active) => !active);
+            },
         },
-    },
-}));
+    }),
+});
+
+storeModule("profile", profileModule);
 ```
 
-Store-module state takes precedence over a matching state attribute. Stores
-must have unique scope names, including when they are nested.
+The state factory runs for each store initialization. `setup` receives its
+fully inferred state plus refs, and its returned action signatures are inferred
+too. `defineStoreModule` preserves that inference when declaring a reusable
+module separately before passing it to `storeModule`.
+
+HTML-only state is still available at runtime, but TypeScript cannot infer its
+shape from markup. Declare state used by `setup` in the state factory. A module
+signal takes precedence over a matching state attribute and remains synchronized
+with it. Stores must have unique scope names, including when they are nested.
 
 ## Reaction attributes
 
@@ -185,22 +198,25 @@ Manual effects are activated with `data-effects`:
 ```
 
 ```ts
-storeModule("dialog", (store) => ({
-    actions: {},
-    effects: {
-        manual: {
-            onOpenChange: ({ isInitial }) => {
-                const [open] = store.state.open;
-                console.log(open(), isInitial);
+storeModule("dialog", {
+    state: () => ({ open: createSignal(false) }),
+    setup: (store) => ({
+        actions: {},
+        effects: {
+            manual: {
+                onOpenChange: ({ isInitial }) => {
+                    const [open] = store.state.open;
+                    console.log(open(), isInitial);
+                },
+            },
+            global: {
+                analytics: ({ isInitial }) => {
+                    console.log("Store effect", isInitial);
+                },
             },
         },
-        global: {
-            analytics: ({ isInitial }) => {
-                console.log("Store effect", isInitial);
-            },
-        },
-    },
-}));
+    }),
+});
 ```
 
 Global effects run whenever the effects reaction is registered. Duplicate

@@ -25,6 +25,8 @@
   state mutations to drive bindings.
 - Added automated coverage for directive reference parsing, loop bindings,
   two-way state, and ref initialization order.
+- Reworked store modules around per-store `state` factories and `setup`
+  callbacks so state and action types are inferred without explicit generics.
 
 ## v0.5.1
 

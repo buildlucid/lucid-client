@@ -1,7 +1,7 @@
 import { createRoot } from "solid-js";
-import type { Store, StoreActions, StoreState } from "../../types/index.js";
 import Catalyst from "../../runtime/catalyst.js";
 import { debug } from "../../runtime/log.js";
+import type { Store } from "../../types/index.js";
 import { createStateObserver, syncStateAttributes } from "../state/index.js";
 import getStoreInterface from "./get-store-interface.js";
 
@@ -22,11 +22,14 @@ const initialiseStore = (element: Element, key: string): Store => {
 
 		const storeModule = Catalyst.storeModules.get(key);
 		if (storeModule) {
-			const result = storeModule(
-				getStoreInterface(nextStore as Store<StoreState, StoreActions>),
-			);
+			const state = storeModule.state?.();
+			if (state) Object.assign(nextStore.state, state);
+		}
 
-			if (result.state) Object.assign(nextStore.state, result.state);
+		syncStateAttributes(nextStore);
+
+		if (storeModule) {
+			const result = storeModule.setup(getStoreInterface(nextStore));
 			if (result.actions) Object.assign(nextStore.actions, result.actions);
 			if (result.effects?.global) {
 				Object.assign(nextStore.effects.global, result.effects.global);
@@ -37,7 +40,6 @@ const initialiseStore = (element: Element, key: string): Store => {
 			if (result.cleanup) nextStore.cleanup = result.cleanup;
 		}
 
-		syncStateAttributes(nextStore);
 		nextStore.stateObserver = createStateObserver(nextStore);
 		return nextStore;
 	});

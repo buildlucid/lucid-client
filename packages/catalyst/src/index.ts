@@ -4,6 +4,7 @@ import start from "./runtime/start.js";
 import sync from "./runtime/sync.js";
 
 export { default as registerReaction } from "./runtime/register-reaction.js";
+export { default as defineStoreModule } from "./core/define-store-module.js";
 export { default as storeModule } from "./core/store-module.js";
 export { createEffect, createMemo, createSignal } from "solid-js";
 

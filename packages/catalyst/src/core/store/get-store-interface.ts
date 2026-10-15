@@ -1,18 +1,14 @@
 import type {
 	Store,
-	StoreActions,
-	StoreInterface,
+	StoreModuleSetupInterface,
 	StoreState,
 } from "../../types/index.js";
 
-const getStoreInterface = <S extends StoreState, A extends StoreActions>(
-	store: Store<S, A>,
-): StoreInterface<S, A> => ({
+const getStoreInterface = <S extends StoreState>(
+	store: Store<S>,
+): StoreModuleSetupInterface<S> => ({
 	get state() {
 		return store.state;
-	},
-	get actions() {
-		return store.actions;
 	},
 	get refs() {
 		return store.refs;

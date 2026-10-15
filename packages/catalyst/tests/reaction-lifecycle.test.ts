@@ -1,7 +1,8 @@
 import { createSignal } from "solid-js";
 import { describe, expect, it } from "vitest";
 import Catalyst, { registerReaction, storeModule } from "../src/index.js";
-import { bind, dom, events } from "../src/reactions.js";
+import { events, bind, dom } from "../src/reactions.js";
+import Runtime from "../src/runtime/catalyst.js";
 import type { Reaction } from "../src/types/index.js";
 
 const settle = async () => {
@@ -19,17 +20,19 @@ describe("reaction lifecycle", () => {
 
 		let setLabel: ReturnType<typeof createSignal<string>>[1] | undefined;
 		let clicks = 0;
-		storeModule<{ label: string }, { select: () => void }>("dynamic", () => {
-			const label = createSignal("initial");
-			setLabel = label[1];
-			return {
-				state: { label },
+		storeModule("dynamic", {
+			state: () => {
+				const label = createSignal("initial");
+				setLabel = label[1];
+				return { label };
+			},
+			setup: () => ({
 				actions: {
 					select: () => {
 						clicks += 1;
 					},
 				},
-			};
+			}),
 		});
 
 		Catalyst.start({ reactions: [bind, events] });
@@ -115,20 +118,24 @@ describe("reaction lifecycle", () => {
 		`;
 		let firstRuns = 0;
 		let secondRuns = 0;
-		storeModule<Record<string, never>, { run: () => void }>("first", () => ({
-			actions: {
-				run: () => {
-					firstRuns += 1;
+		storeModule("first", {
+			setup: () => ({
+				actions: {
+					run: () => {
+						firstRuns += 1;
+					},
 				},
-			},
-		}));
-		storeModule<Record<string, never>, { run: () => void }>("second", () => ({
-			actions: {
-				run: () => {
-					secondRuns += 1;
+			}),
+		});
+		storeModule("second", {
+			setup: () => ({
+				actions: {
+					run: () => {
+						secondRuns += 1;
+					},
 				},
-			},
-		}));
+			}),
+		});
 
 		Catalyst.start({ reactions: [events] });
 		document.dispatchEvent(new Event("catalyst-test"));
@@ -137,9 +144,10 @@ describe("reaction lifecycle", () => {
 	});
 
 	it("can restart without registering reactions or modules again", async () => {
-		storeModule<{ label: string }>("restartable", () => ({
-			state: { label: createSignal("ready") },
-		}));
+		storeModule("restartable", {
+			state: () => ({ label: createSignal("ready") }),
+			setup: () => ({ actions: {} }),
+		});
 		document.body.innerHTML = `
 			<div data-store="restartable">
 				<span data-dom--text="$label"></span>
@@ -149,6 +157,10 @@ describe("reaction lifecycle", () => {
 		Catalyst.start({ reactions: [dom] });
 		await settle();
 		expect(document.querySelector("span")?.textContent).toBe("ready");
+		const firstStore = Runtime.stores.get("restartable");
+		firstStore?.state.label?.[1]("changed");
+		await settle();
+		expect(document.querySelector("span")?.textContent).toBe("changed");
 		Catalyst.destroy();
 
 		document.body.innerHTML = `

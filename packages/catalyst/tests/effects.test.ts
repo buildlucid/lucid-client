@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import Catalyst, { storeModule } from "../src/index.js";
-import Runtime from "../src/runtime/catalyst.js";
+import Catalyst, { createSignal, storeModule } from "../src/index.js";
 import { effects } from "../src/reactions.js";
+import Runtime from "../src/runtime/catalyst.js";
 
 const settle = async () => {
 	await Promise.resolve();
@@ -19,9 +19,9 @@ describe("effects reaction", () => {
 
 		const globalRuns: Array<{ value: number; isInitial: boolean }> = [];
 		const manualRuns: Array<{ value: number; isInitial: boolean }> = [];
-		storeModule<{ count: number }, Record<string, never>>(
-			"effects",
-			(store) => ({
+		storeModule("effects", {
+			state: () => ({ count: createSignal(0) }),
+			setup: (store) => ({
 				actions: {},
 				effects: {
 					global: {
@@ -42,7 +42,7 @@ describe("effects reaction", () => {
 					},
 				},
 			}),
-		);
+		});
 
 		Catalyst.start({ reactions: [effects] });
 		await settle();

@@ -1,38 +1,30 @@
-import { createSignal } from "@lucidclient/catalyst";
-import type { StoreModule } from "@lucidclient/catalyst/types";
+import { createSignal, defineStoreModule } from "@lucidclient/catalyst";
 
-const loopsStore: StoreModule<
-	{
-		items: Array<{
-			title: string;
-			url: string;
-		}>;
-	},
-	// biome-ignore lint/complexity/noBannedTypes: <explanation>
-	{}
-> = (store) => ({
-	state: {
+const loopsStore = defineStoreModule({
+	state: () => ({
 		items: createSignal([
 			{ title: "title one", url: "/one" },
 			{ title: "title two", url: "/two" },
 			{ title: "title threee", url: "/three" },
 		]),
-	},
-	actions: {
-		init: () => {
-			console.log("store", store);
+	}),
+	setup: (store) => ({
+		actions: {
+			init: () => {
+				console.log("store", store);
+			},
+			childOnClick: () => {
+				const [getItems, setItems] = store.state.items;
+				const items = getItems();
+				items.push({ title: "A new title?", url: "/new" });
+				setItems([...items]);
+			},
+			getItems: () => {
+				const [getItems] = store.state.items;
+				return getItems();
+			},
 		},
-		childOnClick: () => {
-			const [getItems, setItems] = store.state.items;
-			const items = getItems();
-			items.push({ title: "A new title?", url: "/new" });
-			setItems([...items]);
-		},
-		getItems: () => {
-			const [getItems] = store.state.items;
-			return getItems();
-		},
-	},
+	}),
 });
 
 export default loopsStore;

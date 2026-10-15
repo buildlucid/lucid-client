@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import Catalyst, { storeModule } from "../src/index.js";
-import Runtime from "../src/runtime/catalyst.js";
 import { bind, dom, refs } from "../src/reactions.js";
+import Runtime from "../src/runtime/catalyst.js";
 
 const settle = async () => {
 	await Promise.resolve();
@@ -74,9 +74,8 @@ describe("store state and refs", () => {
 
 		let refAtInit: Element | Element[] | undefined;
 		let crossRefAtInit: Element | Element[] | undefined;
-		storeModule<Record<string, never>, { init: () => void }>(
-			"refs",
-			(store) => ({
+		storeModule("refs", {
+			setup: (store) => ({
 				actions: {
 					init: () => {
 						refAtInit = store.refs.get("button");
@@ -84,7 +83,7 @@ describe("store state and refs", () => {
 					},
 				},
 			}),
-		);
+		});
 
 		Catalyst.start({ reactions: [refs] });
 		expect(refAtInit).toBe(document.querySelector("button"));

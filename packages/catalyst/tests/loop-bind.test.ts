@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import { describe, expect, it } from "vitest";
 import Catalyst, { storeModule } from "../src/index.js";
-import { bind, dom, events, loop } from "../src/reactions.js";
+import { events, bind, dom, loop } from "../src/reactions.js";
 
 const settle = async () => {
 	await Promise.resolve();
@@ -31,20 +31,22 @@ describe("bindings rendered by loops", () => {
 		let setItems: ReturnType<typeof createSignal<Link[]>>[1] | undefined;
 		let selections = 0;
 		type Link = { title: string; url: string };
-		storeModule<{ items: Link[] }, { select: () => void }>("links", () => {
-			const items = createSignal<Link[]>([
-				{ title: "One", url: "/one" },
-				{ title: "Two", url: "/two" },
-			]);
-			setItems = items[1];
-			return {
-				state: { items },
+		storeModule("links", {
+			state: () => {
+				const items = createSignal<Link[]>([
+					{ title: "One", url: "/one" },
+					{ title: "Two", url: "/two" },
+				]);
+				setItems = items[1];
+				return { items };
+			},
+			setup: () => ({
 				actions: {
 					select: () => {
 						selections += 1;
 					},
 				},
-			};
+			}),
 		});
 
 		Catalyst.start({ reactions: [loop, bind, dom, events] });
@@ -118,8 +120,8 @@ describe("bindings rendered by loops", () => {
 			title: string;
 			links: { title: string; url: string }[];
 		};
-		storeModule<{ groups: Group[] }>("navigation", () => ({
-			state: {
+		storeModule("navigation", {
+			state: () => ({
 				groups: createSignal<Group[]>([
 					{
 						title: "First",
@@ -133,8 +135,9 @@ describe("bindings rendered by loops", () => {
 						links: [{ title: "Three", url: "/three" }],
 					},
 				]),
-			},
-		}));
+			}),
+			setup: () => ({ actions: {} }),
+		});
 
 		Catalyst.start({ reactions: [loop, bind, dom] });
 		await settle();
@@ -188,17 +191,16 @@ describe("bindings rendered by loops", () => {
 
 		type Item = { title: string };
 		let setItems: ReturnType<typeof createSignal<Item[]>>[1] | undefined;
-		storeModule<{ items: Item[] }, { getItems: () => Item[] }>(
-			"action-loop",
-			(store) => {
+		storeModule("action-loop", {
+			state: () => {
 				const items = createSignal<Item[]>([{ title: "One" }]);
 				setItems = items[1];
-				return {
-					state: { items },
-					actions: { getItems: () => store.state.items[0]() },
-				};
+				return { items };
 			},
-		);
+			setup: (store) => ({
+				actions: { getItems: () => store.state.items[0]() },
+			}),
+		});
 
 		Catalyst.start({ reactions: [loop, dom] });
 		await settle();
@@ -244,24 +246,17 @@ describe("bindings rendered by loops", () => {
 			</div>
 		`;
 
-		storeModule<{
-			groups: Array<{
-				title: string;
-				sections: Array<{
-					title: string;
-					links: Array<{ title: string }>;
-				}>;
-			}>;
-		}>("tree", () => ({
-			state: {
+		storeModule("tree", {
+			state: () => ({
 				groups: createSignal([
 					{
 						title: "Group",
 						sections: [{ title: "Section", links: [{ title: "Link" }] }],
 					},
 				]),
-			},
-		}));
+			}),
+			setup: () => ({ actions: {} }),
+		});
 
 		Catalyst.start({ reactions: [loop, bind, dom] });
 		await settle();
