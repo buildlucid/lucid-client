@@ -211,18 +211,16 @@
     import cookieController from "@lucidclient/cookie-controller";
 
     cookieController.init({
-        categoryCookies: {
+        cookies: {
             analytics: ["_ga", "_gid"],
             marketing: ["mkto"],
         },
         onConsentChange: (data) => {
             console.log(data);
         },
-        version: {
-            current: "1.0.2",
-            onNewVersion: (oldVersion, newVersion) => {
-                console.log(oldVersion, newVersion);
-            },
+        policyVersion: "1.0.2",
+        onPolicyVersionChange: (oldVersion, newVersion) => {
+            console.log(oldVersion, newVersion);
         },
         storage: {
             path: "/",
