@@ -1,6 +1,6 @@
 # @lucidclient/cookie-controller
 
-## Unreleased
+## v1.1.0
 
 ### Features:
 
