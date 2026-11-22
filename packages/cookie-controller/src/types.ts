@@ -66,6 +66,13 @@ export type ConsentChange = {
 	}>;
 };
 
+export type GetConsentOptions = {
+	/**
+	 * The current version of the cookie policy. Before init, choices saved for another version are ignored. After init, the version passed to init is used instead
+	 */
+	version?: string;
+};
+
 export type CookieState = {
 	uuid: string;
 	version?: string;

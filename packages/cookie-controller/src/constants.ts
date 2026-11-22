@@ -8,6 +8,8 @@ export default {
 		details: "data-cookie-details",
 		alert: "data-cookie-alert",
 		cookieCategory: "data-cookie-category",
+		activated: "data-cookie-activated",
+		scriptType: "data-type",
 		action: {
 			attribute: "data-cookie-action",
 			value: {

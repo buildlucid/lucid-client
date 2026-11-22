@@ -1,6 +1,11 @@
 import lib from "./lib/index.js";
 
-export type { ConsentChange, Options, StorageOptions } from "./types.js";
+export type {
+	ConsentChange,
+	GetConsentOptions,
+	Options,
+	StorageOptions,
+} from "./types.js";
 
 export default {
 	init: lib.initialise,

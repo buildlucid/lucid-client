@@ -1,9 +1,7 @@
 import C from "../constants.js";
 import S from "../state.js";
 import type { CookieState } from "../types.js";
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
+import readCookie, { isRecord } from "./read-cookie.js";
 
 /** Loads only committed choices for the current policy and the current controls. */
 const getCookieState = (): { state: CookieState; previousVersion?: string } => {
@@ -20,22 +18,8 @@ const getCookieState = (): { state: CookieState; previousVersion?: string } => {
 			state.categories[key] = false;
 	}
 
-	let stored: unknown;
-	try {
-		const prefix = `${C.key}=`;
-		const cookie = document.cookie
-			.split(";")
-			.map((part) => part.trim())
-			.find((part) => part.startsWith(prefix));
-		if (!cookie) return { state };
-		const value = cookie.slice(prefix.length);
-		stored = JSON.parse(
-			value.startsWith("{") ? value : decodeURIComponent(value),
-		);
-	} catch {
-		return { state };
-	}
-	if (!isRecord(stored)) return { state };
+	const stored = readCookie();
+	if (!stored) return { state };
 	if (version !== undefined && stored.version !== version) {
 		const previousVersion =
 			typeof stored.version === "string" ? stored.version : undefined;

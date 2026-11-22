@@ -1,4 +1,5 @@
 import acceptAll from "./accept-all.js";
+import activateElements from "./activate-elements.js";
 import alertState from "./alert-state.js";
 import closeAlert from "./close-alert.js";
 import closeDetails from "./close-details.js";
@@ -13,6 +14,7 @@ import initialise from "./initialise.js";
 import log from "./log.js";
 import onConsentChange from "./on-consent-change.js";
 import openDetails from "./open-details.js";
+import readCookie from "./read-cookie.js";
 import refresh from "./refresh.js";
 import registerEvents from "./register-events.js";
 import rejectAccept from "./reject-accept.js";
@@ -25,6 +27,8 @@ import updateConsent from "./update-consent.js";
 
 const lib = {
 	getElements,
+	readCookie,
+	activateElements,
 	generateUUID,
 	getCookieState,
 	log,

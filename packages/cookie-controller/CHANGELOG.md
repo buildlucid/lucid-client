@@ -8,6 +8,8 @@
 - Added `refresh` to pick up markup added or replaced after initialisation without re-firing callbacks.
 - Action elements added after initialisation now work without a refresh.
 - A checkbox with `data-cookie-category="essential"` is shown checked and disabled.
+- Scripts with `type="text/plain"` and a `data-cookie-category` attribute run once their category is consented. Iframes, images, video and audio load their `data-src` and `data-srcset` the same way.
+- `getConsent()` with no argument returns the consent for every category, and `getConsent` now works before `init` by reading the saved cookie, with an optional policy `version` check.
 
 ### Breaking Changes:
 

@@ -7,10 +7,12 @@ A lightweight, bring your own markup and styles, cookie consent solution. Perfec
 ## Features
 
 - No Markup/Styles: This library supplies no styles or markup allowing you to fully customise the look and feel of the cookie controller to match your website's design.
-- Tiny Footprint: The library is only **~3.2KB** minified and gzipped.
+- Tiny Footprint: The library is only **~3.6KB** minified and gzipped.
 - Attribute Driven: Hook up your markup using data attributes entirely.
 - Consent Callbacks: Read the current preferences on load and after each saved decision.
 - Category Consent: Grant or withdraw individual categories from anywhere on the page, such as an "Allow marketing cookies" button on an embed placeholder.
+- Scripts and Media: Hold back scripts, iframes, images, video and audio until their category is consented.
+- Google Tag Manager: Drive Google consent mode from the visitor's choices, so Tag Manager loads tags based on consent.
 - Consent Records: Use the generated UUID and the consent callback to record the users consent within your own system.
 - Versioning: Ask for fresh consent when the cookie policy version changes.
 - Storage Config: Confure the cookie used to store the users preferences.
@@ -132,6 +134,7 @@ type Options = {
 | `init(options?)` | Initialises the library. Calling it again re-initialises it. |
 | `refresh()` | Re-queries the markup and re-applies its attributes and visibility, without re-reading the cookie or firing callbacks. |
 | `destroy()` | Removes all event listeners. |
+| `getConsent()` | Returns the consent for every category, for example `{ analytics: false, marketing: true, essential: true }`. |
 | `getConsent(category)` | Returns whether a category is consented. `"essential"` is always `true`, and unknown categories return `undefined`. |
 | `updateConsent(categories)` | Updates individual categories, for example `{ marketing: true }`. Other categories keep their saved value, or stay off if the visitor has not decided yet. Saves the decision, closes the alert and fires `onConsentChange` with the `update` type. |
 | `acceptAll()` / `rejectAll()` | Accepts or rejects all categories, then closes the alert and details elements. |
@@ -140,6 +143,8 @@ type Options = {
 | `closeDetails()` | Closes the details element without saving, discarding unsaved checkbox edits. |
 
 Each method has a matching `data-cookie-action` value: `accept`, `reject`, `save`, `details` (which toggles the details element) and `dismiss`.
+
+`getConsent` also works before `init`, as it reads the saved choices straight from the cookie. Before `init` it cannot check the policy version for you, so pass it to ignore choices saved for another version: `getConsent({ version: "1.0.2" })`.
 
 ### HTML Markup
 
@@ -208,13 +213,101 @@ Add a `data-cookie-category` attribute to an `accept` or `reject` action to upda
 
 The category needs a matching checkbox in the `data-cookie-details` element.
 
+#### Scripts and Media
+
+Give a script `type="text/plain"` and a `data-cookie-category` attribute to stop it running until that category is consented. Browsers do not run or download scripts with a type they do not recognise.
+
+```html
+<script
+  type="text/plain"
+  data-cookie-category="analytics"
+  src="https://www.example.com/analytics.js"
+></script>
+
+<script type="text/plain" data-cookie-category="analytics">
+  console.log("Analytics consented");
+</script>
+
+<!-- Add data-type to keep a non classic type, such as a module -->
+<script type="text/plain" data-type="module" data-cookie-category="analytics">
+  import "https://www.example.com/analytics.mjs";
+</script>
+```
+
+For iframes, images, video and audio, use `data-src` and `data-srcset` in place of `src` and `srcset`. The `source` elements inside a `video`, `audio` or `picture` element are swapped too.
+
+```html
+<iframe
+  data-cookie-category="marketing"
+  data-src="https://www.youtube-nocookie.com/embed/VIDEO_ID"
+  title="Video"
+></iframe>
+
+<img data-cookie-category="marketing" data-src="https://www.example.com/pixel.gif" alt="" />
+
+<video data-cookie-category="marketing" controls>
+  <source data-src="https://cdn.example.com/video.mp4" type="video/mp4" />
+</video>
+```
+
+- Elements are activated on load for visitors who have already consented, and whenever consent is given. Each element is only activated once.
+- Activated elements get a `data-cookie-activated` attribute, which you can use to hide placeholders with CSS.
+- Scripts run in page order, and each external script loads before the next one runs, unless it has the `async` attribute. A CSP `nonce` is kept.
+- Space separate categories to require all of them, for example `data-cookie-category="analytics marketing"`.
+- Withdrawing consent does not unload anything that has already run or loaded. Reload the page, or clean up in `onConsentChange`.
+- Tracking pixels inside `<noscript>` only render without JavaScript, so they cannot be held back. Use the script version of the pixel instead.
+- Third party fonts and stylesheets are not covered. Host them yourself instead.
+
 #### Essential Cookies
 
 The `essential` category is always consented, and it always lists the `CookieController` cookie this library uses to store preferences. Add any other essential cookies with `categoryCookies.essential`. If you add a checkbox with `data-cookie-category="essential"`, it is shown checked and disabled.
 
 #### Dynamic Markup
 
-Action elements work as soon as they are added to the page. If the `data-cookie-details` or `data-cookie-alert` elements, or the category checkboxes, are added or replaced after `init`, such as after a client side navigation, call `refresh()`.
+Action elements work as soon as they are added to the page. If the `data-cookie-details` or `data-cookie-alert` elements, the category checkboxes, or consent gated scripts and media are added or replaced after `init`, such as after a client side navigation, call `refresh()`.
+
+## Google Tag Manager
+
+Google consent mode loads the Google tag on every page with consent denied, and Tag Manager only runs each tag once its consent types are granted. Set the default in the `<head>`, before the Tag Manager snippet:
+
+```html
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+  gtag("consent", "default", {
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+    analytics_storage: "denied",
+    wait_for_update: 500,
+  });
+</script>
+<!-- Google Tag Manager snippet -->
+```
+
+Then update it from `onConsentChange`, which runs on every page load and after each decision. Map your categories to Google's consent types:
+
+```javascript
+import cookieController from "@lucidclient/cookie-controller";
+
+const status = (consented) => (consented ? "granted" : "denied");
+
+cookieController.init({
+  onConsentChange: () => {
+    const consent = cookieController.getConsent();
+    gtag("consent", "update", {
+      analytics_storage: status(consent.analytics),
+      ad_storage: status(consent.marketing),
+      ad_user_data: status(consent.marketing),
+      ad_personalization: status(consent.marketing),
+    });
+  },
+});
+```
+
+In Tag Manager, use each tag's consent settings to require the matching consent type. This works for non Google tags too.
 
 ## GDPR Compliance Tips
 

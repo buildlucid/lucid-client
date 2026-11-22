@@ -1,11 +1,15 @@
 import C from "../constants.js";
 import S from "../state.js";
 import type { ConsentChange } from "../types.js";
+import lib from "./index.js";
 
 /**
- * A util fires the onConsentChange callback
+ * Applies a consent change
+ * - Activates the consent gated scripts and media that are now consented
+ * - Fires the onConsentChange callback
  */
 const onConsentChange = (type: ConsentChange["type"]) => {
+	lib.activateElements();
 	if (S.options.onConsentChange) {
 		const categories = Object.entries(S.state.categories).map(
 			([category, consented]) => ({
