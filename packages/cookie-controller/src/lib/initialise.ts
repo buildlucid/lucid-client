@@ -8,7 +8,6 @@ import lib from "./index.js";
 const initialise = (initOptions?: Partial<Options>) => {
 	lib.destroy();
 	S.options = {
-		essentialCookies: initOptions?.essentialCookies ?? false,
 		categoryCookies: initOptions?.categoryCookies ?? {},
 		onConsentChange: initOptions?.onConsentChange ?? null,
 		version: initOptions?.version ?? null,
@@ -22,6 +21,7 @@ const initialise = (initOptions?: Partial<Options>) => {
 
 	S.elements = lib.getElements();
 	S.abortController = new AbortController();
+	S.alertClosed = false;
 
 	if (!S.elements.details) {
 		lib.log("warn", "No details element has been found.");
@@ -40,6 +40,8 @@ const initialise = (initOptions?: Partial<Options>) => {
 	lib.detailsState.set(false);
 	lib.alertState.set(!S.state.decided);
 	lib.registerEvents();
+
+	S.initialised = true;
 
 	if (previousVersion !== undefined && S.options.version) {
 		S.options.version.onNewVersion?.(

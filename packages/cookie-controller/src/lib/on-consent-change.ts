@@ -1,3 +1,4 @@
+import C from "../constants.js";
 import S from "../state.js";
 import type { ConsentChange } from "../types.js";
 
@@ -13,13 +14,14 @@ const onConsentChange = (type: ConsentChange["type"]) => {
 				cookies: S.options.categoryCookies[category] ?? [],
 			}),
 		);
-		if (S.options.essentialCookies) {
-			categories.push({
-				category: "essential",
-				consented: true,
-				cookies: S.options.categoryCookies.essential ?? [],
-			});
-		}
+		// The library's own preference cookie is always essential.
+		categories.push({
+			category: "essential",
+			consented: true,
+			cookies: [
+				...new Set([C.key, ...(S.options.categoryCookies.essential ?? [])]),
+			],
+		});
 
 		S.options.onConsentChange({
 			type,

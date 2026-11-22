@@ -20,6 +20,14 @@ const setAttributes = (type: "static" | "dynamic") => {
 		S.elements?.alert?.setAttribute("aria-live", "polite");
 		S.elements?.alert?.setAttribute("role", "alert");
 
+		// Essential cookies are always on, so an essential checkbox is informational only.
+		for (const element of S.elements?.categoryCheckboxes ?? []) {
+			if (element.getAttribute(C.attributes.cookieCategory) === "essential") {
+				element.checked = true;
+				element.disabled = true;
+			}
+		}
+
 		if (S.elements?.actionDetails) {
 			for (let i = 0; i < S.elements.actionDetails.length; i++) {
 				const element = S.elements.actionDetails[i];

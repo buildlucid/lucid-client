@@ -14,7 +14,7 @@ const rejectAccept = (mode: "accept" | "reject" = "accept") => {
 	}
 
 	lib.setCookieState({ ...S.state, decided: true });
-	lib.dismiss();
+	lib.closeDetails();
 	lib.onConsentChange(mode);
 };
 

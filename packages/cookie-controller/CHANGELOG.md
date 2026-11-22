@@ -1,7 +1,21 @@
 # @lucidclient/cookie-controller
 
-## v0.2.0 (unreleased)
+## v1.0.0 (unreleased)
 
-### Fixes:
+### Features:
+
+- Added `updateConsent` to grant or withdraw individual categories, and support for category scoped `accept`/`reject` actions via `data-cookie-category`. These fire `onConsentChange` with a new `update` type.
+- Added `refresh` to pick up markup added or replaced after initialisation without re-firing callbacks.
+- Action elements added after initialisation now work without a refresh.
+- A checkbox with `data-cookie-category="essential"` is shown checked and disabled.
+
+### Breaking Changes:
+
+- Renamed `getCookieConsent` to `getConsent`, `accept` to `acceptAll`, `reject` to `rejectAll` and `save` to `saveDetails`.
+- Replaced `toggleDetails` and `dismiss` with `openDetails` and `closeDetails`. The `details` and `dismiss` actions are unchanged.
+- Removed the `essentialCookies` option. The `essential` category is now always included in `onConsentChange` and always lists the library's own `CookieController` cookie.
+
+### Bug Fixes:
 
 - Save only explicit consent decisions, request fresh consent when the policy changes, and keep optional cookies off until the visitor chooses.
+- A `dismiss` action inside the alert now hides the alert for the current page without saving a decision.

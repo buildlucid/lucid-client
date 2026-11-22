@@ -8,18 +8,15 @@ export type StorageOptions = {
 
 export type Options = {
 	/**
-	 * Set to true if you have essential cookies. This will return an extra category item called "essential" in the categories array on the onConsentChange callback
-	 */
-	essentialCookies: boolean;
-	/**
-	 * A list of cookies that get added when a certain cateogry is consented
+	 * A list of cookies that get added when a certain category is consented
 	 * - Ie: analytics: ["_ga", "_gid"]
+	 * - The "essential" category is always consented and always includes the cookie this library uses to store preferences
 	 *
 	 * Note that these are just returned in the onConsentChange callback, they are not added/removed from the users cookies
 	 */
 	categoryCookies: Record<string, Array<string>>;
 	/**
-	 * Runs on load and after a decision is committed
+	 * Runs on load and after a decision is saved
 	 */
 	onConsentChange: ((data: ConsentChange) => void) | null;
 	/**
@@ -44,12 +41,13 @@ export type Options = {
 export type ConsentChange = {
 	/**
 	 * The consent change type
-	 * - accept: when the accept button is clicked
-	 * - reject: when the reject button is clicked
-	 * - save: when the save button is clicked
+	 * - accept: when all categories are accepted via acceptAll or an accept button
+	 * - reject: when all categories are rejected via rejectAll or a reject button
+	 * - save: when the details checkboxes are saved via saveDetails or a save button
+	 * - update: when individual categories are updated via updateConsent or a category scoped accept/reject button
 	 * - onload: when the library is initialised
 	 */
-	type: "accept" | "reject" | "save" | "onload";
+	type: "accept" | "reject" | "save" | "update" | "onload";
 	/**
 	 * The users UUID
 	 */
@@ -59,7 +57,7 @@ export type ConsentChange = {
 	 */
 	version?: string;
 	/**
-	 * All of the cookie category states
+	 * All of the cookie category states, including the always consented "essential" category
 	 */
 	categories: Array<{
 		category: string;
@@ -79,9 +77,5 @@ export type Elements = {
 	details: HTMLElement | null;
 	alert: Element | null;
 	categoryCheckboxes: NodeListOf<HTMLInputElement>;
-	actionDismiss: NodeListOf<Element>;
-	actionAccept: NodeListOf<Element>;
-	actionReject: NodeListOf<Element>;
 	actionDetails: NodeListOf<Element>;
-	actionSave: NodeListOf<Element>;
 };

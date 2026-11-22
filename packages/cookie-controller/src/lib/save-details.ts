@@ -3,10 +3,11 @@ import S from "../state.js";
 import lib from "./index.js";
 
 /**
- * Updates the state with the new cookie preferences
+ * Saves the checkbox choices in the details element
  * - Fires the onConsentChange save callback
+ * - Closes the details and alert elements
  */
-const save = () => {
+const saveDetails = () => {
 	for (const element of S.elements?.categoryCheckboxes ?? []) {
 		const key = element.getAttribute(C.attributes.cookieCategory);
 		if (key && Object.hasOwn(S.state.categories, key)) {
@@ -15,8 +16,8 @@ const save = () => {
 	}
 
 	lib.setCookieState({ ...S.state, decided: true });
-	lib.dismiss();
+	lib.closeDetails();
 	lib.onConsentChange("save");
 };
 
-export default save;
+export default saveDetails;

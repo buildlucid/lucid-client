@@ -6,6 +6,9 @@ const S: {
 	abortController: AbortController;
 	elements: Elements | null;
 	opener: HTMLElement | null;
+	/** Set when the alert is closed without a decision. Only lasts for the current page. */
+	alertClosed: boolean;
+	initialised: boolean;
 } = {
 	state: {
 		uuid: "",
@@ -13,7 +16,6 @@ const S: {
 		categories: {},
 	},
 	options: {
-		essentialCookies: false,
 		categoryCookies: {},
 		onConsentChange: null,
 		version: null,
@@ -25,6 +27,8 @@ const S: {
 	abortController: new AbortController(),
 	elements: null,
 	opener: null,
+	alertClosed: false,
+	initialised: false,
 };
 
 export default S;

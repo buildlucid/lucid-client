@@ -5,6 +5,7 @@ import S from "../state.js";
  */
 const destroy = () => {
 	S.abortController.abort();
+	S.initialised = false;
 };
 
 export default destroy;
