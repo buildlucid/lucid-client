@@ -1,3 +1,4 @@
+import C from "./constants.js";
 import type { Options, CookieState, Elements } from "./types.js";
 
 const S: {
@@ -16,12 +17,14 @@ const S: {
 		categories: {},
 	},
 	options: {
-		categoryCookies: {},
+		cookies: {},
 		onConsentChange: null,
-		version: null,
+		policyVersion: null,
+		onPolicyVersionChange: null,
 		storage: {
 			path: "/",
 			sameSite: "Strict",
+			expires: C.defaultExpires,
 		},
 	},
 	abortController: new AbortController(),

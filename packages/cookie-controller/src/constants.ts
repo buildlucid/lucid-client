@@ -1,5 +1,7 @@
 export default {
 	key: "CookieController",
+	/** Days the preference cookie lasts by default, so visitors are asked again after about 6 months */
+	defaultExpires: 180,
 	ids: {
 		details: "cookie-details",
 		alert: "cookie-alert",

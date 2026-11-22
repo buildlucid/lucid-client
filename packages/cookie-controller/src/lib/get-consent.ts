@@ -16,7 +16,8 @@ const getAll = (options?: GetConsentOptions): Record<string, boolean> => {
 		stored !== null &&
 		stored.decided === true &&
 		isRecord(stored.categories) &&
-		(options?.version === undefined || stored.version === options.version);
+		(options?.policyVersion === undefined ||
+			stored.version === options.policyVersion);
 	if (valid && isRecord(stored.categories)) {
 		for (const [key, value] of Object.entries(stored.categories)) {
 			if (key === "__proto__" || key === "essential") continue;

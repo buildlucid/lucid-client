@@ -5,7 +5,7 @@ import readCookie, { isRecord } from "./read-cookie.js";
 
 /** Loads only committed choices for the current policy and the current controls. */
 const getCookieState = (): { state: CookieState; previousVersion?: string } => {
-	const version = S.options.version?.current;
+	const version = S.options.policyVersion ?? undefined;
 	const state: CookieState = {
 		uuid: "",
 		version,

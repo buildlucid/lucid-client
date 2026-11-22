@@ -1,5 +1,18 @@
 # @lucidclient/cookie-controller
 
+## Unreleased
+
+### Features:
+
+- The preference cookie now lasts 180 days by default, instead of ending when the browser closes. Pass `storage: { expires: 0 }` to keep a session cookie.
+
+### Breaking Changes:
+
+- Renamed the `categoryCookies` option to `cookies`. It takes the same `{ category: ["cookie"] }` shape.
+- Replaced the `version: { current, onNewVersion }` option with top level `policyVersion` and `onPolicyVersionChange` options.
+- Renamed `version` to `policyVersion` in the `onConsentChange` data and the `getConsent` options.
+- Renamed the `onload` consent change type to `load`. Saved preference cookies are unchanged, so visitors are not asked again.
+
 ## v1.0.0
 
 ### Features:

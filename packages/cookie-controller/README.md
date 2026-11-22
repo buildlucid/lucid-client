@@ -46,7 +46,7 @@ cookieController.init({
   onConsentChange: (data) => {
     console.log(data);
   },
-  categoryCookies: {
+  cookies: {
     analytics: ["_ga", "_gid"],
     marketing: ["mkto"],
   },
@@ -65,9 +65,9 @@ type ConsentChange = {
    * - reject: when the reject button is clicked
    * - save: when the save button is clicked
    * - update: when individual categories are updated via updateConsent or a category scoped accept/reject button
-   * - onload: when the library is initialised
+   * - load: when the library is initialised
    */
-  type: "accept" | "reject" | "save" | "update" | "onload";
+  type: "accept" | "reject" | "save" | "update" | "load";
   /**
    * The users UUID
    */
@@ -75,7 +75,7 @@ type ConsentChange = {
   /**
    * The version of the cookie policy
    */
-  version?: string;
+  policyVersion?: string;
   /**
    * All of the cookie category states, including the always consented "essential" category
    */
@@ -91,6 +91,11 @@ type StorageOptions = {
   domain?: string;
   sameSite?: "Strict" | "Lax" | "None";
   secure?: boolean;
+  /**
+   * When the preference cookie expires, as a number of days from the visitor's last decision or a date
+   * - Defaults to 180 days
+   * - Pass 0 for a session cookie that is removed when the browser closes
+   */
   expires?: number | Date;
 };
 
@@ -102,24 +107,20 @@ type Options = {
    *
    * Note that these are just returned in the onConsentChange callback, they are not added/removed from the users cookies
    */
-  categoryCookies?: Record<string, Array<string>>;
+  cookies?: Record<string, Array<string>>;
   /**
    * Runs on load and after a decision is saved
    */
   onConsentChange?: (data: ConsentChange) => void;
   /**
-   * A callback that is fired whenever a user state has a different version of the cookie policy to the current version
+   * The current version of your cookie policy
+   * - Choices saved for another version are ignored, so visitors are asked again
    */
-  version?: {
-    /**
-     * The current version of the cookie policy
-     */
-    current: string;
-    /**
-     * The callback
-     */
-    onNewVersion?: (oldVersion: string, newVersion: string) => void;
-  };
+  policyVersion?: string;
+  /**
+   * Runs on load when the visitor's saved choices are for a different policyVersion
+   */
+  onPolicyVersionChange?: (oldVersion: string, newVersion: string) => void;
   /**
    * Configure the options for the cookie used to store the user's preferences
    */
@@ -144,7 +145,7 @@ type Options = {
 
 Each method has a matching `data-cookie-action` value: `accept`, `reject`, `save`, `details` (which toggles the details element) and `dismiss`.
 
-`getConsent` also works before `init`, as it reads the saved choices straight from the cookie. Before `init` it cannot check the policy version for you, so pass it to ignore choices saved for another version: `getConsent({ version: "1.0.2" })`.
+`getConsent` also works before `init`, as it reads the saved choices straight from the cookie. Before `init` it cannot check the policy version for you, so pass it to ignore choices saved for another version: `getConsent({ policyVersion: "1.0.2" })`.
 
 ### HTML Markup
 
@@ -260,7 +261,7 @@ For iframes, images, video and audio, use `data-src` and `data-srcset` in place 
 
 #### Essential Cookies
 
-The `essential` category is always consented, and it always lists the `CookieController` cookie this library uses to store preferences. Add any other essential cookies with `categoryCookies.essential`. If you add a checkbox with `data-cookie-category="essential"`, it is shown checked and disabled.
+The `essential` category is always consented, and it always lists the `CookieController` cookie this library uses to store preferences. Add any other essential cookies with `cookies.essential`. If you add a checkbox with `data-cookie-category="essential"`, it is shown checked and disabled.
 
 #### Dynamic Markup
 
@@ -321,5 +322,6 @@ Here are some tips for achieving compliance:
 - Equal Prominence: Ensure 'Accept' and 'Reject' options are equally prominent in your design.
 - Accessibility: Make sure the cookie controller is accessible to all users.
 - Consent Recording: Save the consent data to ensure compliance with the consent recording requirements of GDPR.
+- Consent Lifetime: Choices are kept for 180 days by default, then visitors are asked again. Change this with `storage.expires`, keeping in mind that some regulators, such as France's CNIL, recommend asking again at least every 6 months.
 
 Please note this is not an exhaustive list, and we recommend seeking legal advice to ensure full compliance.

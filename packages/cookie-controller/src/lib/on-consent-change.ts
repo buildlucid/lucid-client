@@ -15,7 +15,7 @@ const onConsentChange = (type: ConsentChange["type"]) => {
 			([category, consented]) => ({
 				category,
 				consented,
-				cookies: S.options.categoryCookies[category] ?? [],
+				cookies: S.options.cookies[category] ?? [],
 			}),
 		);
 		// The library's own preference cookie is always essential.
@@ -23,14 +23,14 @@ const onConsentChange = (type: ConsentChange["type"]) => {
 			category: "essential",
 			consented: true,
 			cookies: [
-				...new Set([C.key, ...(S.options.categoryCookies.essential ?? [])]),
+				...new Set([C.key, ...(S.options.cookies.essential ?? [])]),
 			],
 		});
 
 		S.options.onConsentChange({
 			type,
 			uuid: S.state.uuid,
-			version: S.state.version,
+			policyVersion: S.state.version,
 			categories: categories,
 		});
 	}

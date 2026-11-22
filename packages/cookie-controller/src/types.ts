@@ -3,6 +3,11 @@ export type StorageOptions = {
 	domain?: string;
 	sameSite?: "Strict" | "Lax" | "None";
 	secure?: boolean;
+	/**
+	 * When the preference cookie expires, as a number of days from the visitor's last decision or a date
+	 * - Defaults to 180 days
+	 * - Pass 0 for a session cookie that is removed when the browser closes
+	 */
 	expires?: number | Date;
 };
 
@@ -14,24 +19,22 @@ export type Options = {
 	 *
 	 * Note that these are just returned in the onConsentChange callback, they are not added/removed from the users cookies
 	 */
-	categoryCookies: Record<string, Array<string>>;
+	cookies: Record<string, Array<string>>;
 	/**
 	 * Runs on load and after a decision is saved
 	 */
 	onConsentChange: ((data: ConsentChange) => void) | null;
 	/**
-	 * A callback that is fired whenever a user state has a different version of the cookie policy to the current version
+	 * The current version of your cookie policy
+	 * - Choices saved for another version are ignored, so visitors are asked again
 	 */
-	version: {
-		/**
-		 * The current version of the cookie policy
-		 */
-		current: string;
-		/**
-		 * The callback
-		 */
-		onNewVersion?: (oldVersion: string, newVersion: string) => void;
-	} | null;
+	policyVersion: string | null;
+	/**
+	 * Runs on load when the visitor's saved choices are for a different policyVersion
+	 */
+	onPolicyVersionChange:
+		| ((oldVersion: string, newVersion: string) => void)
+		| null;
 	/**
 	 * Configure the options for the cookie used to store the user's preferences
 	 */
@@ -45,9 +48,9 @@ export type ConsentChange = {
 	 * - reject: when all categories are rejected via rejectAll or a reject button
 	 * - save: when the details checkboxes are saved via saveDetails or a save button
 	 * - update: when individual categories are updated via updateConsent or a category scoped accept/reject button
-	 * - onload: when the library is initialised
+	 * - load: when the library is initialised
 	 */
-	type: "accept" | "reject" | "save" | "update" | "onload";
+	type: "accept" | "reject" | "save" | "update" | "load";
 	/**
 	 * The users UUID
 	 */
@@ -55,7 +58,7 @@ export type ConsentChange = {
 	/**
 	 * The version of the cookie policy
 	 */
-	version?: string;
+	policyVersion?: string;
 	/**
 	 * All of the cookie category states, including the always consented "essential" category
 	 */
@@ -68,9 +71,9 @@ export type ConsentChange = {
 
 export type GetConsentOptions = {
 	/**
-	 * The current version of the cookie policy. Before init, choices saved for another version are ignored. After init, the version passed to init is used instead
+	 * The current version of the cookie policy. Before init, choices saved for another version are ignored. After init, the policyVersion passed to init is used instead
 	 */
-	version?: string;
+	policyVersion?: string;
 };
 
 export type CookieState = {

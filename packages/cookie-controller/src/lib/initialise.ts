@@ -1,3 +1,4 @@
+import C from "../constants.js";
 import S from "../state.js";
 import type { Options } from "../types.js";
 import lib from "./index.js";
@@ -9,14 +10,16 @@ import lib from "./index.js";
 const initialise = (initOptions?: Partial<Options>) => {
 	lib.destroy();
 	S.options = {
-		categoryCookies: initOptions?.categoryCookies ?? {},
+		cookies: initOptions?.cookies ?? {},
 		onConsentChange: initOptions?.onConsentChange ?? null,
-		version: initOptions?.version ?? null,
+		policyVersion: initOptions?.policyVersion ?? null,
+		onPolicyVersionChange: initOptions?.onPolicyVersionChange ?? null,
 		storage: {
 			path: "/",
 			sameSite: "Strict",
 			secure: window.location.protocol === "https:",
 			...initOptions?.storage,
+			expires: initOptions?.storage?.expires ?? C.defaultExpires,
 		},
 	};
 
@@ -40,13 +43,13 @@ const initialise = (initOptions?: Partial<Options>) => {
 
 	S.initialised = true;
 
-	if (previousVersion !== undefined && S.options.version) {
-		S.options.version.onNewVersion?.(
+	if (previousVersion !== undefined && S.options.policyVersion !== null) {
+		S.options.onPolicyVersionChange?.(
 			previousVersion,
-			S.options.version.current,
+			S.options.policyVersion,
 		);
 	}
-	lib.onConsentChange("onload");
+	lib.onConsentChange("load");
 };
 
 export default initialise;
