@@ -17,9 +17,9 @@ export type Options = {
 	 *
 	 * Note that these are just returned in the onConsentChange callback, they are not added/removed from the users cookies
 	 */
-	categoryCookies: Record<string | "esential", Array<string>>;
+	categoryCookies: Record<string, Array<string>>;
 	/**
-	 * A callback that is fired whenever the consent state changes
+	 * Runs on load and after a decision is committed
 	 */
 	onConsentChange: ((data: ConsentChange) => void) | null;
 	/**
@@ -44,13 +44,12 @@ export type Options = {
 export type ConsentChange = {
 	/**
 	 * The consent change type
-	 * - change: when a cookie checkbox is changed
 	 * - accept: when the accept button is clicked
 	 * - reject: when the reject button is clicked
 	 * - save: when the save button is clicked
 	 * - onload: when the library is initialised
 	 */
-	type: "change" | "accept" | "reject" | "save" | "onload";
+	type: "accept" | "reject" | "save" | "onload";
 	/**
 	 * The users UUID
 	 */
@@ -59,15 +58,6 @@ export type ConsentChange = {
 	 * The version of the cookie policy
 	 */
 	version?: string;
-	/**
-	 * The cookie category that has changed
-	 * - this is only present when the type is "change", triggered by a cookie checkbox change
-	 */
-	changed?: {
-		category: string;
-		consented: boolean;
-		cookies: Array<string>;
-	};
 	/**
 	 * All of the cookie category states
 	 */
@@ -81,12 +71,12 @@ export type ConsentChange = {
 export type CookieState = {
 	uuid: string;
 	version?: string;
-	interacted: boolean;
+	decided: boolean;
 	categories: Record<string, boolean>;
 };
 
 export type Elements = {
-	details: Element | null;
+	details: HTMLElement | null;
 	alert: Element | null;
 	categoryCheckboxes: NodeListOf<HTMLInputElement>;
 	actionDismiss: NodeListOf<Element>;

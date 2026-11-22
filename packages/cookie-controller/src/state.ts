@@ -5,10 +5,11 @@ const S: {
 	options: Options;
 	abortController: AbortController;
 	elements: Elements | null;
+	opener: HTMLElement | null;
 } = {
 	state: {
 		uuid: "",
-		interacted: false,
+		decided: false,
 		categories: {},
 	},
 	options: {
@@ -19,11 +20,11 @@ const S: {
 		storage: {
 			path: "/",
 			sameSite: "Strict",
-			secure: window.location.protocol === "https:",
 		},
 	},
 	abortController: new AbortController(),
 	elements: null,
+	opener: null,
 };
 
 export default S;

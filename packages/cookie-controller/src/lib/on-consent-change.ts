@@ -4,14 +4,7 @@ import S from "../state.js";
 /**
  * A util fires the onConsentChange callback
  */
-const onConsentChange = (
-	type: ConsentChange["type"],
-	category?: {
-		category: string;
-		consented: boolean;
-		cookies: Array<string>;
-	},
-) => {
+const onConsentChange = (type: ConsentChange["type"]) => {
 	if (S.options.onConsentChange) {
 		const categories = Object.entries(S.state.categories).map(
 			([category, consented]) => ({
@@ -33,7 +26,6 @@ const onConsentChange = (
 			uuid: S.state.uuid,
 			version: S.state.version,
 			categories: categories,
-			changed: category,
 		});
 	}
 };

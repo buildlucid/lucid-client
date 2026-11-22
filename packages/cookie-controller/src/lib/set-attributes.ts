@@ -12,7 +12,7 @@ const setAttributes = (type: "static" | "dynamic") => {
 		if (!S.elements?.alert?.hasAttribute("id"))
 			S.elements?.alert?.setAttribute("id", C.ids.alert);
 
-		const detailId = S.elements?.details?.getAttribute("id") as string;
+		const detailId = S.elements?.details?.id ?? C.ids.details;
 
 		S.elements?.details?.setAttribute("role", "dialog");
 		S.elements?.details?.setAttribute("aria-modal", "true");
@@ -38,7 +38,7 @@ const setAttributes = (type: "static" | "dynamic") => {
 		);
 		S.elements?.alert?.setAttribute(
 			"aria-hidden",
-			detailsState ? "true" : "false",
+			lib.alertState.get() ? "false" : "true",
 		);
 
 		if (S.elements?.actionDetails) {

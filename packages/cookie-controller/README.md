@@ -9,9 +9,9 @@ A lightweight, bring your own markup and styles, cookie consent solution. Perfec
 - No Markup/Styles: This library supplies no styles or markup allowing you to fully customise the look and feel of the cookie controller to match your website's design.
 - Tiny Footprint: The library is only **~3.2KB** minified and gzipped.
 - Attribute Driven: Hook up your markup using data attributes entirely.
-- Consent Callbacks: Execute consent callbacks whenever the consent state changes, or when a user interacts with the library.
+- Consent Callbacks: Read the current preferences on load and after each saved decision.
 - Consent Records: Use the generated UUID and the consent callback to record the users consent within your own system.
-- Versioning: Version your cookie policy and fire a callback when the users consented version of the policy differs.
+- Versioning: Ask for fresh consent when the cookie policy version changes.
 - Storage Config: Confure the cookie used to store the users preferences.
 - Accessibility: The library is fully accessible and as its attribute driven, you can easily customise the HTML to further meet your accessibility requirements.
 - Destroy: Destroy the cookie controller instance and remove all event listeners. Useful for using within SPA's.
@@ -39,14 +39,14 @@ All config for the init function is optional.
 import cookieController from "@lucidclient/cookie-controller";
 
 cookieController.init({
-    onConsentChange: (data) => {
-        console.log(data);
-    },
-    essentialCookies: true,
-    categoryCookies: {
-        analytics: ["_ga", "_gid"],
-        marketing: ["mkto"],
-    },
+  onConsentChange: (data) => {
+    console.log(data);
+  },
+  essentialCookies: true,
+  categoryCookies: {
+    analytics: ["_ga", "_gid"],
+    marketing: ["mkto"],
+  },
 });
 ```
 
@@ -56,128 +56,122 @@ The following `Options` type is used for the init functions options parameter.
 
 ```typescript
 type ConsentChange = {
-	/**
-	 * The consent change type
-	 * - change: when a cookie checkbox is changed
-	 * - accept: when the accept button is clicked
-	 * - reject: when the reject button is clicked
-	 * - save: when the save button is clicked
-	 * - onload: when the library is initialised
-	 */
-	type: "change" | "accept" | "reject" | "save" | "onload";
-	/**
-	 * The users UUID
-	 */
-	uuid: string;
-	/**
-	 * The version of the cookie policy
-	 */
-	version?: string;
-	/**
-	 * The cookie category that has changed
-	 * - this is only present when the type is "change", triggered by a cookie checkbox change
-	 */
-	changed?: {
-		category: string;
-		consented: boolean;
-		cookies: Array<string>;
-	};
-	/**
-	 * All of the cookie category states
-	 */
-	categories: Array<{
-		category: string;
-		consented: boolean;
-		cookies: Array<string>;
-	}>;
+  /**
+   * The consent change type
+   * - accept: when the accept button is clicked
+   * - reject: when the reject button is clicked
+   * - save: when the save button is clicked
+   * - onload: when the library is initialised
+   */
+  type: "accept" | "reject" | "save" | "onload";
+  /**
+   * The users UUID
+   */
+  uuid: string;
+  /**
+   * The version of the cookie policy
+   */
+  version?: string;
+  /**
+   * All of the cookie category states
+   */
+  categories: Array<{
+    category: string;
+    consented: boolean;
+    cookies: Array<string>;
+  }>;
 };
 
 type StorageOptions = {
-	path?: string;
-	domain?: string;
-	sameSite?: "Strict" | "Lax" | "None";
-	secure?: boolean;
-	expires?: number | Date;
+  path?: string;
+  domain?: string;
+  sameSite?: "Strict" | "Lax" | "None";
+  secure?: boolean;
+  expires?: number | Date;
 };
 
 type Options = {
-	/**
-	 * Set to true if you have essential cookies. This will return an extra category item called "essential" in the categories array on the onConsentChange callback
-	 */
-	essentialCookies?: boolean;
-	/**
-	 * A list of cookies that get added when a certain cateogry is consented
-	 * - Ie: analytics: ["_ga", "_gid"]
-	 *
-	 * Note that these are just returned in the onConsentChange callback, they are not added/removed from the users cookies
-	 */
-	categoryCookies?: Record<string | "esential", Array<string>>;
-	/**
-	 * A callback that is fired whenever the consent state changes
-	 */
-	onConsentChange?: ((data: ConsentChange) => void);
-	/**
-	 * A callback that is fired whenever a user state has a different version of the cookie policy to the current version
-	 */
-	version?: {
-		/**
-		 * The current version of the cookie policy
-		 */
-		current: string;
-		/**
-		 * The callback
-		 */
-		onNewVersion?: (oldVersion: string, newVersion: string) => void;
-	};
-	/**
-	 * Configure the options for the cookie used to store the user's preferences
-	 */
-	storage?: StorageOptions;
+  /**
+   * Set to true if you have essential cookies. This will return an extra category item called "essential" in the categories array on the onConsentChange callback
+   */
+  essentialCookies?: boolean;
+  /**
+   * A list of cookies that get added when a certain cateogry is consented
+   * - Ie: analytics: ["_ga", "_gid"]
+   *
+   * Note that these are just returned in the onConsentChange callback, they are not added/removed from the users cookies
+   */
+  categoryCookies?: Record<string, Array<string>>;
+  /**
+   * Runs on load and after a decision is saved
+   */
+  onConsentChange?: ((data: ConsentChange) => void);
+  /**
+   * A callback that is fired whenever a user state has a different version of the cookie policy to the current version
+   */
+  version?: {
+    /**
+     * The current version of the cookie policy
+     */
+    current: string;
+    /**
+     * The callback
+     */
+    onNewVersion?: (oldVersion: string, newVersion: string) => void;
+  };
+  /**
+   * Configure the options for the cookie used to store the user's preferences
+   */
+  storage?: StorageOptions;
 };
 ```
 
 ### HTML Markup
 
-An any page there should only ever be one `data-cookie-details` element, and one `data-cookie-alert` element. With the `data-cookie-action` attributes, you can add as many as you like.
+On each page, include one `data-cookie-details` element and one `data-cookie-alert` element. With the `data-cookie-action` attributes, you can add as many as you like.
 
 ```html
-<div data-cookie-details>
-    <button data-cookie-action="dismiss">Close</button>
-    <button data-cookie-action="accept">Accept Recommended</button>
-    <button data-cookie-action="reject">Reject</button>
-    <a href="https://www.example.com/privacy-policy" target="_blank">
-        Cookie Policy
-    </a>
-    <ul>
-        <li>
-            <p>Essential Cookies:</p>
-            <p>...</p>
-        </li>
-        <li>
-            <input id="analytics" type="checkbox" data-cookie-category="analytics" />
-            <label for="analytics">Analytics:</label>
-            <p>...</p>
-        </li>
-        <li>
-            <input id="marketing" type="checkbox" data-cookie-category="marketing" />
-            <label for="marketing">Marketing:</label>
-            <p>...</p>
-        </li>
-    </ul>
-    <button data-cookie-action="save">Save My Preferences</button>
-</div>
+<dialog data-cookie-details aria-label="Cookie settings" hidden>
+  <button data-cookie-action="dismiss">Close</button>
+  <button data-cookie-action="accept">Accept Recommended</button>
+  <button data-cookie-action="reject">Reject</button>
+  <a href="https://www.example.com/privacy-policy" target="_blank">
+    Cookie Policy
+  </a>
+  <ul>
+    <li>
+      <p>Essential Cookies:</p>
+      <p>...</p>
+    </li>
+    <li>
+      <input id="analytics" type="checkbox" data-cookie-category="analytics" />
+      <label for="analytics">Analytics:</label>
+      <p>...</p>
+    </li>
+    <li>
+      <input id="marketing" type="checkbox" data-cookie-category="marketing" />
+      <label for="marketing">Marketing:</label>
+      <p>...</p>
+    </li>
+  </ul>
+  <button data-cookie-action="save">Save My Preferences</button>
+</dialog>
 
-<div data-cookie-alert>
-    <button data-cookie-action="accept">Accept All</button>
-    <button data-cookie-action="reject">Reject</button>
-    <button data-cookie-action="details">Details</button>
-    <button data-cookie-action="dismiss">Close</button>
+<div data-cookie-alert hidden>
+  <button data-cookie-action="accept">Accept All</button>
+  <button data-cookie-action="reject">Reject</button>
+  <button data-cookie-action="details">Details</button>
+  <button data-cookie-action="dismiss">Close</button>
 </div>
 
 <button data-cookie-action="details">Open Cookie Modal</button>
 ```
 
-> For a more detailed example, checkout the tailwind.html example.
+> For a styled example, see `examples/tailwind.html`.
+
+Use a native `<dialog>` for the preferences panel to get modal focus management and Escape-to-close. Checkbox edits take effect after Save. Closing preferences discards edits and returns visitors who have yet to decide to the banner.
+
+Version 0.2.0 asks visitors who have a 0.1.0 preference cookie to choose again, since that format also saved unsaved checkbox edits.
 
 ## GDPR Compliance Tips
 

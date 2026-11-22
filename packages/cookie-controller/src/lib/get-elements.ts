@@ -4,11 +4,11 @@ import C from "../constants.js";
  * Get the required elements for the library
  */
 const getElements = () => ({
-	details: document.querySelector(`[${C.attributes.details}]`),
+	details: document.querySelector<HTMLElement>(`[${C.attributes.details}]`),
 	alert: document.querySelector(`[${C.attributes.alert}]`),
-	categoryCheckboxes: document.querySelectorAll(
+	categoryCheckboxes: document.querySelectorAll<HTMLInputElement>(
 		`input[type="checkbox"][${C.attributes.cookieCategory}]`,
-	) as NodeListOf<HTMLInputElement>,
+	),
 	actionDismiss: document.querySelectorAll(
 		`[${C.attributes.action.attribute}="${C.attributes.action.value.dismiss}"]`,
 	),

@@ -10,6 +10,7 @@ const setAlertState = (modalState: boolean) => {
 		C.attributes.alert,
 		modalState ? "true" : "false",
 	);
+	S.elements?.alert?.toggleAttribute("hidden", !modalState);
 	lib.setAttributes("dynamic");
 };
 

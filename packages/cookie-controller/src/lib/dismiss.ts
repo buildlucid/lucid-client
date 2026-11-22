@@ -1,15 +1,10 @@
 import S from "../state.js";
 import lib from "./index.js";
 
-/**
- * Closes the cookie details and alert modals
- */
+/** Discards any unsaved choices and returns undecided visitors to the banner. */
 const dismiss = () => {
+	lib.alertState.set(!S.state.decided);
 	lib.detailsState.set(false);
-	lib.alertState.set(false);
-
-	S.state.interacted = true;
-	lib.setCookieState(S.state);
 };
 
 export default dismiss;

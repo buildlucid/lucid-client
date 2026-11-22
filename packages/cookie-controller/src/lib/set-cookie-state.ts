@@ -9,14 +9,13 @@ import lib from "./index.js";
 const setCookieState = (newState: CookieState) => {
 	if (!newState.uuid) newState.uuid = lib.generateUUID();
 
-	const cookieValue = JSON.stringify(newState);
+	S.state = newState;
+	const cookieValue = encodeURIComponent(JSON.stringify(newState));
 	document.cookie = lib.formatCookieString(
 		C.key,
 		cookieValue,
 		S.options.storage,
 	);
-
-	S.state = newState;
 };
 
 export default setCookieState;

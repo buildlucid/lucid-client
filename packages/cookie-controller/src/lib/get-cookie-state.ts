@@ -1,44 +1,62 @@
-import S from "../state.js";
 import C from "../constants.js";
+import S from "../state.js";
 import type { CookieState } from "../types.js";
 
-/**
- * Get the state via the user's cookie
- */
-const getCookieState = () => {
-	const defaultCategories: Record<string, boolean> = {};
-	if (S.elements?.categoryCheckboxes) {
-		for (let i = 0; i < S.elements.categoryCheckboxes.length; i++) {
-			const element = S.elements.categoryCheckboxes[i];
-			const key = element?.getAttribute(C.attributes.cookieCategory) as string;
-			defaultCategories[key] = false;
-		}
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Loads only committed choices for the current policy and the current controls. */
+const getCookieState = (): { state: CookieState; previousVersion?: string } => {
+	const version = S.options.version?.current;
+	const state: CookieState = {
+		uuid: "",
+		version,
+		decided: false,
+		categories: {},
+	};
+	for (const element of S.elements?.categoryCheckboxes ?? []) {
+		const key = element.getAttribute(C.attributes.cookieCategory);
+		if (key && key !== "essential" && key !== "__proto__")
+			state.categories[key] = false;
 	}
 
+	let stored: unknown;
 	try {
+		const prefix = `${C.key}=`;
 		const cookie = document.cookie
 			.split(";")
-			.find((cookie) => cookie.trim().startsWith(`${C.key}=`));
-		const value = cookie?.split("=")[1];
-
-		if (value) {
-			return JSON.parse(value) as CookieState;
-		}
-
-		return {
-			uuid: "",
-			version: S.options.version?.current || undefined,
-			interacted: false,
-			categories: defaultCategories,
-		};
-	} catch (error) {
-		return {
-			uuid: "",
-			version: S.options.version?.current || undefined,
-			interacted: false,
-			categories: defaultCategories,
-		};
+			.map((part) => part.trim())
+			.find((part) => part.startsWith(prefix));
+		if (!cookie) return { state };
+		const value = cookie.slice(prefix.length);
+		stored = JSON.parse(
+			value.startsWith("{") ? value : decodeURIComponent(value),
+		);
+	} catch {
+		return { state };
 	}
+	if (!isRecord(stored)) return { state };
+	if (version !== undefined && stored.version !== version) {
+		const previousVersion =
+			typeof stored.version === "string" ? stored.version : undefined;
+		// Keep the ID for later decisions without applying the choices from this version.
+		if (stored.decided === true && typeof stored.uuid === "string")
+			state.uuid = stored.uuid;
+		return { state, previousVersion };
+	}
+	//* Old cookies have no way to distinguish saved choices from checkbox edits.
+	if (
+		stored.decided !== true ||
+		typeof stored.uuid !== "string" ||
+		!isRecord(stored.categories)
+	) {
+		return { state };
+	}
+	for (const key of Object.keys(state.categories)) {
+		state.categories[key] =
+			Object.hasOwn(stored.categories, key) && stored.categories[key] === true;
+	}
+	return { state: { ...state, uuid: stored.uuid, decided: true } };
 };
 
 export default getCookieState;

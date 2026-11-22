@@ -2,24 +2,17 @@ import C from "../constants.js";
 import S from "../state.js";
 import lib from "./index.js";
 
-/**
- * Toggles the details modal
- */
+/** Opens preferences with the saved choices, or closes without saving. */
 const toggleDetails = () => {
-	if (S.elements?.categoryCheckboxes) {
-		for (let i = 0; i < S.elements.categoryCheckboxes.length; i++) {
-			const element = S.elements.categoryCheckboxes[i];
-			if (!element) continue;
-
-			const key = element.getAttribute(C.attributes.cookieCategory) as string;
-			const value = S.state.categories[key];
-			element.checked = value ?? false;
-		}
+	if (lib.detailsState.get()) {
+		lib.dismiss();
+		return;
 	}
-
-	lib.detailsState.set(!lib.detailsState.get());
-	S.state.interacted = true;
-	lib.setCookieState(S.state);
+	for (const element of S.elements?.categoryCheckboxes ?? []) {
+		const key = element.getAttribute(C.attributes.cookieCategory);
+		if (key) element.checked = lib.getCookieConsent(key) === true;
+	}
+	lib.detailsState.set(true);
 };
 
 export default toggleDetails;

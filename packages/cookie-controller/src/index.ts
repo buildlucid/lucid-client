@@ -1,5 +1,7 @@
 import lib from "./lib/index.js";
 
+export type { ConsentChange, Options, StorageOptions } from "./types.js";
+
 export default {
 	init: lib.initialise,
 	destroy: lib.destroy,

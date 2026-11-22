@@ -6,6 +6,7 @@ import lib from "./index.js";
  * Initialises the library
  */
 const initialise = (initOptions?: Partial<Options>) => {
+	lib.destroy();
 	S.options = {
 		essentialCookies: initOptions?.essentialCookies ?? false,
 		categoryCookies: initOptions?.categoryCookies ?? {},
@@ -31,25 +32,21 @@ const initialise = (initOptions?: Partial<Options>) => {
 		return;
 	}
 
-	S.state = lib.getCookieState();
+	const { state, previousVersion } = lib.getCookieState();
+	S.state = state;
 	lib.setAttributes("static");
 	lib.setAttributes("dynamic");
 
-	if (!S.state.interacted) lib.alertState.set(true);
-
+	lib.detailsState.set(false);
+	lib.alertState.set(!S.state.decided);
 	lib.registerEvents();
 
-	if (S.state.version && S.options.version?.current) {
-		if (S.state.version !== S.options.version.current) {
-			S.options.version.onNewVersion?.(
-				S.state.version,
-				S.options.version.current,
-			);
-		}
-		S.state.version = S.options.version.current;
-		lib.setCookieState(S.state);
+	if (previousVersion !== undefined && S.options.version) {
+		S.options.version.onNewVersion?.(
+			previousVersion,
+			S.options.version.current,
+		);
 	}
-
 	lib.onConsentChange("onload");
 };
 

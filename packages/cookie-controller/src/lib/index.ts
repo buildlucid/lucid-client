@@ -7,7 +7,6 @@ import setAttributes from "./set-attributes.js";
 import alertState from "./alert-state.js";
 import detailsState from "./details-state.js";
 import onConsentChange from "./on-consent-change.js";
-import onCategoryChange from "./on-category-change.js";
 import rejectAccept from "./reject-accept.js";
 import reject from "./reject.js";
 import accept from "./accept.js";
@@ -30,7 +29,6 @@ const lib = {
 	alertState,
 	detailsState,
 	onConsentChange,
-	onCategoryChange,
 	rejectAccept,
 	accept,
 	reject,

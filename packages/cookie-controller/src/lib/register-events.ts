@@ -27,12 +27,14 @@ const registerEvents = () => {
 		registerEventListener(S.elements.actionDetails, "click", lib.toggleDetails);
 	if (S.elements?.actionSave)
 		registerEventListener(S.elements.actionSave, "click", lib.save);
-	if (S.elements?.categoryCheckboxes)
-		registerEventListener(
-			S.elements.categoryCheckboxes,
-			"change",
-			lib.onCategoryChange,
-		);
+	S.elements?.details?.addEventListener(
+		"cancel",
+		(event) => {
+			event.preventDefault();
+			lib.dismiss();
+		},
+		{ signal },
+	);
 };
 
 export default registerEvents;

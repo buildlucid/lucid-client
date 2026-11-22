@@ -7,19 +7,16 @@ import lib from "./index.js";
  * - Fires the onConsentChange save callback
  */
 const save = () => {
-	if (S.elements?.categoryCheckboxes) {
-		for (let i = 0; i < S.elements.categoryCheckboxes.length; i++) {
-			const element = S.elements.categoryCheckboxes[i];
-			if (!element) continue;
-
-			const key = element.getAttribute(C.attributes.cookieCategory) as string;
-			const value = element.checked;
-			S.state.categories[key] = value;
+	for (const element of S.elements?.categoryCheckboxes ?? []) {
+		const key = element.getAttribute(C.attributes.cookieCategory);
+		if (key && Object.hasOwn(S.state.categories, key)) {
+			S.state.categories[key] = element.checked;
 		}
 	}
 
-	lib.onConsentChange("save");
+	lib.setCookieState({ ...S.state, decided: true });
 	lib.dismiss();
+	lib.onConsentChange("save");
 };
 
 export default save;
