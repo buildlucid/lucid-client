@@ -16,18 +16,18 @@
 		}
 	},
 	"scripts": {
-		"build": "tsc && tsup",
-		"dev": "tsup --watch",
+		"build": "tsc --noEmit && tsdown",
+		"dev": "tsdown --watch",
 		"format": "biome format ./src",
 		"format:fix": "biome format --write ./src",
 		"lint": "biome lint ./src",
-		"lint:fix": "biome lint --apply ./src"
+		"lint:fix": "biome lint --write ./src"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
+		"@biomejs/biome": "^2.6.8",
 		"@repo/config": "*",
-		"tsup": "^8.3.6",
-		"typescript": "^5.7.3"
+		"tsdown": "^0.23.7",
+		"typescript": "^7.0.2"
 	},
 	"author": "Proto Digital",
 	"repository": {
@@ -45,7 +45,10 @@
 		"lucid-client",
 		"lucid"
 	],
+	"engines": {
+		"node": ">=24 <27"
+	},
 	"volta": {
-		"node": "22.13.1"
+		"node": "26.13.1"
 	}
 }

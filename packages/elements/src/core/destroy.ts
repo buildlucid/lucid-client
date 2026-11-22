@@ -10,7 +10,7 @@ import handler from "./handler/index.js";
  */
 const destroy = () => {
 	handler.destroyHandlers();
-	Elements.stores.forEach((store, key) => s.destroyStore(key, store));
+	for (const [key, store] of Elements.stores) s.destroyStore(key, store);
 	for (const syncedEle of Elements.syncedElements) syncedEle[1]();
 };
 

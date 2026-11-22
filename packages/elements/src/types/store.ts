@@ -24,9 +24,7 @@ export type StoreState = Record<string, unknown>;
 export type Action = (...args: any[]) => unknown;
 export type StoreActions = Record<string, Action>;
 
-export type Effect = (context: {
-	isInitial: boolean;
-}) => void;
+export type Effect = (context: { isInitial: boolean }) => void;
 export type StoreEffects = Record<string, Effect>;
 
 export type StoreData<S extends StoreState, A extends StoreActions> = {

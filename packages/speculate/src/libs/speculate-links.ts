@@ -171,10 +171,7 @@ const parseLinkRel = (
 /**
  * Determines if the given link should be preloaded
  */
-const shouldPreload = (props: {
-	href: string;
-	target: string;
-}): boolean => {
+const shouldPreload = (props: { href: string; target: string }): boolean => {
 	try {
 		props.href = props.href.replace(/#.*/, "");
 		if (props.target === "_blank") return false;
