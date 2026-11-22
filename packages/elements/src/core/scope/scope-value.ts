@@ -1,5 +1,5 @@
-import Elements from "../elements.js";
 import type { ScopedMember } from "../../types/directives.js";
+import Elements from "../elements.js";
 
 /**
  * Scopes the given value with the stores provided scope

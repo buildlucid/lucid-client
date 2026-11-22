@@ -1,5 +1,5 @@
-import type { SetStoreFunction } from "solid-js/store";
 import type { Signal } from "solid-js";
+import type { SetStoreFunction } from "solid-js/store";
 import type {
 	BindStateDirectives,
 	StateDirectives,
@@ -20,7 +20,6 @@ export type StoreDirectives = Map<string, DirectiveMap>;
 export type Refs = Map<string, Element | Element[]>;
 
 export type StoreState = Record<string, unknown>;
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export type Action = (...args: any[]) => unknown;
 export type StoreActions = Record<string, Action>;
 

@@ -1,6 +1,6 @@
+import { log } from "../../helpers.js";
 import type { Store, StoreState, StoreActions } from "../../types/index.js";
 import Elements from "../elements.js";
-import { log } from "../../helpers.js";
 
 /**
  * Removes the store and disposes the SolidJS createRoot

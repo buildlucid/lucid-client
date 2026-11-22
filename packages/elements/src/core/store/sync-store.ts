@@ -1,11 +1,11 @@
-import state from "../state/index.js";
-import ref from "../ref/index.js";
-import Elements from "../elements.js";
 import { buildAttribute, log } from "../../helpers.js";
+import type { DirectiveMap } from "../../types/store.js";
 import bind from "../bind/index.js";
 import effect from "../effect/index.js";
-import type { DirectiveMap } from "../../types/store.js";
+import Elements from "../elements.js";
 import loop from "../loop/index.js";
+import ref from "../ref/index.js";
+import state from "../state/index.js";
 
 const syncStore = (storeKey: string, directives: DirectiveMap) => {
 	const store = Elements.stores.get(storeKey);

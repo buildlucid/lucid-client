@@ -1,5 +1,5 @@
-import type { StoreMember } from "../types/store.js";
 import { evaluatePathValue, inferValueType } from "../helpers.js";
+import type { StoreMember } from "../types/store.js";
 
 /**
  * Resolves the store memeber.

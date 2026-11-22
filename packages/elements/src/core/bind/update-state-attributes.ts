@@ -1,13 +1,13 @@
-import type { DirectiveMap } from "../../types/index.js";
-import C from "../constants.js";
-import Elements from "../elements.js";
-import scope from "../scope/index.js";
 import {
 	evaluatePathValue,
 	inferValueType,
 	stringifyState,
 	buildAttribute,
 } from "../../helpers.js";
+import type { DirectiveMap } from "../../types/index.js";
+import C from "../constants.js";
+import Elements from "../elements.js";
+import scope from "../scope/index.js";
 
 /**
  * Updates a single element's attribute based on its binding value

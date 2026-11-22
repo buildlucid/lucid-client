@@ -1,6 +1,6 @@
 import Elements from "./elements.js";
-import s from "./store/index.js";
 import handler from "./handler/index.js";
+import s from "./store/index.js";
 
 /**
  * Destroys the library

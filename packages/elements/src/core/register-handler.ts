@@ -1,6 +1,6 @@
+import { log } from "../helpers.js";
 import type { Handler } from "../types/handlers.js";
 import Elements from "./elements.js";
-import { log } from "../helpers.js";
 
 /**
  * Registerss handlers for Elements

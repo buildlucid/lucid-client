@@ -1,7 +1,7 @@
 import Elements from "../core/elements.js";
 import { inferMemberValue, log } from "../helpers.js";
-import type { StoreMember } from "../types/store.js";
 import type { Store, StoreState, StoreActions } from "../types/index.js";
+import type { StoreMember } from "../types/store.js";
 
 /**
  * Find store member (state or action) based on the member value

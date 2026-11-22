@@ -1,16 +1,16 @@
 import { createEffect } from "solid-js";
-import type {
-	Store,
-	StoreState,
-	StoreActions,
-	DirectiveMap,
-} from "../../types/index.js";
 import {
 	findStoreMember,
 	buildAttribute,
 	resolveMember,
 	log,
 } from "../../helpers.js";
+import type {
+	Store,
+	StoreState,
+	StoreActions,
+	DirectiveMap,
+} from "../../types/index.js";
 import Elements from "../elements.js";
 import loop from "./index.js";
 

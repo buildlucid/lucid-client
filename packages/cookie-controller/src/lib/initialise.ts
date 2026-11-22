@@ -1,5 +1,5 @@
-import type { Options } from "../types.js";
 import S from "../state.js";
+import type { Options } from "../types.js";
 import lib from "./index.js";
 
 /**

@@ -1,8 +1,8 @@
-import scopeValue from "./scope-value.js";
-import valueIsScoped from "./value-is-scoped.js";
-import removeScope from "./remove-scope.js";
-import splitValue from "./split-value.js";
 import valueHasScope from "./has-scope.js";
+import removeScope from "./remove-scope.js";
+import scopeValue from "./scope-value.js";
+import splitValue from "./split-value.js";
+import valueIsScoped from "./value-is-scoped.js";
 
 const scope = {
 	scopeValue,

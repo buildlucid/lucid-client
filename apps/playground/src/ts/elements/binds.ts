@@ -4,7 +4,6 @@ import type { StoreModule } from "@lucidclient/elements/types";
 type BindState = {
 	storeState: number;
 };
-// biome-ignore lint/complexity/noBannedTypes: <explanation>
 type BindActions = {};
 
 const bindsStore: StoreModule<BindState, BindActions> = (store) => ({

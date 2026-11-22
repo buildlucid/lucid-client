@@ -12,9 +12,9 @@ const evaluatePathValue = (
 	const parts = path
 		.split(".")
 		.reduce((acc: string[], part: string) => {
-			const matches = part.match(/([^\[\]]+)|\[(\d+)\]/g);
+			const matches = part.match(/([^[\]]+)|\[(\d+)\]/g);
 			if (matches) {
-				acc.push(...matches.map((m) => m.replace(/[\[\]]/g, "")));
+				acc.push(...matches.map((m) => m.replace(/[[\]]/g, "")));
 			}
 			return acc;
 		}, [])
@@ -26,8 +26,7 @@ const evaluatePathValue = (
 		}
 
 		if (typeof currentValue === "object") {
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-			return (currentValue as any)[part];
+			return (currentValue as Record<string, unknown>)[part];
 		}
 
 		return undefined;

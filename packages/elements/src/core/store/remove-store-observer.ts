@@ -1,6 +1,6 @@
+import { buildAttribute } from "../../helpers.js";
 import Elements from "../elements.js";
 import s from "./index.js";
-import { buildAttribute } from "../../helpers.js";
 
 /**
  * Sets up a mutation observer on the body element

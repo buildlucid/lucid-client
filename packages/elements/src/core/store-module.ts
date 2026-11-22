@@ -1,6 +1,6 @@
+import { log } from "../helpers.js";
 import type { StoreActions, StoreModule, StoreState } from "../types/index.js";
 import Elements from "./elements.js";
-import { log } from "../helpers.js";
 
 /**
  * Register store module for custom state and actions

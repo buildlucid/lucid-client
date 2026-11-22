@@ -12,10 +12,10 @@ const parseStateString = (value: string | null) => {
 
 	if (!Number.isNaN(Number(value))) return Number(value);
 
-	if (value.trim().match(/^[{\[]/)) {
+	if (value.trim().match(/^[{[]/)) {
 		try {
 			return JSON.parse(value);
-		} catch (e) {
+		} catch {
 			return value;
 		}
 	}

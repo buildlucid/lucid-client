@@ -1,11 +1,11 @@
+import { batch } from "solid-js";
+import { parseStateString, buildAttribute } from "../../helpers.js";
 import type {
 	Store,
 	StoreState,
 	StoreActions,
 	DirectiveMap,
 } from "../../types/index.js";
-import { batch } from "solid-js";
-import { parseStateString, buildAttribute } from "../../helpers.js";
 import bind from "../bind/index.js";
 import Elements from "../elements.js";
 

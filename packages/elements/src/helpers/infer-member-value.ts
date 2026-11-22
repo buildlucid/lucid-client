@@ -1,5 +1,5 @@
-import scope from "../core/scope/index.js";
 import C from "../core/constants.js";
+import scope from "../core/scope/index.js";
 import { extractBaseStateKey } from "../helpers.js";
 
 /**

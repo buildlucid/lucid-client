@@ -5,13 +5,8 @@
 	"scripts": {
 		"dev": "astro dev",
 		"start": "astro dev",
-		"build": "astro check && astro build",
 		"preview": "astro preview",
-		"astro": "astro",
-		"format": "biome format ./src",
-		"format:fix": "biome format --write ./src",
-		"lint": "biome lint ./src",
-		"lint:fix": "biome lint --write ./src"
+		"astro": "astro"
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.12",
@@ -22,6 +17,9 @@
 		"@tailwindcss/vite": "^4.3.5",
 		"tailwindcss": "^4.3.5",
 		"typescript": "^6.0.3"
+	},
+	"devDependencies": {
+		"vite-plus": "1.7.0"
 	},
 	"engines": {
 		"node": ">=24 <27"

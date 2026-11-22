@@ -1,10 +1,10 @@
+import { createEffect, createRoot } from "solid-js";
 import {
 	buildHandlerSelector,
 	stringifyState,
 	findStoreMember,
 	resolveMember,
 } from "../../helpers.js";
-import { createEffect, createRoot } from "solid-js";
 import type { Handler } from "../../types/index.js";
 
 const namespace = "dom";

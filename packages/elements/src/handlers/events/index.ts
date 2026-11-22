@@ -1,12 +1,12 @@
 import Elements from "../../core/elements.js";
 import { buildHandlerSelector, findStoreMember } from "../../helpers.js";
-import type { EventConfig } from "./types.js";
 import type {
 	Handler,
 	HandlerSpecifiersMap,
 	Action,
 	StoreMember,
 } from "../../types/index.js";
+import type { EventConfig } from "./types.js";
 
 /**
  * The namespace for the event handler
@@ -18,7 +18,7 @@ const namespace = "event";
  */
 const createEventHandler = (member: StoreMember): Action => {
 	if (member.type === "action") return (e: Event) => member.member(e);
-	return (e: Event) => console.log(member.member);
+	return () => console.log(member.member);
 };
 
 /**
@@ -135,7 +135,7 @@ const registerEvents = (
  */
 const eventsHandler: Handler = {
 	namespace: namespace,
-	initialise: (attributes, options) => {
+	initialise: (attributes) => {
 		const abortController = new AbortController();
 		const eventListenerMap = new Map<
 			string,

@@ -1,11 +1,11 @@
-import C from "./constants.js";
-import Elements from "./elements.js";
-import store from "./store/index.js";
-import handler from "./handler/index.js";
-import buildDirectives from "./build-directives.js";
 import { log } from "../helpers.js";
 import type { Handler } from "../types/handlers.js";
+import buildDirectives from "./build-directives.js";
+import C from "./constants.js";
+import Elements from "./elements.js";
+import handler from "./handler/index.js";
 import registerHandler from "./register-handler.js";
+import store from "./store/index.js";
 
 /**
  * Sets up and starts the Elements library

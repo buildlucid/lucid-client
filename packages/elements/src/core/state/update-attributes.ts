@@ -1,7 +1,7 @@
-import Elements from "../elements.js";
 import { stringifyState, buildAttribute } from "../../helpers.js";
 import type { BindStateDirectives } from "../../types/directives.js";
 import C from "../constants.js";
+import Elements from "../elements.js";
 
 /**
  * Responsible for two thing:

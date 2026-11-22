@@ -6,7 +6,6 @@ const loopsStore: StoreModule<
 			title: string;
 		}>;
 	},
-	// biome-ignore lint/complexity/noBannedTypes: <explanation>
 	{}
 > = (store) => ({
 	actions: {

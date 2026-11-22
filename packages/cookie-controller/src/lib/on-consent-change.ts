@@ -1,5 +1,5 @@
-import type { ConsentChange } from "../types.js";
 import S from "../state.js";
+import type { ConsentChange } from "../types.js";
 
 /**
  * A util fires the onConsentChange callback

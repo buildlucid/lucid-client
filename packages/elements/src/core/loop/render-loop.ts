@@ -1,7 +1,7 @@
 import { log } from "../../helpers.js";
 import type { ScopedMember } from "../../types/directives.js";
-import sync from "../sync.js";
 import C from "../constants.js";
+import sync from "../sync.js";
 
 /**
  * Replaces all :index: and :indexOne: occurances in the markup
@@ -24,9 +24,9 @@ const replaceLoopIndexes = (element: Element, index: number): string => {
 
 	for (let i = 0; i < nestedTemplates.length; i++) {
 		const target = nestedTemplates[i];
-		templateContents.set(i, target?.innerHTML);
-		// biome-ignore lint/style/noNonNullAssertion: <explanation>
-		target!.innerHTML = `<!--template-${i}-->`;
+		if (!target) continue;
+		templateContents.set(i, target.innerHTML);
+		target.innerHTML = `<!--template-${i}-->`;
 	}
 
 	let html = tempDiv.innerHTML

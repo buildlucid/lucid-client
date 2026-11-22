@@ -1,9 +1,9 @@
-import Elements from "./elements.js";
+import { createRoot } from "solid-js";
 import { log } from "../helpers.js";
 import buildDirectives from "./build-directives.js";
-import { createRoot } from "solid-js";
-import store from "./store/index.js";
+import Elements from "./elements.js";
 import handler from "./handler/index.js";
+import store from "./store/index.js";
 
 /**
  * Checks for new Elements directive attributes and initialises them for a given target. \

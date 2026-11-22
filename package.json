@@ -2,24 +2,35 @@
 	"name": "lucid_primitives",
 	"private": true,
 	"scripts": {
-		"build": "turbo build",
-		"dev": "turbo dev",
-		"format": "turbo run format",
-		"format:fix": "turbo run format:fix",
-		"lint": "turbo run lint",
-		"lint:fix": "turbo run lint:fix"
+		"build": "vp run -r build",
+		"dev": "vp run -r --parallel dev",
+		"format": "vp fmt --check",
+		"format:fix": "vp fmt",
+		"lint": "vp lint",
+		"lint:fix": "vp lint --fix",
+		"check": "vp check",
+		"check:fix": "vp check --fix"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.6.8",
 		"@repo/config": "*",
-		"turbo": "^2.11.13"
+		"typescript": "^7.0.2",
+		"vite-plus": "1.7.0"
+	},
+	"overrides": {
+		"vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000"
 	},
 	"engines": {
 		"node": ">=24 <27"
 	},
 	"packageManager": "npm@11.20.0",
-	"workspaces": ["apps/*", "packages/*"],
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
 	"volta": {
 		"node": "26.13.1"
+	},
+	"allowScripts": {
+		"fsevents": false
 	}
 }

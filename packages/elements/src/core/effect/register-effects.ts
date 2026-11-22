@@ -1,5 +1,4 @@
 import { createEffect } from "solid-js";
-import scope from "../scope/index.js";
 import type {
 	Store,
 	StoreState,

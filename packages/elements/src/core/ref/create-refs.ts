@@ -1,12 +1,12 @@
+import { buildAttribute } from "../../helpers.js";
 import type {
 	Store,
 	StoreState,
 	StoreActions,
 	Refs,
 } from "../../types/index.js";
-import s from "../scope/index.js";
 import Elements from "../elements.js";
-import { buildAttribute } from "../../helpers.js";
+import s from "../scope/index.js";
 
 /**
  * Selects all of the data-ref elements and creates Map of key to element / elements

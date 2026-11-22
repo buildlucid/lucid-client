@@ -1,4 +1,5 @@
 import { createEffect } from "solid-js";
+import { stringifyState, buildAttribute } from "../../helpers.js";
 import type {
 	Store,
 	StoreState,
@@ -7,7 +8,6 @@ import type {
 } from "../../types/index.js";
 import C from "../constants.js";
 import Elements from "../elements.js";
-import { stringifyState, buildAttribute } from "../../helpers.js";
 import scope from "../scope/index.js";
 
 /**

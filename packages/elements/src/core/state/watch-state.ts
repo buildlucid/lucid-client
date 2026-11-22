@@ -1,3 +1,6 @@
+import { createEffect, type Signal } from "solid-js";
+import { produce } from "solid-js/store";
+import { inferValueType } from "../../helpers.js";
 import type {
 	Store,
 	StoreState,
@@ -5,10 +8,7 @@ import type {
 	DirectiveMap,
 	BindStateDirectives,
 } from "../../types/index.js";
-import { createEffect, type Signal } from "solid-js";
 import state from "./index.js";
-import { inferValueType } from "../../helpers.js";
-import { produce } from "solid-js/store";
 
 /**
  * Registers effect for each state signal

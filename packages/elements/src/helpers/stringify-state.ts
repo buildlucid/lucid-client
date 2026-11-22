@@ -12,7 +12,7 @@ const stringifyState = (value: unknown): string => {
 			return JSON.stringify(value);
 		}
 		return String(value);
-	} catch (e) {
+	} catch {
 		return String(value);
 	}
 };

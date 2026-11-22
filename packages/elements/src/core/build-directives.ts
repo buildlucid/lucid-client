@@ -1,17 +1,17 @@
-import type {
-	HandlerDirectives,
-	StoreDirectives,
-	ScopedMember,
-	DirectiveMap,
-} from "../types/index.js";
 import {
 	deepCollectAttributes,
 	parseStateString,
 	buildAttribute,
 	inferMemberValue,
 } from "../helpers.js";
-import Elements from "./elements.js";
+import type {
+	HandlerDirectives,
+	StoreDirectives,
+	ScopedMember,
+	DirectiveMap,
+} from "../types/index.js";
 import C from "./constants.js";
+import Elements from "./elements.js";
 
 const buildDirectives = (
 	target: Element = document.body,
@@ -36,18 +36,19 @@ const buildDirectives = (
 
 	// helper to ensure store exists and is initialised
 	const ensureStore = (storeName: string) => {
-		if (!storeDirectives.has(storeName)) {
-			storeDirectives.set(storeName, {
+		let directives = storeDirectives.get(storeName);
+		if (!directives) {
+			directives = {
 				scope: storeName,
 				state: new Map(),
 				bindState: new Map(),
 				bindActions: new Map(),
 				effects: new Set(),
 				loops: new Set(),
-			});
+			};
+			storeDirectives.set(storeName, directives);
 		}
-		// biome-ignore lint/style/noNonNullAssertion: <explanation>
-		return storeDirectives.get(storeName)!;
+		return directives;
 	};
 
 	// helper to ensure state exists in store
