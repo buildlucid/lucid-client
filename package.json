@@ -12,7 +12,6 @@
 		"check:fix": "vp check --fix"
 	},
 	"devDependencies": {
-		"@repo/config": "*",
 		"typescript": "^7.0.2",
 		"vite-plus": "1.7.0"
 	},

@@ -21,7 +21,6 @@
 		"dev": "vp pack --watch"
 	},
 	"devDependencies": {
-		"@repo/config": "*",
 		"vite-plus": "1.7.0",
 		"typescript": "^7.0.2"
 	},
