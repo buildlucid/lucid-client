@@ -1,4 +1,8 @@
-import { createSignal, defineStoreModule } from "@lucidclient/catalyst";
+import {
+	createSignal,
+	defineEffect,
+	defineStoreModule,
+} from "@lucidclient/catalyst";
 
 const exampleStore = defineStoreModule({
 	state: () => ({
@@ -39,9 +43,12 @@ const exampleStore = defineStoreModule({
 			},
 			effects: {
 				manual: {
-					elementEffect: (context) => {
-						console.log("element effect", context);
-					},
+					elementEffect: defineEffect({
+						compute: () => store.state.boolean[0](),
+						effect: (value, context) => {
+							console.log("element effect", value, context);
+						},
+					}),
 				},
 			},
 		};

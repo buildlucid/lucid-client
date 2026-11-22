@@ -1,7 +1,7 @@
 import type { MemberReference } from "../types/directives.js";
 
 const parseStatePath = (value: string) => {
-	const parts = value.match(/[^.\[\]]+|\[([^\]]+)\]/g) ?? [];
+	const parts = value.match(/[^.[\]]+|\[([^\]]+)\]/g) ?? [];
 	return parts.map((part) =>
 		part
 			.replace(/^\[/, "")

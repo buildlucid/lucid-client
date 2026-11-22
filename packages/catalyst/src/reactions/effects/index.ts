@@ -1,5 +1,7 @@
-import { createEffect, createRoot } from "solid-js";
-import type { Reaction, Store } from "../../types/index.js";
+import { createEffect } from "solid-js";
+import { error } from "../../runtime/log.js";
+import { createOwnedRoot, runEffectCallback } from "../../runtime/reactive.js";
+import type { Reaction, Store, StoreEffect } from "../../types/index.js";
 
 type EffectRegistration = {
 	count: number;
@@ -10,6 +12,31 @@ const effectRegistrations = new WeakMap<
 	Store,
 	Map<string, EffectRegistration>
 >();
+
+const isStoreEffect = (value: unknown): value is StoreEffect =>
+	typeof value === "object" &&
+	value !== null &&
+	"compute" in value &&
+	"effect" in value &&
+	typeof value.compute === "function" &&
+	typeof value.effect === "function";
+
+const runStoreEffect = (store: Store, name: string, effect: StoreEffect) =>
+	createOwnedRoot((disposeRoot) => {
+		let isInitial = true;
+		createEffect(() => effect.compute(), {
+			effect: (value: unknown, previous?: unknown) =>
+				runEffectCallback(() => {
+					const context = { isInitial, previous };
+					isInitial = false;
+					return effect.effect(value, context);
+				}),
+			error: (cause: unknown) => {
+				error(`The effect "${name}" on store "${store.key}" threw.`, cause);
+			},
+		});
+		return disposeRoot;
+	});
 
 const effectsReaction: Reaction = {
 	name: "effects",
@@ -43,47 +70,40 @@ const effectsReaction: Reaction = {
 			);
 			return;
 		}
+		if (!isStoreEffect(effect)) {
+			context.warn(
+				`The ${type} effect "${reference.key}" on store "${reference.scope}" must be an object with "compute" and "effect" functions.`,
+			);
+			return;
+		}
 
 		let storeRegistrations = effectRegistrations.get(store);
 		if (!storeRegistrations) {
 			storeRegistrations = new Map();
 			effectRegistrations.set(store, storeRegistrations);
 		}
+		const registrations = storeRegistrations;
 
+		// Every directive that references the same store effect shares one run.
 		const registrationKey = `${type}:${reference.key}`;
-		const existing = storeRegistrations.get(registrationKey);
-		if (existing) {
-			existing.count += 1;
-			return () => {
-				existing.count -= 1;
-				if (existing.count === 0) {
-					existing.dispose();
-					storeRegistrations?.delete(registrationKey);
-				}
+		let registration = registrations.get(registrationKey);
+		if (registration) {
+			registration.count += 1;
+		} else {
+			registration = {
+				count: 1,
+				dispose: runStoreEffect(store, reference.key, effect),
 			};
+			registrations.set(registrationKey, registration);
 		}
 
-		const dispose = createRoot((disposeRoot) => {
-			let hasRun = false;
-			createEffect(() => {
-				try {
-					effect({ isInitial: !hasRun });
-					hasRun = true;
-				} catch (error) {
-					console.error(error);
-				}
-			});
-			return disposeRoot;
-		});
-
-		storeRegistrations.set(registrationKey, { count: 1, dispose });
+		const owned = registration;
 		return () => {
-			const registration = storeRegistrations?.get(registrationKey);
-			if (!registration) return;
-			registration.count -= 1;
-			if (registration.count === 0) {
-				registration.dispose();
-				storeRegistrations?.delete(registrationKey);
+			owned.count -= 1;
+			if (owned.count > 0) return;
+			owned.dispose();
+			if (registrations.get(registrationKey) === owned) {
+				registrations.delete(registrationKey);
 			}
 		};
 	},

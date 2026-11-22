@@ -1,5 +1,6 @@
 import Catalyst, {
 	createSignal,
+	defineEffect,
 	defineStoreModule,
 } from "@lucidclient/catalyst";
 
@@ -49,10 +50,12 @@ const navStore = defineStoreModule({
 		},
 		effects: {
 			manual: {
-				customEffect: (context) => {
-					const [getOpen] = store.state.open;
-					console.log("effect", getOpen(), context);
-				},
+				customEffect: defineEffect({
+					compute: () => store.state.open[0](),
+					effect: (open, context) => {
+						console.log("effect", open, context);
+					},
+				}),
 			},
 		},
 		cleanup: () => {

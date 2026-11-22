@@ -13,12 +13,21 @@ const LOOP_REFERENCE_KEYS: LoopMemberReferenceKey[] = [
 	"indexOne",
 ];
 
+/**
+ * Returns the scope of the nearest `data-store` ancestor. When that element is
+ * a duplicate of a scope another element already owns, its directives are
+ * left unscoped instead of silently binding to the other instance.
+ */
 const getNearestStoreScope = (element: Element) => {
 	const attributeName = `${Catalyst.options.attributes.prefix}${Catalyst.options.attributes.store}`;
 	let current: Element | null = element;
 	while (current) {
 		if (current.hasAttribute(attributeName)) {
-			return current.getAttribute(attributeName) || null;
+			const scope = current.getAttribute(attributeName) || null;
+			if (!scope) return null;
+			const store = Catalyst.stores.get(scope);
+			if (store && store.element !== current) return null;
+			return scope;
 		}
 		current = current.parentElement;
 	}

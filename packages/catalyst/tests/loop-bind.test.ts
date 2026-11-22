@@ -2,11 +2,7 @@ import { createSignal } from "solid-js";
 import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { storeModule } from "../src/index.js";
 import { events, bind, dom, loop } from "../src/reactions.js";
-
-const settle = async () => {
-	await Promise.resolve();
-	await new Promise((resolve) => setTimeout(resolve, 0));
-};
+import { settle } from "./utils.js";
 
 describe("bindings rendered by loops", () => {
 	it("runs bindings against store-module array state", async () => {

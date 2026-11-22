@@ -4,11 +4,7 @@ import Catalyst, { registerReaction, storeModule } from "../src/index.js";
 import { events, bind, dom } from "../src/reactions.js";
 import Runtime from "../src/runtime/catalyst.js";
 import type { Reaction } from "../src/types/index.js";
-
-const settle = async () => {
-	await Promise.resolve();
-	await new Promise((resolve) => setTimeout(resolve, 0));
-};
+import { settle } from "./utils.js";
 
 describe("reaction lifecycle", () => {
 	it("initialises dynamic bindings once and disposes removed events", async () => {

@@ -10,28 +10,33 @@ const eventRegistrations = new WeakMap<
 	Map<string, EventRegistration>
 >();
 
+const GLOBAL_TARGETS = ["document", "body", "head", "window"];
+
+/**
+ * HTML lowercases attribute names, so the event name in the specifier is always
+ * lowercase. Events with uppercase letters in their names cannot be targeted.
+ */
 const getEventTarget = (
 	element: Element,
 	specifier: string,
 ): { target: EventTarget; eventName: string } | null => {
 	const parts = specifier.split(".");
-	const possibleTargets = ["document", "body", "head", "window"];
-	if (parts[0] && possibleTargets.includes(parts[0])) {
-		const eventName = parts[1];
-		if (!eventName) return null;
-		switch (parts[0]) {
+	const [first, second] = parts;
+	if (first && GLOBAL_TARGETS.includes(first)) {
+		if (!second) return null;
+		switch (first) {
 			case "document":
-				return { target: document, eventName };
+				return { target: document, eventName: second };
 			case "body":
-				return { target: document.body, eventName };
+				return { target: document.body, eventName: second };
 			case "head":
-				return { target: document.head, eventName };
+				return { target: document.head, eventName: second };
 			case "window":
-				return { target: window, eventName };
+				return { target: window, eventName: second };
 		}
 	}
 
-	return parts[0] ? { target: element, eventName: parts[0] } : null;
+	return first ? { target: element, eventName: first } : null;
 };
 
 const callAction = (
@@ -78,38 +83,31 @@ const eventsReaction: Reaction = {
 			targetRegistrations = new Map();
 			eventRegistrations.set(config.target, targetRegistrations);
 		}
+		const registrations = targetRegistrations;
 
+		// Identical listeners on a shared target (document, window) run once.
 		const registrationKey = `${config.eventName}:${reference.scope}:${reference.key}`;
-		const existing = targetRegistrations.get(registrationKey);
-		if (existing) {
-			existing.count += 1;
-			return () => {
-				existing.count -= 1;
-				if (existing.count === 0) {
-					existing.abortController.abort();
-					targetRegistrations?.delete(registrationKey);
-				}
-			};
+		let registration = registrations.get(registrationKey);
+		if (registration) {
+			registration.count += 1;
+		} else {
+			const abortController = new AbortController();
+			config.target.addEventListener(
+				config.eventName,
+				(event) => callAction(reference, event, context.resolve),
+				{ signal: abortController.signal },
+			);
+			registration = { count: 1, abortController };
+			registrations.set(registrationKey, registration);
 		}
 
-		const abortController = new AbortController();
-		config.target.addEventListener(
-			config.eventName,
-			(event) => callAction(reference, event, context.resolve),
-			{ signal: abortController.signal },
-		);
-		targetRegistrations.set(registrationKey, {
-			count: 1,
-			abortController,
-		});
-
+		const owned = registration;
 		return () => {
-			const registration = targetRegistrations?.get(registrationKey);
-			if (!registration) return;
-			registration.count -= 1;
-			if (registration.count === 0) {
-				registration.abortController.abort();
-				targetRegistrations?.delete(registrationKey);
+			owned.count -= 1;
+			if (owned.count > 0) return;
+			owned.abortController.abort();
+			if (registrations.get(registrationKey) === owned) {
+				registrations.delete(registrationKey);
 			}
 		};
 	},

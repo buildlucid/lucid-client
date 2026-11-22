@@ -1,7 +1,7 @@
 import { parseReference } from "../helpers.js";
 import type { Directive, SyncOptions } from "../types/index.js";
-import collectElements from "./collect-elements.js";
 import Catalyst from "./catalyst.js";
+import collectElements from "./collect-elements.js";
 import resolveDirectiveReference from "./resolve-directive-reference.js";
 
 const collectDirectives = (target: Element, options?: SyncOptions) => {

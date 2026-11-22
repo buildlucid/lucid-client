@@ -5,7 +5,8 @@ const registerRemovalObserver = () => {
 		for (const mutation of mutations) {
 			for (const node of mutation.removedNodes) {
 				if (!(node instanceof Element)) continue;
-				if (document.documentElement.contains(node)) continue;
+				// Moved nodes are reconnected by the time the observer runs.
+				if (node.isConnected) continue;
 				disposeSubtree(node);
 			}
 		}

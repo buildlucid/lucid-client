@@ -2,11 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { storeModule } from "../src/index.js";
 import { bind, dom, refs } from "../src/reactions.js";
 import Runtime from "../src/runtime/catalyst.js";
-
-const settle = async () => {
-	await Promise.resolve();
-	await new Promise((resolve) => setTimeout(resolve, 0));
-};
+import { settle } from "./utils.js";
 
 describe("store state and refs", () => {
 	it("keeps state attributes and bindings in sync in both directions", async () => {

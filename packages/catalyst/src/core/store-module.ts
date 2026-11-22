@@ -38,6 +38,12 @@ const storeModule = <S extends ModuleStateSignals, A extends StoreActions>(
 		key,
 		module as unknown as StoreModule<StoreState, StoreActions>,
 	);
+
+	if (Catalyst.stores.has(key)) {
+		warn(
+			`The store module "${key}" was registered after its store was created. Call Catalyst.refresh("${key}") to apply it.`,
+		);
+	}
 };
 
 export default storeModule;

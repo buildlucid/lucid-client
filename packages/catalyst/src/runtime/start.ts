@@ -1,14 +1,32 @@
 import type { CatalystStartOptions } from "../types/index.js";
-import DEFAULT_OPTIONS from "./constants.js";
 import Catalyst from "./catalyst.js";
+import DEFAULT_OPTIONS from "./constants.js";
 import { debug, warn } from "./log.js";
+import { createRuntimeOwner, flushUpdates } from "./reactive.js";
 import registerReaction from "./register-reaction.js";
 import registerRemovalObserver from "./register-removal-observer.js";
-import sync from "./sync.js";
+import { syncTarget } from "./sync.js";
+
+let pendingStart = false;
 
 const start = (options?: CatalystStartOptions) => {
 	if (Catalyst.started) {
 		warn("Catalyst has already been started.");
+		return;
+	}
+
+	// Scripts in <head> without `defer` run before <body> exists.
+	if (!document.body) {
+		if (pendingStart) return;
+		pendingStart = true;
+		document.addEventListener(
+			"DOMContentLoaded",
+			() => {
+				pendingStart = false;
+				start(options);
+			},
+			{ once: true },
+		);
 		return;
 	}
 
@@ -32,9 +50,12 @@ const start = (options?: CatalystStartOptions) => {
 		if (!Catalyst.reactions.has(reaction.name)) registerReaction(reaction);
 	}
 
+	createRuntimeOwner();
 	Catalyst.started = true;
-	sync(document.body);
+	// Observe before the first sync so removals made while it runs are seen.
 	Catalyst.removalObserver = registerRemovalObserver();
+	syncTarget(document.body);
+	flushUpdates();
 	debug("Library started.");
 };
 

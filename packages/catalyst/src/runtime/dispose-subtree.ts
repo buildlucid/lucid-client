@@ -1,31 +1,28 @@
 import { destroyStore } from "../core/store/index.js";
 import type { SyncOptions } from "../types/index.js";
-import disposeRegistration from "./dispose-registration.js";
 import Catalyst from "./catalyst.js";
+import collectElements from "./collect-elements.js";
+import disposeRegistration from "./dispose-registration.js";
 
-const isWithinTarget = (
-	target: Element,
-	element: Element,
-	options?: SyncOptions,
-) => {
-	if (target === element) return !options?.childrenOnly;
-	return target.contains(element);
-};
-
+/**
+ * Walks the subtree and looks each element up, so the cost scales with the
+ * size of the subtree rather than with every registration on the page.
+ */
 const disposeSubtree = (target: Element, options?: SyncOptions) => {
-	const registrations = [];
-	for (const [element, elementRegistrations] of Catalyst.registrations) {
-		if (!isWithinTarget(target, element, options)) continue;
-		registrations.push(...elementRegistrations.values());
-	}
-	for (const registration of registrations) {
-		disposeRegistration(registration);
+	const elements = collectElements(target, options);
+
+	for (const element of elements) {
+		const registrations = Catalyst.registrations.get(element);
+		if (!registrations) continue;
+		for (const registration of Array.from(registrations.values())) {
+			disposeRegistration(registration);
+		}
 	}
 
-	const stores = Array.from(Catalyst.stores.values()).filter((store) =>
-		isWithinTarget(target, store.element, options),
-	);
-	for (const store of stores) destroyStore(store);
+	for (const element of elements) {
+		const store = Catalyst.storesByElement.get(element);
+		if (store) destroyStore(store);
+	}
 };
 
 export default disposeSubtree;

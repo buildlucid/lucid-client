@@ -7,3 +7,6 @@ export const debug = (message: string) => {
 };
 
 export const warn = (message: string) => console.warn(`${prefix} ${message}`);
+
+export const error = (message: string, cause: unknown) =>
+	console.error(`${prefix} ${message}`, cause);

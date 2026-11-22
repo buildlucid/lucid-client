@@ -16,7 +16,7 @@ const registerReaction = (reaction: Reaction) => {
 			(existing) => existing.attribute === reaction.attribute,
 		)
 	) {
-		warn(`A reaction already uses the "data-${reaction.attribute}" attribute.`);
+		warn(`A reaction already uses the "${reaction.attribute}" attribute.`);
 		return;
 	}
 

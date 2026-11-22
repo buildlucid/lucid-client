@@ -21,6 +21,8 @@ export type ResolvedCatalystOptions = {
 
 export type DirectiveRegistration = {
 	directive: Directive;
+	/** The store the directive's scope resolved to when it was initialised. */
+	scopeStore: Store | undefined;
 	dispose: () => void;
 };
 
@@ -30,7 +32,10 @@ export type CatalystRuntime = {
 	started: boolean;
 	reactions: Map<string, Reaction>;
 	stores: Map<string, Store>;
+	storesByElement: Map<Element, Store>;
 	storeModules: Map<string, StoreModule<StoreState, StoreActions>>;
 	registrations: Map<Element, Map<string, DirectiveRegistration>>;
+	/** Registrations indexed by the store scope their reference targets. */
+	scopeDependents: Map<string, Set<DirectiveRegistration>>;
 	removalObserver?: MutationObserver;
 };

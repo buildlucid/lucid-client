@@ -1,8 +1,8 @@
-import { createEffect, createRoot } from "solid-js";
-import { createSignal } from "solid-js";
+import { createEffect, createSignal } from "solid-js";
 import { parseStateString, stringifyState } from "../../helpers.js";
-import type { Store } from "../../types/index.js";
 import Catalyst from "../../runtime/catalyst.js";
+import { createOwnedRoot, runEffectCallback } from "../../runtime/reactive.js";
+import type { Store } from "../../types/index.js";
 
 const registerStateAttribute = (
 	store: Store,
@@ -10,7 +10,7 @@ const registerStateAttribute = (
 	initialValue: string | null,
 ) => {
 	if (!store.state[key]) {
-		store.state[key] = createSignal(parseStateString(initialValue));
+		store.state[key] = createSignal<unknown>(parseStateString(initialValue));
 	}
 
 	if (store.stateAttributeDisposes.has(key)) return;
@@ -19,14 +19,18 @@ const registerStateAttribute = (
 	const signal = store.state[key];
 	if (!signal) return;
 
-	const dispose = createRoot((disposeRoot) => {
-		createEffect(() => {
-			const value = stringifyState(signal[0]());
-			if (store.element.getAttribute(attributeName) === value) return;
+	const dispose = createOwnedRoot((disposeRoot) => {
+		createEffect(
+			() => signal[0](),
+			(value) =>
+				runEffectCallback(() => {
+					const next = stringifyState(value);
+					if (store.element.getAttribute(attributeName) === next) return;
 
-			store.internalStateWrites.set(attributeName, value);
-			store.element.setAttribute(attributeName, value);
-		});
+					store.internalStateWrites.set(attributeName, next);
+					store.element.setAttribute(attributeName, next);
+				}),
+		);
 		return disposeRoot;
 	});
 

@@ -1,20 +1,31 @@
-import { createRoot, onCleanup } from "solid-js";
-import type { ReactionContext, Directive } from "../types/index.js";
-import disposeSubtree from "./dispose-subtree.js";
+import { onCleanup } from "solid-js";
+import type { ReactionContext, Directive, Store } from "../types/index.js";
 import Catalyst from "./catalyst.js";
+import disposeRegistration, {
+	indexRegistration,
+} from "./dispose-registration.js";
+import disposeSubtree from "./dispose-subtree.js";
 import { debug, warn } from "./log.js";
+import { createOwnedRoot } from "./reactive.js";
 import resolveReference from "./resolve-reference.js";
-import sync from "./sync.js";
+import { syncTarget } from "./sync.js";
 import type { DirectiveRegistration } from "./types.js";
-import disposeRegistration from "./dispose-registration.js";
 
 const context: ReactionContext = {
 	getStore: (scope) => Catalyst.stores.get(scope),
 	resolve: resolveReference,
-	sync: (target, options) => sync(target, options),
+	sync: (target, options) => syncTarget(target, options),
 	disposeSubtree,
 	warn,
 	debug,
+};
+
+const getScopeStore = (directive: Directive): Store | undefined => {
+	const reference = directive.reference;
+	if (!reference || reference.type === "loop" || !reference.scope) {
+		return undefined;
+	}
+	return Catalyst.stores.get(reference.scope);
 };
 
 const referencesMatch = (
@@ -37,15 +48,32 @@ const referencesMatch = (
 	return true;
 };
 
-const directiveMatches = (left: Directive, right: Directive) =>
-	left.reaction === right.reaction &&
-	left.specifier === right.specifier &&
-	left.value === right.value &&
-	referencesMatch(left.reference, right.reference);
+/**
+ * A registration is only reused when the directive is unchanged and its scope
+ * still resolves to the same store. A store that was refreshed, or that did
+ * not exist when the directive first ran, causes it to initialise again.
+ */
+const registrationMatches = (
+	registration: DirectiveRegistration,
+	directive: Directive,
+	scopeStore: Store | undefined,
+) =>
+	registration.scopeStore === scopeStore &&
+	registration.directive.reaction === directive.reaction &&
+	registration.directive.specifier === directive.specifier &&
+	registration.directive.value === directive.value &&
+	referencesMatch(registration.directive.reference, directive.reference);
 
 const initialiseDirective = (directive: Directive) => {
 	const reaction = Catalyst.reactions.get(directive.reaction);
 	if (!reaction) return;
+
+	const scopeStore = getScopeStore(directive);
+	const existing = Catalyst.registrations
+		.get(directive.element)
+		?.get(directive.attributeName);
+	if (existing && registrationMatches(existing, directive, scopeStore)) return;
+	if (existing) disposeRegistration(existing);
 
 	let elementRegistrations = Catalyst.registrations.get(directive.element);
 	if (!elementRegistrations) {
@@ -53,20 +81,26 @@ const initialiseDirective = (directive: Directive) => {
 		Catalyst.registrations.set(directive.element, elementRegistrations);
 	}
 
-	const existing = elementRegistrations.get(directive.attributeName);
-	if (existing && directiveMatches(existing.directive, directive)) return;
-	if (existing) disposeRegistration(existing);
-
 	const registration: DirectiveRegistration = {
 		directive,
+		scopeStore,
 		dispose: () => {},
 	};
 	elementRegistrations.set(directive.attributeName, registration);
+	indexRegistration(registration);
 
-	registration.dispose = createRoot((disposeRoot) => {
+	registration.dispose = createOwnedRoot((disposeRoot) => {
 		try {
 			const cleanup = reaction.setup(directive, context);
-			if (cleanup) onCleanup(cleanup);
+			if (cleanup) {
+				onCleanup(() => {
+					try {
+						cleanup();
+					} catch (error) {
+						console.error(error);
+					}
+				});
+			}
 		} catch (error) {
 			console.error(error);
 		}

@@ -1,28 +1,45 @@
 import { destroyStore } from "../core/store/index.js";
+import Catalyst from "./catalyst.js";
 import DEFAULT_OPTIONS from "./constants.js";
 import disposeRegistration from "./dispose-registration.js";
-import Catalyst from "./catalyst.js";
 import { debug } from "./log.js";
+import { disposeRuntimeOwner } from "./reactive.js";
 
+const attempt = (fn: () => void) => {
+	try {
+		fn();
+	} catch (error) {
+		console.error(error);
+	}
+};
+
+/** Always resets the runtime, even when a cleanup throws. */
 const destroy = () => {
-	Catalyst.removalObserver?.disconnect();
-	Catalyst.removalObserver = undefined;
+	try {
+		Catalyst.removalObserver?.disconnect();
 
-	const registrations = Array.from(Catalyst.registrations.values()).flatMap(
-		(items) => Array.from(items.values()),
-	);
-	for (const registration of registrations) {
-		disposeRegistration(registration);
+		const registrations = Array.from(Catalyst.registrations.values()).flatMap(
+			(items) => Array.from(items.values()),
+		);
+		for (const registration of registrations) {
+			attempt(() => disposeRegistration(registration));
+		}
+
+		for (const store of Array.from(Catalyst.stores.values())) {
+			attempt(() => destroyStore(store));
+		}
+
+		attempt(disposeRuntimeOwner);
+	} finally {
+		Catalyst.removalObserver = undefined;
+		Catalyst.registrations.clear();
+		Catalyst.scopeDependents.clear();
+		Catalyst.stores.clear();
+		Catalyst.storesByElement.clear();
+		Catalyst.started = false;
+		Catalyst.startOptions = undefined;
+		Catalyst.options = DEFAULT_OPTIONS;
 	}
-
-	for (const store of Array.from(Catalyst.stores.values())) {
-		destroyStore(store);
-	}
-
-	Catalyst.registrations.clear();
-	Catalyst.started = false;
-	Catalyst.startOptions = undefined;
-	Catalyst.options = DEFAULT_OPTIONS;
 	debug("Library destroyed.");
 };
 
