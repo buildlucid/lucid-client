@@ -19,10 +19,6 @@ const refresh = () => {
 		lib.log("warn", "No details element has been found.");
 		return;
 	}
-	if (!elements.alert) {
-		lib.log("warn", "No alert element has been found.");
-		return;
-	}
 	// A replaced alert means a new page, so a visitor who closed the previous alert sees it again.
 	if (elements.alert !== S.elements?.alert) S.alertClosed = false;
 	S.elements = elements;

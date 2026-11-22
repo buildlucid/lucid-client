@@ -4,6 +4,7 @@ import lib from "./index.js";
 
 /**
  * Initialises the library
+ * - The details element is required. The alert element is optional, so a site can show its own banner from onConsentChange
  */
 const initialise = (initOptions?: Partial<Options>) => {
 	lib.destroy();
@@ -25,10 +26,6 @@ const initialise = (initOptions?: Partial<Options>) => {
 
 	if (!S.elements.details) {
 		lib.log("warn", "No details element has been found.");
-		return;
-	}
-	if (!S.elements.alert) {
-		lib.log("warn", "No alert element has been found.");
 		return;
 	}
 

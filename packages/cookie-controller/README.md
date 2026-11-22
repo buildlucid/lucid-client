@@ -148,7 +148,7 @@ Each method has a matching `data-cookie-action` value: `accept`, `reject`, `save
 
 ### HTML Markup
 
-On each page, include one `data-cookie-details` element and one `data-cookie-alert` element. With the `data-cookie-action` attributes, you can add as many as you like.
+On each page, include one `data-cookie-details` element and, optionally, one `data-cookie-alert` element. Leave the alert out to show your own banner from `onConsentChange` instead. With the `data-cookie-action` attributes, you can add as many as you like.
 
 ```html
 <dialog data-cookie-details aria-label="Cookie settings" hidden>
