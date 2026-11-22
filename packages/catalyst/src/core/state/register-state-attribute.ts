@@ -1,8 +1,8 @@
 import { createEffect, createSignal } from "solid-js";
 import { parseStateString, stringifyState } from "../../helpers.js";
-import Catalyst from "../../runtime/catalyst.js";
 import { createOwnedRoot, runEffectCallback } from "../../runtime/reactive.js";
 import type { Store } from "../../types/index.js";
+import { stateKeyToAttribute } from "./state-attribute.js";
 
 const registerStateAttribute = (
 	store: Store,
@@ -15,7 +15,7 @@ const registerStateAttribute = (
 
 	if (store.stateAttributeDisposes.has(key)) return;
 
-	const attributeName = `${Catalyst.options.attributes.prefix}${Catalyst.options.attributes.state}${key}`;
+	const attributeName = stateKeyToAttribute(key);
 	const signal = store.state[key];
 	if (!signal) return;
 
@@ -24,9 +24,14 @@ const registerStateAttribute = (
 			() => signal[0](),
 			(value) =>
 				runEffectCallback(() => {
-					const next = stringifyState(value);
-					if (store.element.getAttribute(attributeName) === next) return;
+					const current = store.element.getAttribute(attributeName);
+					// A removed attribute is not recreated just to hold an empty value.
+					if (current === null && (value === null || value === undefined)) {
+						return;
+					}
 
+					const next = stringifyState(value);
+					if (current === next) return;
 					store.internalStateWrites.set(attributeName, next);
 					store.element.setAttribute(attributeName, next);
 				}),
