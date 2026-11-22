@@ -9,7 +9,6 @@ import type {
 	StoreState,
 } from "../types/index.js";
 
-// biome-ignore lint/suspicious/noExplicitAny: signal values must remain inferable
 export type ModuleStateSignals = Record<string, Signal<any>>;
 
 type InferModuleState<S extends ModuleStateSignals> = {

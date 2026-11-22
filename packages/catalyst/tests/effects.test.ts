@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { createSignal, storeModule } from "../src/index.js";
 import { effects } from "../src/reactions.js";
 import Runtime from "../src/runtime/catalyst.js";

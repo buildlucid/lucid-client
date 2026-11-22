@@ -10,11 +10,10 @@ import {
 } from "@lucidclient/catalyst/reactions";
 import { speculateLinks } from "@lucidclient/speculate";
 import "./speculate/speculator";
-
-import loopsStore from "./catalyst/loops";
-import exampleStore from "./catalyst/example";
-import navStore from "./catalyst/nav";
 import bindsStore from "./catalyst/binds";
+import exampleStore from "./catalyst/example";
+import loopsStore from "./catalyst/loops";
+import navStore from "./catalyst/nav";
 
 storeModule("loops", loopsStore);
 storeModule("example", exampleStore);

@@ -1,12 +1,21 @@
 import lib from "./lib/index.js";
 
+export type {
+	ConsentChange,
+	GetConsentOptions,
+	Options,
+	StorageOptions,
+} from "./types.js";
+
 export default {
 	init: lib.initialise,
+	refresh: lib.refresh,
 	destroy: lib.destroy,
-	getCookieConsent: lib.getCookieConsent,
-	accept: lib.accept,
-	reject: lib.reject,
-	dismiss: lib.dismiss,
-	toggleDetails: lib.toggleDetails,
-	save: lib.save,
+	getConsent: lib.getConsent,
+	updateConsent: lib.updateConsent,
+	acceptAll: lib.acceptAll,
+	rejectAll: lib.rejectAll,
+	saveDetails: lib.saveDetails,
+	openDetails: lib.openDetails,
+	closeDetails: lib.closeDetails,
 };

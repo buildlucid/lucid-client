@@ -1,27 +1,34 @@
-import getElements from "./get-elements.js";
-import generateUUID from "./generate-uuid.js";
-import getCookieState from "./get-cookie-state.js";
-import log from "./log.js";
-import setCookieState from "./set-cookie-state.js";
-import setAttributes from "./set-attributes.js";
+import acceptAll from "./accept-all.js";
+import activateElements from "./activate-elements.js";
 import alertState from "./alert-state.js";
-import detailsState from "./details-state.js";
-import onConsentChange from "./on-consent-change.js";
-import onCategoryChange from "./on-category-change.js";
-import rejectAccept from "./reject-accept.js";
-import reject from "./reject.js";
-import accept from "./accept.js";
-import dismiss from "./dismiss.js";
-import toggleDetails from "./toggle-details.js";
-import save from "./save.js";
-import registerEvents from "./register-events.js";
-import initialise from "./initialise.js";
+import closeAlert from "./close-alert.js";
+import closeDetails from "./close-details.js";
 import destroy from "./destroy.js";
-import getCookieConsent from "./get-cookie-consentt.js";
+import detailsState from "./details-state.js";
 import formatCookieString from "./format-cookie-string.js";
+import generateUUID from "./generate-uuid.js";
+import getConsent from "./get-consent.js";
+import getCookieState from "./get-cookie-state.js";
+import getElements from "./get-elements.js";
+import initialise from "./initialise.js";
+import log from "./log.js";
+import onConsentChange from "./on-consent-change.js";
+import openDetails from "./open-details.js";
+import readCookie from "./read-cookie.js";
+import refresh from "./refresh.js";
+import registerEvents from "./register-events.js";
+import rejectAccept from "./reject-accept.js";
+import rejectAll from "./reject-all.js";
+import saveDetails from "./save-details.js";
+import setAttributes from "./set-attributes.js";
+import setCookieState from "./set-cookie-state.js";
+import toggleDetails from "./toggle-details.js";
+import updateConsent from "./update-consent.js";
 
 const lib = {
 	getElements,
+	readCookie,
+	activateElements,
 	generateUUID,
 	getCookieState,
 	log,
@@ -30,17 +37,20 @@ const lib = {
 	alertState,
 	detailsState,
 	onConsentChange,
-	onCategoryChange,
 	rejectAccept,
-	accept,
-	reject,
-	dismiss,
+	acceptAll,
+	rejectAll,
+	saveDetails,
+	openDetails,
+	closeDetails,
 	toggleDetails,
-	save,
+	closeAlert,
 	registerEvents,
 	initialise,
+	refresh,
 	destroy,
-	getCookieConsent,
+	getConsent,
+	updateConsent,
 	formatCookieString,
 };
 

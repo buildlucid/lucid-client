@@ -4,7 +4,6 @@ export type StoreState = Record<string, unknown>;
 
 // Actions deliberately accept arbitrary arguments so event listeners can retain
 // their concrete event parameter types in userland store modules.
-// biome-ignore lint/suspicious/noExplicitAny: see comment above
 export type Action = (...args: any[]) => unknown;
 export type StoreActions = Record<string, Action>;
 

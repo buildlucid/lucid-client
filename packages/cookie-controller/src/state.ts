@@ -1,3 +1,4 @@
+import C from "./constants.js";
 import type { Options, CookieState, Elements } from "./types.js";
 
 const S: {
@@ -5,25 +6,32 @@ const S: {
 	options: Options;
 	abortController: AbortController;
 	elements: Elements | null;
+	opener: HTMLElement | null;
+	/** Set when the alert is closed without a decision. Only lasts for the current page. */
+	alertClosed: boolean;
+	initialised: boolean;
 } = {
 	state: {
 		uuid: "",
-		interacted: false,
+		decided: false,
 		categories: {},
 	},
 	options: {
-		essentialCookies: false,
-		categoryCookies: {},
+		cookies: {},
 		onConsentChange: null,
-		version: null,
+		policyVersion: null,
+		onPolicyVersionChange: null,
 		storage: {
 			path: "/",
 			sameSite: "Strict",
-			secure: window.location.protocol === "https:",
+			expires: C.defaultExpires,
 		},
 	},
 	abortController: new AbortController(),
 	elements: null,
+	opener: null,
+	alertClosed: false,
+	initialised: false,
 };
 
 export default S;

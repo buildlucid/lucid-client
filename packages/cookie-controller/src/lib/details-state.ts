@@ -6,12 +6,26 @@ import lib from "./index.js";
  * Sets the details modal state - open/close
  */
 const setDetailsState = (modalState: boolean) => {
-	if (lib.alertState.get()) lib.alertState.set(false);
-	S.elements?.details?.setAttribute(
-		C.attributes.details,
-		modalState ? "true" : "false",
-	);
+	const details = S.elements?.details;
+	if (!details) return;
+	if (modalState) {
+		S.opener =
+			document.activeElement instanceof HTMLElement
+				? document.activeElement
+				: null;
+		lib.alertState.set(false);
+	}
+	details.setAttribute(C.attributes.details, modalState ? "true" : "false");
+	details.toggleAttribute("hidden", !modalState);
 	lib.setAttributes("dynamic");
+	if (details instanceof HTMLDialogElement) {
+		if (modalState && !details.open) details.showModal();
+		if (!modalState && details.open) details.close();
+	}
+	if (!modalState) {
+		S.opener?.focus();
+		S.opener = null;
+	}
 };
 
 /**

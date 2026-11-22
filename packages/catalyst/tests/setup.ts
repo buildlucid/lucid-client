@@ -1,4 +1,4 @@
-import { afterEach } from "vitest";
+import { afterEach } from "vite-plus/test";
 import Catalyst from "../src/index.js";
 import Runtime from "../src/runtime/catalyst.js";
 

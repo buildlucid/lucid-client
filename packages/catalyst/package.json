@@ -7,7 +7,9 @@
 	"types": "./dist/index.d.ts",
 	"main": "dist/index.cjs",
 	"module": "dist/index.js",
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -31,23 +33,12 @@
 		}
 	},
 	"scripts": {
-		"build": "tsc && tsup",
-		"dev": "tsup --watch",
-		"test": "vitest run && npm run test:types",
-		"test:types": "tsc -p tsconfig.type-tests.json",
-		"test:watch": "vitest",
-		"format": "biome format ./src",
-		"format:fix": "biome format --write ./src",
-		"lint": "biome lint ./src",
-		"lint:fix": "biome lint --write ./src"
+		"dev": "vp pack --watch"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@repo/config": "*",
 		"happy-dom": "^20.11.1",
-		"tsup": "^8.3.6",
-		"typescript": "^5.7.3",
-		"vitest": "^4.1.10"
+		"typescript": "^7.0.2",
+		"vite-plus": "1.7.0"
 	},
 	"author": "Proto Digital",
 	"license": "MIT",
@@ -74,8 +65,11 @@
 		"lucid"
 	],
 	"homepage": "https://lucidjs.build/catalyst",
+	"engines": {
+		"node": ">=24 <27"
+	},
 	"volta": {
-		"node": "22.13.1"
+		"node": "26.13.1"
 	},
 	"dependencies": {
 		"solid-js": "^1.9.4"

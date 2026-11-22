@@ -6,7 +6,7 @@ const parseStateString = (value: string | null) => {
 	if (value === "undefined") return undefined;
 	if (!Number.isNaN(Number(value))) return Number(value);
 
-	if (value.trim().match(/^[{\[]/)) {
+	if (value.trim().match(/^[{[]/)) {
 		try {
 			return JSON.parse(value);
 		} catch {

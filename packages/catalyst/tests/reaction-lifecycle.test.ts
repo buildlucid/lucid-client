@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { registerReaction, storeModule } from "../src/index.js";
 import { events, bind, dom } from "../src/reactions.js";
 import Runtime from "../src/runtime/catalyst.js";

@@ -1,13 +1,15 @@
 {
 	"name": "@lucidclient/cookie-controller",
-	"version": "0.1.0",
+	"version": "1.1.0",
 	"private": false,
 	"description": "A lightweight, bring your own markup and styles, cookie consent solution to help you comply with the EU Cookie Law and GDPR.",
 	"type": "module",
 	"types": "./dist/index.d.ts",
 	"main": "dist/index.cjs",
 	"module": "dist/index.js",
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -16,18 +18,11 @@
 		}
 	},
 	"scripts": {
-		"build": "tsc && tsup",
-		"dev": "tsup --watch",
-		"format": "biome format ./src",
-		"format:fix": "biome format --write ./src",
-		"lint": "biome lint ./src",
-		"lint:fix": "biome lint --apply ./src"
+		"dev": "vp pack --watch"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@repo/config": "*",
-		"tsup": "^8.3.6",
-		"typescript": "^5.7.3"
+		"vite-plus": "1.7.0",
+		"typescript": "^7.0.2"
 	},
 	"author": "Proto Digital",
 	"license": "MIT",
@@ -52,7 +47,10 @@
 		"lucid"
 	],
 	"homepage": "https://lucidjs.build/cookie-controller",
+	"engines": {
+		"node": ">=24 <27"
+	},
 	"volta": {
-		"node": "22.13.1"
+		"node": "26.13.1"
 	}
 }

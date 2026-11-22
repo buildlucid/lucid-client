@@ -3,38 +3,38 @@ export type StorageOptions = {
 	domain?: string;
 	sameSite?: "Strict" | "Lax" | "None";
 	secure?: boolean;
+	/**
+	 * When the preference cookie expires, as a number of days from the visitor's last decision or a date
+	 * - Defaults to 180 days
+	 * - Pass 0 for a session cookie that is removed when the browser closes
+	 */
 	expires?: number | Date;
 };
 
 export type Options = {
 	/**
-	 * Set to true if you have essential cookies. This will return an extra category item called "essential" in the categories array on the onConsentChange callback
-	 */
-	essentialCookies: boolean;
-	/**
-	 * A list of cookies that get added when a certain cateogry is consented
+	 * A list of cookies that get added when a certain category is consented
 	 * - Ie: analytics: ["_ga", "_gid"]
+	 * - The "essential" category is always consented and always includes the cookie this library uses to store preferences
 	 *
 	 * Note that these are just returned in the onConsentChange callback, they are not added/removed from the users cookies
 	 */
-	categoryCookies: Record<string | "esential", Array<string>>;
+	cookies: Record<string, Array<string>>;
 	/**
-	 * A callback that is fired whenever the consent state changes
+	 * Runs on load and after a decision is saved
 	 */
 	onConsentChange: ((data: ConsentChange) => void) | null;
 	/**
-	 * A callback that is fired whenever a user state has a different version of the cookie policy to the current version
+	 * The current version of your cookie policy
+	 * - Choices saved for another version are ignored, so visitors are asked again
 	 */
-	version: {
-		/**
-		 * The current version of the cookie policy
-		 */
-		current: string;
-		/**
-		 * The callback
-		 */
-		onNewVersion?: (oldVersion: string, newVersion: string) => void;
-	} | null;
+	policyVersion: string | null;
+	/**
+	 * Runs on load when the visitor's saved choices are for a different policyVersion
+	 */
+	onPolicyVersionChange:
+		| ((oldVersion: string, newVersion: string) => void)
+		| null;
 	/**
 	 * Configure the options for the cookie used to store the user's preferences
 	 */
@@ -44,13 +44,13 @@ export type Options = {
 export type ConsentChange = {
 	/**
 	 * The consent change type
-	 * - change: when a cookie checkbox is changed
-	 * - accept: when the accept button is clicked
-	 * - reject: when the reject button is clicked
-	 * - save: when the save button is clicked
-	 * - onload: when the library is initialised
+	 * - accept: when all categories are accepted via acceptAll or an accept button
+	 * - reject: when all categories are rejected via rejectAll or a reject button
+	 * - save: when the details checkboxes are saved via saveDetails or a save button
+	 * - update: when individual categories are updated via updateConsent or a category scoped accept/reject button
+	 * - load: when the library is initialised
 	 */
-	type: "change" | "accept" | "reject" | "save" | "onload";
+	type: "accept" | "reject" | "save" | "update" | "load";
 	/**
 	 * The users UUID
 	 */
@@ -58,18 +58,9 @@ export type ConsentChange = {
 	/**
 	 * The version of the cookie policy
 	 */
-	version?: string;
+	policyVersion?: string;
 	/**
-	 * The cookie category that has changed
-	 * - this is only present when the type is "change", triggered by a cookie checkbox change
-	 */
-	changed?: {
-		category: string;
-		consented: boolean;
-		cookies: Array<string>;
-	};
-	/**
-	 * All of the cookie category states
+	 * All of the cookie category states, including the always consented "essential" category
 	 */
 	categories: Array<{
 		category: string;
@@ -78,20 +69,23 @@ export type ConsentChange = {
 	}>;
 };
 
+export type GetConsentOptions = {
+	/**
+	 * The current version of the cookie policy. Before init, choices saved for another version are ignored. After init, the policyVersion passed to init is used instead
+	 */
+	policyVersion?: string;
+};
+
 export type CookieState = {
 	uuid: string;
 	version?: string;
-	interacted: boolean;
+	decided: boolean;
 	categories: Record<string, boolean>;
 };
 
 export type Elements = {
-	details: Element | null;
+	details: HTMLElement | null;
 	alert: Element | null;
 	categoryCheckboxes: NodeListOf<HTMLInputElement>;
-	actionDismiss: NodeListOf<Element>;
-	actionAccept: NodeListOf<Element>;
-	actionReject: NodeListOf<Element>;
 	actionDetails: NodeListOf<Element>;
-	actionSave: NodeListOf<Element>;
 };
