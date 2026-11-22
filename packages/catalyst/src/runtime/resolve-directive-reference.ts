@@ -58,7 +58,7 @@ const resolveLoopReference = (
 		type: "loop",
 		key: key as LoopMemberReferenceKey,
 		path: parts,
-		value: targetContext?.[key as LoopMemberReferenceKey],
+		context: targetContext,
 	};
 };
 

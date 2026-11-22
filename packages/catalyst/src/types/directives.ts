@@ -2,6 +2,13 @@ export type StoreMemberReferenceType = "action" | "identifier" | "state";
 export type LoopMemberReferenceKey = "index" | "indexOne" | "item";
 export type MemberReferenceType = StoreMemberReferenceType | "loop";
 
+/** The item a loop rendered an element for. `index` is reactive. */
+export type LoopContext = {
+	item: unknown;
+	index: () => number;
+	parent?: LoopContext;
+};
+
 export type StoreMemberReference = {
 	raw: string;
 	scope: string | null;
@@ -16,7 +23,8 @@ export type LoopMemberReference = {
 	type: "loop";
 	key: LoopMemberReferenceKey;
 	path: string[];
-	value: unknown;
+	/** `undefined` when `$parent` traverses past the outermost loop. */
+	context: LoopContext | undefined;
 };
 
 export type MemberReference = LoopMemberReference | StoreMemberReference;

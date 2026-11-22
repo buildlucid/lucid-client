@@ -43,7 +43,7 @@ const referencesMatch = (
 		return false;
 	}
 	if (left.type === "loop" && right.type === "loop") {
-		return Object.is(left.value, right.value);
+		return left.context === right.context;
 	}
 	return true;
 };

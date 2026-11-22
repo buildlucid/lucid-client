@@ -1,6 +1,17 @@
-import type { Reaction } from "../../types/index.js";
+import { createSignal } from "solid-js";
 import { getLoopContext, setLoopContext } from "../../runtime/loop-context.js";
+import type { LoopContext, Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
+
+type LoopEntry = {
+	item: unknown;
+	root: Element;
+	/** Every top-level node of the cloned template, moved as one unit. */
+	nodes: ChildNode[];
+	/** Mirrors the reactive index, so updates never read the signal. */
+	position: number;
+	setIndex: (index: number) => void;
+};
 
 const getTemplate = (target: Element) =>
 	Array.from(target.children).find(
@@ -19,7 +30,8 @@ const loopReaction: Reaction = {
 			return;
 		}
 
-		const template = getTemplate(directive.element);
+		const element = directive.element;
+		const template = getTemplate(element);
 		if (!template) {
 			context.warn(
 				`The "${directive.attributeName}" directive requires a direct template child.`,
@@ -31,38 +43,115 @@ const loopReaction: Reaction = {
 			return;
 		}
 
-		createResolvedEffect(directive, context, (value) => {
-			if (!Array.isArray(value)) {
+		let entries: LoopEntry[] = [];
+		let hasRendered = false;
+
+		const createEntry = (
+			item: unknown,
+			index: number,
+			parent: LoopContext | undefined,
+		): LoopEntry | null => {
+			const fragment = template.content.cloneNode(true) as DocumentFragment;
+			const root = fragment.firstElementChild;
+			if (!root) return null;
+
+			const [getIndex, setIndex] = createSignal(index);
+			setLoopContext(root, { item, index: getIndex, parent });
+			return {
+				item,
+				root,
+				nodes: Array.from(fragment.childNodes),
+				position: index,
+				setIndex: (next) => setIndex(next),
+			};
+		};
+
+		const removeEntry = (entry: LoopEntry) => {
+			context.disposeSubtree(entry.root);
+			for (const node of entry.nodes) node.remove();
+		};
+
+		// Markup the loop did not render, such as server-rendered placeholders.
+		const removeUnmanagedChildren = () => {
+			for (const child of Array.from(element.childNodes)) {
+				if (child === template) continue;
+				if (child instanceof Element) context.disposeSubtree(child);
+				child.remove();
+			}
+		};
+
+		const placeEntries = (ordered: LoopEntry[]) => {
+			const skipTemplate = (node: Node | null) =>
+				node === template ? node.nextSibling : node;
+			let cursor = skipTemplate(element.firstChild);
+			for (const entry of ordered) {
+				for (const node of entry.nodes) {
+					if (node === cursor) {
+						cursor = skipTemplate(node.nextSibling);
+						continue;
+					}
+					element.insertBefore(node, cursor);
+				}
+			}
+		};
+
+		const render = (value: unknown) => {
+			if (value !== null && value !== undefined && !Array.isArray(value)) {
 				context.warn(
 					`The "${directive.attributeName}" directive must resolve to an array.`,
 				);
 				return;
 			}
+			const items: unknown[] = Array.isArray(value) ? value : [];
 
-			context.disposeSubtree(directive.element, { childrenOnly: true });
-			for (const child of Array.from(directive.element.childNodes)) {
-				if (child !== template) child.remove();
+			if (!hasRendered) {
+				hasRendered = true;
+				removeUnmanagedChildren();
 			}
 
-			const result = document.createDocumentFragment();
-			const parent = getLoopContext(directive.element);
-			for (let index = 0; index < value.length; index += 1) {
-				const clone = template.content.cloneNode(true) as DocumentFragment;
-				const root = clone.firstElementChild;
-				if (!root) continue;
-				setLoopContext(root, {
-					item: value[index],
-					index,
-					indexOne: index + 1,
-					parent,
-				});
-				result.append(clone);
+			// Items are matched by identity, so unchanged items keep their markup,
+			// state and listeners, and only their index updates.
+			const available = new Map<unknown, LoopEntry[]>();
+			for (const entry of entries) {
+				const matches = available.get(entry.item);
+				if (matches) matches.push(entry);
+				else available.set(entry.item, [entry]);
 			}
-			directive.element.append(result);
-			context.sync(directive.element, { childrenOnly: true });
-		});
+
+			const parent = getLoopContext(element);
+			const next: LoopEntry[] = [];
+			const created: LoopEntry[] = [];
+			for (let index = 0; index < items.length; index += 1) {
+				const item = items[index];
+				const reused = available.get(item)?.shift();
+				if (reused) {
+					if (reused.position !== index) {
+						reused.position = index;
+						reused.setIndex(index);
+					}
+					next.push(reused);
+					continue;
+				}
+				const entry = createEntry(item, index, parent);
+				if (!entry) continue;
+				next.push(entry);
+				created.push(entry);
+			}
+
+			for (const unused of available.values()) {
+				for (const entry of unused) removeEntry(entry);
+			}
+
+			placeEntries(next);
+			entries = next;
+			for (const entry of created) context.sync(entry.root);
+		};
+
+		createResolvedEffect(directive, context, render, { immediate: true });
+
 		return () => {
-			context.disposeSubtree(directive.element, { childrenOnly: true });
+			for (const entry of entries) context.disposeSubtree(entry.root);
+			entries = [];
 		};
 	},
 };

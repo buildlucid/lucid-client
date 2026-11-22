@@ -1,13 +1,27 @@
 import { evaluatePathValue } from "../helpers.js";
-import type { MemberReference } from "../types/index.js";
+import type { LoopMemberReference, MemberReference } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import { warn } from "./log.js";
 
+const resolveLoopValue = (reference: LoopMemberReference) => {
+	const context = reference.context;
+	if (!context) return undefined;
+	switch (reference.key) {
+		case "item":
+			return context.item;
+		case "index":
+			return context.index();
+		case "indexOne":
+			return context.index() + 1;
+	}
+};
+
 const resolveReference = (reference: MemberReference, args: unknown[] = []) => {
 	if (reference.type === "loop") {
+		const value = resolveLoopValue(reference);
 		return reference.path.length
-			? evaluatePathValue(reference.value, reference.path)
-			: reference.value;
+			? evaluatePathValue(value, reference.path)
+			: value;
 	}
 
 	if (!reference.scope) {

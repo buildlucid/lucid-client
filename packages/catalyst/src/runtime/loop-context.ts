@@ -1,9 +1,6 @@
-export type LoopContext = {
-	item: unknown;
-	index: number;
-	indexOne: number;
-	parent?: LoopContext;
-};
+import type { LoopContext } from "../types/index.js";
+
+export type { LoopContext };
 
 const loopContexts = new WeakMap<Element, LoopContext>();
 

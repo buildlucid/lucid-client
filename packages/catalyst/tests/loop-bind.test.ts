@@ -2,6 +2,7 @@ import { createSignal } from "solid-js";
 import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { storeModule } from "../src/index.js";
 import { events, bind, dom, loop } from "../src/reactions.js";
+import Runtime from "../src/runtime/catalyst.js";
 import { settle } from "./utils.js";
 
 describe("bindings rendered by loops", () => {
@@ -260,5 +261,131 @@ describe("bindings rendered by loops", () => {
 		expect(link?.textContent).toBe("Link");
 		expect(link?.getAttribute("data-group")).toBe("Group");
 		expect(link?.getAttribute("data-section")).toBe("Section");
+	});
+});
+
+describe("loop updates", () => {
+	it("keeps markup for unchanged items and updates their index", async () => {
+		document.body.innerHTML = `
+			<div data-store="keyed">
+				<ul data-loop="$items">
+					<template>
+						<li data-bind--data-index="$index" data-dom--text="$item.title"></li>
+					</template>
+				</ul>
+			</div>
+		`;
+		const one = { title: "One" };
+		const two = { title: "Two" };
+		const three = { title: "Three" };
+		storeModule("keyed", {
+			state: () => ({ items: createSignal([one, two]) }),
+			setup: () => ({ actions: {} }),
+		});
+		Catalyst.start({ reactions: [loop, bind, dom] });
+
+		const [firstOne, firstTwo] = Array.from(document.querySelectorAll("li"));
+		Runtime.stores.get("keyed")?.state.items?.[1]([three, two, one]);
+		await settle();
+
+		const items = Array.from(document.querySelectorAll("li"));
+		expect(items.map((item) => item.textContent)).toEqual([
+			"Three",
+			"Two",
+			"One",
+		]);
+		expect(items[1]).toBe(firstTwo);
+		expect(items[2]).toBe(firstOne);
+		expect(items.map((item) => item.getAttribute("data-index"))).toEqual([
+			"0",
+			"1",
+			"2",
+		]);
+	});
+
+	it("clears rendered items when the value becomes nullish", async () => {
+		document.body.innerHTML = `
+			<div data-store="nullable">
+				<ul data-loop="$items"><template><li></li></template></ul>
+			</div>
+		`;
+		storeModule("nullable", {
+			state: () => ({ items: createSignal<number[] | null>([1, 2]) }),
+			setup: () => ({ actions: {} }),
+		});
+		Catalyst.start({ reactions: [loop] });
+		expect(document.querySelectorAll("li")).toHaveLength(2);
+
+		Runtime.stores.get("nullable")?.state.items?.[1](null);
+		await settle();
+		expect(document.querySelectorAll("li")).toHaveLength(0);
+	});
+
+	it("does not re-render when a nested store's init reads its state", async () => {
+		document.body.innerHTML = `
+			<div data-store="list">
+				<div data-loop="$items">
+					<template><div data-store="child"></div></template>
+				</div>
+			</div>
+		`;
+		let inits = 0;
+		storeModule("list", {
+			state: () => ({ items: createSignal([1]) }),
+			setup: () => ({ actions: {} }),
+		});
+		storeModule("child", {
+			state: () => ({ count: createSignal(0) }),
+			setup: (store) => ({
+				actions: {
+					init: () => {
+						inits += 1;
+						store.state.count[0]();
+					},
+				},
+			}),
+		});
+		Catalyst.start({ reactions: [loop] });
+
+		const child = Runtime.stores.get("child");
+		child?.state.count?.[1](5);
+		await settle();
+		expect(inits).toBe(1);
+		expect(Runtime.stores.get("child")).toBe(child);
+		expect(child?.state.count?.[0]()).toBe(5);
+	});
+
+	it("replaces server-rendered children without leaking their directives", async () => {
+		let pings = 0;
+		document.body.innerHTML = `
+			<div data-store="ssr">
+				<ul data-loop="$items">
+					<template><li class="rendered"></li></template>
+					<li id="placeholder" data-events--document.ping="@ping"></li>
+				</ul>
+			</div>
+		`;
+		storeModule("ssr", {
+			state: () => ({ items: createSignal([1]) }),
+			setup: () => ({
+				actions: {
+					ping: () => {
+						pings += 1;
+					},
+				},
+			}),
+		});
+		Catalyst.start({ reactions: [loop, events] });
+		await settle();
+
+		expect(document.querySelector("#placeholder")).toBeNull();
+		expect(document.querySelectorAll("li.rendered")).toHaveLength(1);
+		document.dispatchEvent(new Event("ping"));
+		expect(pings).toBe(0);
+		expect(
+			Array.from(Runtime.registrations.keys()).filter(
+				(element) => !element.isConnected,
+			),
+		).toHaveLength(0);
 	});
 });
