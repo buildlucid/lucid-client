@@ -2,12 +2,19 @@ import { stringifyState } from "../../helpers.js";
 import type { Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
 
-const updateDom = (element: Element, specifier: string, value: unknown) => {
-	if (!(element instanceof HTMLElement)) return;
+const SPECIFIERS = ["text", "html", "value", "focus", "blur", "scrollto"];
 
+/** Nullish values render as empty content rather than "null"/"undefined". */
+const toText = (value: unknown) =>
+	value === null || value === undefined ? "" : stringifyState(value);
+
+const isFocusable = (element: Element): element is HTMLElement | SVGElement =>
+	"focus" in element && typeof element.focus === "function";
+
+const updateDom = (element: Element, specifier: string, value: unknown) => {
 	switch (specifier) {
 		case "html":
-			element.innerHTML = stringifyState(value);
+			element.innerHTML = toText(value);
 			return;
 		case "value":
 			if (
@@ -15,24 +22,25 @@ const updateDom = (element: Element, specifier: string, value: unknown) => {
 				element instanceof HTMLTextAreaElement ||
 				element instanceof HTMLSelectElement
 			) {
-				element.value = stringifyState(value);
+				element.value = toText(value);
 			}
 			return;
 		case "focus":
-			if (value === true) {
+			if (value === true && isFocusable(element)) {
+				// Deferred so it wins over a trap moving focus in the same update.
 				setTimeout(() => {
 					if (element.isConnected) element.focus();
 				}, 0);
 			}
 			return;
 		case "blur":
-			if (value === true) element.blur();
+			if (value === true && isFocusable(element)) element.blur();
 			return;
 		case "scrollto":
 			if (value === true) element.scrollIntoView({ behavior: "smooth" });
 			return;
 		default:
-			element.innerText = stringifyState(value);
+			element.textContent = toText(value);
 	}
 };
 
@@ -47,8 +55,16 @@ const domReaction: Reaction = {
 			return;
 		}
 
+		const specifier = directive.specifier || "text";
+		if (!SPECIFIERS.includes(specifier)) {
+			context.warn(
+				`The "${directive.attributeName}" directive has an unknown specifier. Use one of: ${SPECIFIERS.join(", ")}.`,
+			);
+			return;
+		}
+
 		createResolvedEffect(directive, context, (value) => {
-			updateDom(directive.element, directive.specifier || "text", value);
+			updateDom(directive.element, specifier, value);
 		});
 		return undefined;
 	},
