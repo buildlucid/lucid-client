@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { defineStore } from "../src/index.js";
-import { dom, events, loop } from "../src/reactions.js";
+import { conditional, dom, events, loop } from "../src/reactions.js";
 import Runtime from "../src/runtime/catalyst.js";
 import {
 	allowConsoleErrors,
@@ -331,5 +331,74 @@ describe("runtime robustness", () => {
 		`;
 		Catalyst.start({ reactions: [dom, events] });
 		expect(document.querySelector("span")?.textContent).toBe("ready");
+	});
+});
+
+describe("data-ignore", () => {
+	it("leaves the element and everything inside it unbound", () => {
+		document.body.innerHTML = `
+			<div data-store="page" data-state--name="Ada">
+				<p id="bound" data-dom--text="$name"></p>
+				<div data-ignore data-dom--text="$name">
+					<p id="ignored" data-dom--text="$name">Kept</p>
+					<div data-store="nested"></div>
+				</div>
+			</div>
+		`;
+		Catalyst.start({ reactions: [dom] });
+		expect(document.querySelector("#bound")?.textContent).toBe("Ada");
+		expect(document.querySelector("#ignored")?.textContent).toBe("Kept");
+		expect(getStore("nested")).toBeUndefined();
+
+		// Syncing inside an ignored element binds nothing either.
+		const ignored = document.querySelector("#ignored");
+		if (ignored) Catalyst.sync(ignored);
+		expect(ignored?.textContent).toBe("Kept");
+	});
+
+	it("works with a prefix that isn't valid in a selector", () => {
+		document.body.innerHTML = `
+			<div c:store="page" c:state--name="Ada">
+				<p id="bound" c:dom--text="$name"></p>
+				<p id="ignored" c:ignore c:dom--text="$name">Kept</p>
+			</div>
+		`;
+		Catalyst.start({ reactions: [dom], attributes: { prefix: "c:" } });
+		expect(document.querySelector("#bound")?.textContent).toBe("Ada");
+		expect(document.querySelector("#ignored")?.textContent).toBe("Kept");
+	});
+
+	it("can be renamed with the ignore attribute option", () => {
+		document.body.innerHTML = `
+			<div data-store="page" data-state--name="Ada">
+				<p data-skip data-dom--text="$name">Kept</p>
+			</div>
+		`;
+		Catalyst.start({ reactions: [dom], attributes: { ignore: "skip" } });
+		expect(document.querySelector("p")?.textContent).toBe("Kept");
+	});
+});
+
+describe("data-ignore in rendered markup", () => {
+	it("leaves ignored parts of loop items and conditions unbound", () => {
+		document.body.innerHTML = `
+			<div data-store="page" data-state--items="[1]" data-state--shown="true">
+				<ul data-loop="$items">
+					<template>
+						<li>
+							<span class="bound" data-dom--text="$item"></span>
+							<span class="ignored" data-ignore data-dom--text="$item">Kept</span>
+						</li>
+					</template>
+				</ul>
+				<div data-if="$shown">
+					<template><p data-ignore data-dom--text="$shown">Kept</p></template>
+				</div>
+			</div>
+		`;
+		Catalyst.start({ reactions: [conditional, dom, loop] });
+		expect(document.querySelector(".bound")?.textContent).toBe("1");
+		expect(document.querySelector(".ignored")?.textContent).toBe("Kept");
+		expect(document.querySelector("[data-if] p")?.textContent).toBe("Kept");
 	});
 });

@@ -51,9 +51,10 @@ with `$name`, actions are called with `@name`, and elements are registered as
 refs with `#name`.
 
 Reactions are registered explicitly, so an application only includes the
-behavior it uses. Catalyst exports `bind`, `css`, `dom`, `events`, `loop`,
-`model` and `trap` from `@lucidclient/catalyst/reactions`. Refs and store effects
-are part of the core and need no reaction.
+behavior it uses. Catalyst exports `bind`, `classes`, `conditional`, `css`,
+`dom`, `events`, `intersect`, `loop`, `model`, `trap` and `uid` from
+`@lucidclient/catalyst/reactions`. Refs and store effects are part of the core
+and need no reaction.
 
 `start` waits for `DOMContentLoaded` when it runs before `<body>` exists, and
 returns with every binding applied.
@@ -194,7 +195,9 @@ logged with its name and does not stop other effects from running.
 
 ### Init and cleanup
 
-`init` runs once the store's refs are registered, and can write state. Return a
+`init` runs once the store's refs are registered, and can write state. Refs
+inside a loop or a `data-if` register when that markup renders, after `init`,
+so read them in an action or effect instead. Return a
 function to clean up when the store is destroyed, so setup and teardown share
 the same variables. An async `init` can return a cleanup too.
 
@@ -490,6 +493,46 @@ field's defaults and stop applying once someone edits the field. Use
 `data-dom--checked`, `data-dom--value` or `data-model` to set what a field
 shows.
 
+`data-bind--class` replaces the whole `class` attribute, so use `data-class` to
+add and remove classes. `data-bind--hidden` hides an element through the
+browser's `[hidden] { display: none }` style, which any `display` rule of your
+own overrides, such as a `flex` class. Add `[hidden] { display: none !important; }`
+to your stylesheet so hidden always wins.
+
+### Classes
+
+`data-class--{name}` adds the `{name}` class while the value is truthy and
+removes it while it is falsy. `data-class` applies a list of classes from a
+string, an array of strings, or an object whose truthy keys are applied, which
+suits a computed value or a loop item's action:
+
+```html
+<nav data-store="menu">
+    <button class="toggle" data-class--is-open="$open">Menu</button>
+    <ul data-loop="$links">
+        <template>
+            <li class="link" data-class="@linkClass" data-dom--text="$item.title"></li>
+        </template>
+    </ul>
+</nav>
+```
+
+```ts
+actions: ({ state }) => ({
+    linkClass: ({ item }: LoopItem<Link>) => ({
+        "font-semibold text-accent": item.url === state.current,
+    }),
+}),
+```
+
+`data-class` only removes classes it added, so classes the markup already had
+stay, even when the value stops naming them. Use `data-class--{name}` for a
+class the server may render that should still be removed, since it owns its one
+class. When either directive is disposed, the classes it changed go back to how
+the markup had them. HTML lowercases attribute names, so
+`data-class--{name}` can only set lowercase class names without `.`; use
+`data-class` for any other name, such as utility classes like `w-1/2`.
+
 ### CSS variables
 
 `data-css--{name}` reactively sets the `--{name}` custom property on the element
@@ -573,6 +616,54 @@ names, so an event name containing uppercase letters, such as `DOMContentLoaded`
 or a camelCase custom event, cannot be listened to; give custom events lowercase
 or kebab-case names.
 
+`outside` listens for an event anywhere outside the element, which suits
+closing a menu or popup. Put it on the element that holds both the menu and the
+button that opens it, so the button's own click isn't outside:
+
+```html
+<div data-store="menu" data-events--outside.click="@close">
+    <button data-events--click="@toggle">Menu</button>
+    <ul data-bind--hidden="$closed">…</ul>
+</div>
+```
+
+Events that start while the element is hidden aren't outside it, so a popup
+that listens for them itself can sit beside the button that opens it: the click
+that opens it doesn't close it again. The action runs once the event has bubbled
+to `document`, after the clicked element's own actions, so an event stopped
+before it gets there isn't seen.
+
+#### Modifiers
+
+Modifiers follow the event name, separated by dots, and can be combined:
+
+```html
+<form data-events--submit.prevent="@save">…</form>
+<div data-events--document.keydown.escape="@close"></div>
+<input data-events--input.debounce.300ms="@search" />
+<button data-events--click.once="@load">Load more</button>
+```
+
+- `prevent` and `stop` call `preventDefault()` and `stopPropagation()`.
+- `once` calls the action the first time only.
+- `self` only calls it when the event happened on the element itself, not a
+  child.
+- `passive` and `capture` set the listener options of the same names.
+- `debounce` waits until the events stop for 250ms, then calls the action with
+  the last event. `throttle` calls it at most once every 250ms. Both take a
+  duration such as `500ms` or `1s`.
+- `transition` calls the action in a [view transition](#view-transitions).
+- `shift`, `ctrl`, `alt` and `meta` only call the action while that key is
+  held, such as `click.shift` or `keydown.ctrl.k`.
+- On `keydown` and `keyup`, any other modifier is a key name, and the action
+  only runs for those keys. Names are the event's `key` in kebab-case:
+  `escape`, `enter`, `space`, `tab`, `arrow-down`, `k`.
+
+Modifiers filter the event first, then `prevent` and `stop` apply straight
+away, even when the action is debounced, throttled or run in a transition. An
+action that runs after the event, such as a debounced one, receives an event
+whose `currentTarget` is `null`, so read `event.target` or a ref instead.
+
 ### Two-way binding
 
 `data-model` keeps a form field and state in sync both ways: the field shows the
@@ -603,6 +694,43 @@ state, and the state follows the field as it is edited.
 `data-model` writes state the store declares, or a property of a loop item, such
 as `data-model="$item.qty"`, which is written to the store the loop renders.
 Computed values can't be written.
+
+Modifiers change when a text field writes:
+
+```html
+<input data-model--lazy="$name" />
+<input data-model--trim="$email" />
+<input type="search" data-model--debounce.300ms="$query" />
+```
+
+- `lazy` writes when the field changes, such as when it loses focus, instead
+  of as it is typed in.
+- `trim` writes the text without spaces at either end. The field keeps what was
+  typed until it changes, then shows the trimmed text.
+- `debounce` writes once typing pauses for 250ms, or for a duration such as
+  `500ms`, and straight away when the field changes or its form is submitted.
+
+#### Dialogs, popovers and details
+
+`data-model` also opens and closes a `<dialog>`, a `popover` element or a
+`<details>` from boolean state, and writes `false` when the browser closes it,
+such as on `Escape`, a click outside a popover or a `<form method="dialog">`:
+
+```html
+<div data-store="confirm">
+    <button data-events--click="@open">Delete</button>
+    <dialog data-model="$open">
+        <form method="dialog">
+            <button>Cancel</button>
+            <button data-events--click="@delete">Delete</button>
+        </form>
+    </dialog>
+</div>
+```
+
+A dialog opens as a modal with `showModal()`, so the page behind it is inert,
+focus moves inside and `Escape` closes it, without a `data-trap`. Popovers use
+`showPopover()` and `hidePopover()`, and a details element its `open` property.
 
 ### Loops
 
@@ -690,6 +818,30 @@ actions: ({ setState }) => ({
 </ul>
 ```
 
+### Conditional rendering
+
+`data-if` renders its direct `<template>` child while the value is truthy, and
+removes it, with its listeners, effects and stores, while it is falsy. It
+suits markup that is expensive or shouldn't exist while it's hidden, such as a
+heavy widget or form fields that shouldn't submit:
+
+```html
+<div data-store="checkout">
+    <div data-if="$needsInvoice">
+        <template>
+            <fieldset>
+                <input name="company" data-model="$company" />
+            </fieldset>
+        </template>
+    </div>
+</div>
+```
+
+The template can hold any number of elements. Rendered markup is created
+afresh each time, so field values and listeners don't carry over. Any markup
+inside the element other than its `<template>` is replaced on the first render,
+as with loops. To hide markup while keeping it, use `data-bind--hidden`.
+
 ### Focus traps
 
 ```html
@@ -724,6 +876,159 @@ suits a menu toggle that sits outside the menu it opens:
 </header>
 ```
 
+### Visibility
+
+`data-intersect` calls an action when the element scrolls into view, with the
+`IntersectionObserverEntry` as its first argument. `data-intersect--leave`
+calls it when the element scrolls out of view again:
+
+```html
+<div data-store="feed">
+    <img data-src="/photo.jpg" data-intersect--once.200px="@loadImage" />
+    <video data-intersect="@play" data-intersect--leave="@pause"></video>
+    <div data-intersect="@loadMore"></div>
+</div>
+```
+
+- `once` stops after the first call.
+- `half` waits until half of the element is visible, and `full` until all of
+  it is, allowing for rounding at 99%. An element taller than the viewport
+  never becomes fully visible.
+- A length such as `200px` or `10%` grows the viewport by that much on every
+  side, so the action runs before the element scrolls into view.
+
+Elements with the same modifiers share one `IntersectionObserver`.
+
+### Unique ids
+
+`data-uid="{name}"` gives an element a generated id, and
+`data-uid--{attribute}="{name}"` writes the same id to another attribute, such
+as `for`, `aria-controls`, `aria-labelledby` or `popovertarget`. Each loop item
+and store gets its own ids, so markup inside a loop needs no index:
+
+```html
+<ul data-loop="$questions">
+    <template>
+        <li>
+            <button data-uid--aria-controls="answer" data-dom--text="$item.question"></button>
+            <div data-uid="answer" data-dom--text="$item.answer"></div>
+        </li>
+    </template>
+</ul>
+```
+
+Names belong to the nearest loop item or store, or to the page outside them.
+Several names separated by spaces write several ids, for attributes that take a
+list such as `aria-describedby`.
+
+## Animations
+
+### View transitions
+
+The [View Transition API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API)
+animates the page from how it looks before a change to how it looks after it.
+Wrap the state change in `viewTransition`, exported by Catalyst:
+
+```ts
+import { defineStore, viewTransition } from "@lucidclient/catalyst";
+
+const gallery = defineStore({
+    state: { photos: [] as Photo[] },
+    actions: ({ setState }) => ({
+        shuffle: () =>
+            viewTransition(() =>
+                setState((state) => {
+                    state.photos.sort(() => Math.random() - 0.5);
+                }),
+            ),
+    }),
+});
+```
+
+From markup, the `transition` event modifier does the same for any action:
+`data-events--click.transition="@remove"`. Its transition's type is the
+action's store scope, such as `gallery`.
+
+Catalyst applies the change to the page inside the transition, so the browser
+captures the page after it. The browser cross-fades the page by default, and
+elements with a `view-transition-name` move from their old position to their
+new one. Loops keep each item's element while it stays in the array, so
+`view-transition-name: match-element` animates items as they are added,
+removed and reordered, without a name for each:
+
+```css
+.photo {
+    view-transition-name: match-element;
+}
+```
+
+Replacing every item with new objects, such as freshly parsed JSON, renders new
+elements, which cross-fade rather than move. A name must be a CSS identifier, so
+to name items yourself use a prefixed value such as `photo-42` through
+`data-css`, not a bare number.
+
+`viewTransition` returns the browser's `ViewTransition`, so you can wait for
+`finished` or call `skipTransition()`. `types` sets
+[transition types](https://developer.mozilla.org/en-US/docs/Web/CSS/:active-view-transition-type)
+for CSS to match: `viewTransition(next, { types: ["forward"] })`.
+
+A transition covers the whole page: every element with a `view-transition-name`
+animates, and the rest of the page cross-fades. To animate only the part of the
+page that changed, name elements only during their own transitions, and turn
+off the page's cross-fade:
+
+```css
+:active-view-transition-type(gallery) .photo {
+    view-transition-name: match-element;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+}
+```
+
+Browsers without transition types then change the page without animating it.
+
+- The change runs once the browser has captured the page, a frame later, so
+  state read straight after calling `viewTransition` still has its old value.
+  Read it after `await transition?.updateCallbackDone`.
+- Only the changes made before `update` returns are animated. For an async
+  action, call `viewTransition` once its data has loaded.
+- The page doesn't respond to clicks while a transition runs, and starting
+  another skips to the end of the current one, so keep transitions short.
+- Without browser support, or when the user prefers reduced motion, the change
+  is applied straight away without a transition and nothing is returned.
+
+### Showing and hiding
+
+Elements shown and hidden with `data-bind--hidden`, `data-class` or `data-css`
+can animate with CSS alone. `@starting-style` sets where an element animates in
+from, and `transition-behavior: allow-discrete` keeps it visible while it
+animates out:
+
+```css
+.panel {
+    transition:
+        opacity 200ms,
+        translate 200ms,
+        display 200ms allow-discrete;
+}
+.panel[hidden] {
+    display: none !important;
+    opacity: 0;
+    translate: 0 -8px;
+}
+@starting-style {
+    .panel:not([hidden]) {
+        opacity: 0;
+        translate: 0 -8px;
+    }
+}
+```
+
+Markup that `data-if` or a loop removes leaves the page straight away, so use a
+view transition to animate it out.
+
 ## Dynamic markup and lifecycle
 
 Use `sync` after adding markup outside Catalyst:
@@ -757,11 +1062,18 @@ the new store. `destroy` resets the running instance so it can be started again,
 even if a store's cleanup throws. Registered stores and reactions remain
 available, so `Catalyst.start()` can be called again without them.
 
+`data-ignore` keeps Catalyst out of an element and everything inside it, such
+as a third-party widget or markup that shows Catalyst's own attributes as code.
+Nothing inside it is bound, including stores, and a `sync` inside it does
+nothing. In a loop or `data-if` template, put it on an element inside the
+`<template>`, not on the template itself. Add it before the markup is synced: bindings that already exist stay
+until the markup is removed.
+
 `sync` and `refresh` activate every directive in their target, including ones in
 markup you did not write. HTML sanitizers such as DOMPurify keep `data-*`
 attributes by default, so sanitize user content with those attributes removed, or
-keep it outside the areas you synchronize, otherwise it could wire up your
-actions.
+keep it inside a `data-ignore` element or outside the areas you synchronize,
+otherwise it could wire up your actions.
 
 ## Configuration
 
@@ -775,6 +1087,7 @@ Catalyst.start({
         store: "store",
         state: "state--",
         persist: "persist",
+        ignore: "ignore",
         scopeSeparator: ":",
         specifierSeparator: "--",
     },

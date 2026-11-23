@@ -10,16 +10,23 @@ import { warn } from "./log.js";
 import { getElementLoopContext } from "./loop-context.js";
 import resolveDirectiveReference from "./resolve-directive-reference.js";
 
-/** First-party reactions, whose names match their attributes. */
-const FIRST_PARTY_REACTIONS = [
-	"bind",
-	"css",
-	"dom",
-	"events",
-	"loop",
-	"model",
-	"trap",
-];
+/**
+ * First-party reactions by attribute. Names match their attributes, except
+ * where the attribute is a reserved word that can't be exported.
+ */
+const FIRST_PARTY_REACTIONS = new Map([
+	["bind", "bind"],
+	["class", "classes"],
+	["css", "css"],
+	["dom", "dom"],
+	["events", "events"],
+	["if", "conditional"],
+	["intersect", "intersect"],
+	["loop", "loop"],
+	["model", "model"],
+	["trap", "trap"],
+	["uid", "uid"],
+]);
 
 const matchesAttribute = (name: string, attribute: string) => {
 	const base = `${Catalyst.options.attributes.prefix}${attribute}`;
@@ -31,8 +38,8 @@ const matchesAttribute = (name: string, attribute: string) => {
 
 /** In debug mode, reports markup for a first-party reaction that isn't registered. */
 const reportUnregisteredReaction = (attributeName: string) => {
-	for (const name of FIRST_PARTY_REACTIONS) {
-		if (!matchesAttribute(attributeName, name)) continue;
+	for (const [attribute, name] of FIRST_PARTY_REACTIONS) {
+		if (!matchesAttribute(attributeName, attribute)) continue;
 		if (Catalyst.reactions.has(name) || Catalyst.reportedReactions.has(name)) {
 			return;
 		}

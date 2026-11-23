@@ -7,6 +7,7 @@ export type CatalystAttributeOptions = {
 	store?: string;
 	state?: string;
 	persist?: string;
+	ignore?: string;
 	scopeSeparator?: string;
 	specifierSeparator?: string;
 };
@@ -36,4 +37,13 @@ export type CatalystApi = {
 	destroy: () => void;
 	refresh: (targetStore?: string) => void;
 	sync: (target: Element, options?: { childrenOnly?: boolean }) => void;
+};
+
+export type ViewTransitionOptions = {
+	/**
+	 * Types for the transition, which CSS matches with
+	 * `:active-view-transition-type()`. Browsers without support for types
+	 * still run the transition.
+	 */
+	types?: string[];
 };

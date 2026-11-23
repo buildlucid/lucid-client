@@ -341,8 +341,21 @@ const lazyLoader = defineStore({
 
 // --------------------------------------------------------
 
+// --------------------------------------------------------
+// data-ignore
+
+const ignoreLog = createLogger("ignore");
+const ignoreHost = defineStore({
+	state: { name: "Ada" },
+	actions: ({ state }) => ({
+		bound: () => `Bound: ${state.name}`,
+		press: () => ignoreLog.info("Press ran"),
+	}),
+});
+
 startCatalyst({
 	stores: {
+		ignoreHost,
 		injector,
 		injected,
 		removal,
@@ -398,4 +411,16 @@ document
 	.querySelector("[data-dispatch-keydown]")
 	?.addEventListener("click", () => {
 		document.dispatchEvent(new KeyboardEvent("keydown", { key: "k" }));
+	});
+
+document
+	.querySelector("[data-ignore-inject]")
+	?.addEventListener("click", () => {
+		for (const target of document.querySelectorAll<HTMLElement>(
+			"[data-ignore-target]",
+		)) {
+			target.innerHTML = `<p data-dom--text="ignoreHost:@bound">Injected, not bound</p>`;
+			Catalyst.sync(target);
+		}
+		ignoreLog.info("Injected the same markup into both panels and synced each");
 	});

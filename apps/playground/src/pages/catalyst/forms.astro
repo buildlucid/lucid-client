@@ -634,6 +634,51 @@ import Playground from "../../layouts/Playground.astro";
 		[data-strength="4"] :is(.strength-1, .strength-2, .strength-3, .strength-4) { background-color: var(--color-emerald-400); }
 	</style>
 
+	<Scenario
+		id="model-modifiers"
+		title="Model modifiers"
+		description={'`data-model--lazy` writes when the field changes, `data-model--trim` writes the text without surrounding spaces, and `data-model--debounce.400ms` waits until typing pauses. The readout shows each state value with quotes, so spaces are visible.'}
+		expect={[
+			"Typing in `lazy` doesn't change its state until the field loses focus or `Enter` is pressed.",
+			"Typing `  Ada  ` in `trim` writes `Ada`, and the spaces stay in the field until it loses focus, then disappear.",
+			"Typing quickly in `debounce` updates its state once you pause, and straight away when the field loses focus.",
+		]}
+	>
+		<div data-store="modelModifiers" class="space-y-4">
+			<div class="grid gap-3 sm:grid-cols-3">
+				<label class="space-y-1.5"><span class="label">lazy</span><input class="input" data-model--lazy="$lazy" /></label>
+				<label class="space-y-1.5"><span class="label">trim</span><input class="input" data-model--trim="$trimmed" /></label>
+				<label class="space-y-1.5"><span class="label">debounce.400ms</span><input class="input" type="search" data-model--debounce.400ms="$query" /></label>
+			</div>
+			<pre class="readout" data-dom--text="$summary"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="unique-ids"
+		title="Unique ids for labels and descriptions"
+		description={'Each contact row uses `data-uid="name"` on its input, `data-uid--for="name"` on its label, and `data-uid--aria-describedby="hint"` for its hint. Every loop item gets its own ids, with no index in the markup.'}
+		expect={[
+			"Clicking a row's label focuses that row's input, not another row's.",
+			"The readout shows each row's generated ids, all different.",
+			"`Add contact` adds a row with new ids.",
+		]}
+	>
+		<div data-store="contactIds" class="space-y-3">
+			<div data-loop="$contacts" class="space-y-3">
+				<template>
+					<div class="space-y-1.5">
+						<label class="label" data-uid--for="name">Contact <span data-dom--text="$indexOne"></span></label>
+						<input class="input" data-uid="name" data-uid--aria-describedby="hint" data-model="$item.name" />
+						<p class="hint" data-uid="hint">Shown to the contact's team.</p>
+					</div>
+				</template>
+			</div>
+			<button class="btn btn-sm" data-events--click="@add">Add contact</button>
+			<pre class="readout" data-uid-readout></pre>
+		</div>
+	</Scenario>
+
 	<script>
 		import "../../scripts/catalyst/forms";
 	</script>

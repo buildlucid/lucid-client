@@ -41,16 +41,17 @@ const classList: Reaction = {
 };
 
 // --------------------------------------------------------
-// class: toggles the class named by the specifier while the value is truthy
+// toggle-class: toggles the class named by the specifier while the value is
+// truthy, like a simpler first-party data-class--{name}
 
 const toggleClass: Reaction = {
 	name: "toggleClass",
-	attribute: "class",
+	attribute: "toggle-class",
 	setup: (directive, context) => {
 		const { element, specifier, reference } = directive;
 		if (!specifier) {
 			context.warn(
-				`The "${directive.attributeName}" directive needs a class name: data-class--{name}.`,
+				`The "${directive.attributeName}" directive needs a class name: data-toggle-class--{name}.`,
 			);
 			return;
 		}

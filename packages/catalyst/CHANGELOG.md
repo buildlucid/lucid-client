@@ -23,6 +23,16 @@
 - `data-dom--value` selects every matching option of a `<select multiple>` from an array, and applies a select's value again when its options change, such as when a loop renders them.
 - Actions called from inside a loop item receive a `LoopItem` with its `item`, `index`, `indexOne` and `parent`: after the `Event` for events, and as the only argument for actions that provide a value.
 - Added persisted state, imported from `@lucidclient/catalyst/persistence` so pages that don't use it don't include it. Pass `persistence()` to `Catalyst.start`, then wrap a state value in `persisted()`, or list state keys in a `data-persist` attribute, to save it to `localStorage`, `sessionStorage` or a registered storage adapter and restore it when the page loads again. Stored values are restored before the store is created, are ignored when their type no longer matches, and can follow changes from other tabs with `sync`. `clearPersisted(scope)` removes a store's saved values.
+- Added event modifiers: `prevent`, `stop`, `once`, `self`, `passive`, `capture`, `debounce` and `throttle` with an optional duration, `shift`, `ctrl`, `alt` and `meta`, key names such as `keydown.escape`, and `transition`, which runs the action in a view transition whose type is the store's scope.
+- Added the `outside` event target. `data-events--outside.click` calls an action for clicks outside the element while it is shown.
+- Added `viewTransition(update, { types })`, which runs a state change in a view transition and applies it to the page before the browser captures it. Without browser support, or when the user prefers reduced motion, the change is applied straight away.
+- Added the `classes` reaction. `data-class--{name}` toggles one class, and `data-class` applies classes from a string, an array or an object, leaving the element's other classes alone.
+- `data-model` opens and closes a `<dialog>` as a modal, a `popover` element and a `<details>` from boolean state, and writes `false` when the browser closes them.
+- Added the `lazy`, `trim` and `debounce` modifiers to `data-model`, such as `data-model--debounce.300ms`.
+- Added the `conditional` reaction. `data-if` renders its template while a value is truthy, and removes it with its listeners, effects and stores while it is falsy.
+- Added the `intersect` reaction. `data-intersect` calls an action when the element scrolls into view, and `data-intersect--leave` when it scrolls out of view, with the `once`, `half` and `full` modifiers and a margin such as `200px`.
+- Added the `uid` reaction. `data-uid="name"` gives an element a generated id, unique to its loop item or store, and `data-uid--for="name"` writes the same id to another attribute.
+- Added `data-ignore`, which keeps Catalyst out of an element and everything inside it. Its name is set by the `ignore` attribute option.
 - Catalyst ships a development build, which bundlers pick through the `development` export condition, and a smaller production build without warnings or `debug` messages.
 - Catalyst is faster throughout: syncing walks each subtree once, loops set up new items in one pass and remove items without disposing them twice, events and refs need no reactive root, and bindings skip DOM writes that wouldn't change anything.
 - Reactions can't use the `cookie` or `speculate` attributes, which Cookie Controller and Speculate own.

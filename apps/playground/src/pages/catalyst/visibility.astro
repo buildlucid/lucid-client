@@ -1,0 +1,120 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Visibility">
+	<Fragment slot="intro">
+		<p>
+			<code>data-intersect</code> calls an action when the element scrolls into
+			view, and <code>data-intersect--leave</code> when it scrolls out again.
+			<code>once</code> stops after the first call, <code>half</code> and
+			<code>full</code> wait for half or all (99%) of the element, and a length such as
+			<code>200px</code> starts that far before it is in view. Scroll the page
+			to try each scenario.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="enter-leave"
+		title="Entering and leaving"
+		description={'The box below the spacer has `data-intersect="@enter"` and `data-intersect--leave="@leave"`. The status line sticks to the top of the scenario while you scroll.'}
+		expect={[
+			"On load the box is out of view and nothing is counted: starting out of view isn't leaving.",
+			"Scrolling the box into view counts an enter, and scrolling it back out counts a leave.",
+			"The status reads `in view` only while part of the box is visible.",
+		]}
+	>
+		<div data-store="enterLeave">
+			<p class="readout sticky top-2 z-10" data-dom--text="$status"></p>
+			<div class="h-[70vh] text-sm text-subtle grid place-items-center">Scroll down</div>
+			<div class="grid h-40 place-items-center rounded-lg border border-accent/50 bg-accent/10 text-sm" data-intersect="@enter" data-intersect--leave="@leave">
+				Watched box
+			</div>
+			<div class="h-[40vh]"></div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="lazy"
+		title="Lazy loading and reveals"
+		description={'Each card has `data-intersect--once.200px="@load"`, so it loads 200px before it scrolls into view and stops watching afterwards. Loading sets `$item.loaded`, which `data-class--loaded` uses to fade the card in.'}
+		expect={[
+			"Cards further down show `waiting` until you scroll close to them.",
+			"Each card loads once, logs it, and fades in; scrolling away and back doesn't load it again.",
+		]}
+	>
+		<div data-store="lazy" class="space-y-3">
+			<p class="readout sticky top-2 z-10" data-dom--text="$status"></p>
+			<div data-loop="$cards" class="grid gap-3 sm:grid-cols-2">
+				<template>
+					<div class="lazy-card grid h-48 place-items-center rounded-lg border border-line text-sm" data-class--loaded="$item.loaded" data-css--hue="$item.hue" data-intersect--once.200px="@load">
+						<span data-dom--text="@cardLabel"></span>
+					</div>
+				</template>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="infinite"
+		title="Infinite scroll"
+		description={'A sentinel after the list has `data-intersect--300px="@loadMore"`. It is rendered by `data-if="$canLoad"`, so each load removes it and renders a fresh one, whose first report loads again if it is still near the viewport. Rows load ten at a time, up to 60.'}
+		expect={[
+			"Scrolling to the end of the list shows `Loading…`, then ten more rows.",
+			"If the end of the list is still in view after a load, the next ten load without scrolling.",
+			"At 60 rows the list reads `All loaded` and nothing more loads.",
+		]}
+	>
+		<div data-store="feed" class="flex flex-col gap-2">
+			<ul data-loop="$rows" class="divide-y divide-line rounded-md border border-line">
+				<template>
+					<li class="px-3 py-2 text-sm">Row <span class="font-mono" data-dom--text="$item"></span></li>
+				</template>
+			</ul>
+			<div class="contents" data-if="$canLoad">
+				<template><p class="py-3 text-center text-sm text-subtle" data-intersect--300px="@loadMore">Scroll for more</p></template>
+			</div>
+			<p class="py-3 text-center text-sm text-subtle empty:hidden" data-dom--text="$status"></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="thresholds"
+		title="Half and full"
+		description={'One tall box, watched three ways: `data-intersect` as soon as any of it is visible, `data-intersect--half` at half, and `data-intersect--full` once all of it is visible, allowing for rounding at 99%.'}
+		expect={[
+			"Scrolling the box in counts `any` first, then `half`, then `full` once at least 99% of it is on screen.",
+			"Scrolling it out and back in counts each again.",
+		]}
+	>
+		<div data-store="thresholds">
+			<p class="readout sticky top-2 z-10" data-dom--text="$status"></p>
+			<div class="h-[60vh]"></div>
+			<div class="grid h-72 place-items-center rounded-lg border border-line-strong bg-raised text-sm" data-intersect="@any" data-intersect--half="@half" data-intersect--full="@full">
+				A 288px box
+			</div>
+			<div class="h-[60vh]"></div>
+		</div>
+	</Scenario>
+
+	<style is:global>
+		.lazy-card {
+			background: oklch(0.3 0.04 var(--hue, 277) / 0.25);
+			opacity: 0.35;
+			translate: 0 12px;
+			transition:
+				opacity 400ms,
+				translate 400ms;
+		}
+		.lazy-card.loaded {
+			background: oklch(0.45 0.12 var(--hue, 277) / 0.35);
+			opacity: 1;
+			translate: 0;
+		}
+	</style>
+
+	<script>
+		import "../../scripts/catalyst/visibility";
+	</script>
+</Playground>

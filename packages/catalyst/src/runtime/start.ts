@@ -43,6 +43,7 @@ const start = (options?: CatalystStartOptions) => {
 			state: options?.attributes?.state ?? DEFAULT_OPTIONS.attributes.state,
 			persist:
 				options?.attributes?.persist ?? DEFAULT_OPTIONS.attributes.persist,
+			ignore: options?.attributes?.ignore ?? DEFAULT_OPTIONS.attributes.ignore,
 			scopeSeparator:
 				options?.attributes?.scopeSeparator ??
 				DEFAULT_OPTIONS.attributes.scopeSeparator,

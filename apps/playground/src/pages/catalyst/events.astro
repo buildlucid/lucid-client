@@ -11,7 +11,10 @@ const fruits = ["Apple", "Banana", "Cherry", "Damson"];
 			<code>data-events--{"{event}"}</code> calls an action when the event
 			fires, passing the <code>Event</code> as the first argument. Prefix the
 			event with <code>document.</code>, <code>window.</code>,
-			<code>body.</code> or <code>head.</code> to listen there instead.
+			<code>body.</code> or <code>head.</code> to listen there instead, or
+			<code>outside.</code> for events outside the element. Modifiers such as
+			<code>.prevent</code>, <code>.escape</code> and <code>.debounce</code>
+			follow the event name.
 		</p>
 	</Fragment>
 
@@ -160,6 +163,131 @@ const fruits = ["Apple", "Banana", "Cherry", "Damson"];
 			<button class="btn btn-sm btn-danger" data-events--click="@failSlowly">Fail slowly</button>
 			<button class="btn btn-sm btn-danger" data-events--click="@throwNow">Throw now</button>
 			<p class="ml-auto text-sm text-muted">status: <span class="font-mono text-fg" data-dom--text="$status"></span></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="modifiers"
+		title="Modifiers"
+		description={'Modifiers follow the event name: `click.prevent`, `click.stop`, `click.once` and `click.self`. The panel itself listens with a plain `data-events--click`, so it counts every click that bubbles up to it.'}
+		expect={[
+			"`.prevent` doesn't navigate, and the panel count goes up.",
+			"`.stop` counts, but the panel count doesn't change.",
+			"`.once` counts its first click only; later clicks still reach the panel.",
+			"In the `.self` box, clicking the box counts and clicking its inner button doesn't. Both reach the panel.",
+		]}
+	>
+		<div data-store="modifiers" data-events--click="@onPanel" class="space-y-4">
+			<div class="flex flex-wrap items-center gap-3 text-sm">
+				<a href="/" data-events--click.prevent="@onPrevent">A link with .prevent</a>
+				<button class="btn btn-sm" data-events--click.stop="@onStop">.stop</button>
+				<button class="btn btn-sm" data-events--click.once="@onOnce">.once</button>
+				<div class="flex items-center gap-2 rounded-md border border-dashed border-line-strong px-3 py-2 text-muted" data-events--click.self="@onSelf">
+					.self box
+					<button class="btn btn-sm">Inner button</button>
+				</div>
+			</div>
+			<p class="readout" data-dom--text="$summary"></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="keys"
+		title="Key names and held keys"
+		description={'On `keydown` and `keyup`, a modifier that isn\'t one of the others is a key name: the event\'s `key` in kebab-case. `shift`, `ctrl`, `alt` and `meta` require that key to be held, on keyboard and mouse events alike.'}
+		expect={[
+			"Focus the list with `Tab`: the arrow keys move the highlight without scrolling the page, and `Enter` picks the highlighted item.",
+			"`Ctrl+K` or `⌘K` toggles the command bar without the browser's own shortcut running.",
+			"`Escape` closes the command bar.",
+			"A plain click on `Shift-click me` does nothing; a Shift+click counts.",
+		]}
+	>
+		<div
+			data-store="keys"
+			data-events--document.keydown.ctrl.k.prevent="@toggleBar"
+			data-events--document.keydown.meta.k.prevent="@toggleBar"
+			data-events--document.keydown.escape="@closeBar"
+			class="flex flex-col gap-4"
+		>
+			<ul
+				tabindex="0"
+				aria-label="Folders"
+				data-loop="$items"
+				data-events--keydown.arrow-down.prevent="@next"
+				data-events--keydown.arrow-right.prevent="@next"
+				data-events--keydown.arrow-up.prevent="@previous"
+				data-events--keydown.arrow-left.prevent="@previous"
+				data-events--keydown.enter="@pick"
+				class="flex flex-wrap gap-2 rounded-md p-1"
+			>
+				<template>
+					<li class="badge text-sm" data-class="@itemClass" data-dom--text="$item"></li>
+				</template>
+			</ul>
+			<p class="text-sm text-muted">Picked: <span class="font-mono text-fg" data-dom--text="$picked"></span></p>
+			<div class="rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-sm" data-bind--hidden="$barClosed" hidden>
+				Command bar is open. Press <kbd class="kbd">Esc</kbd> to close it.
+			</div>
+			<button class="btn btn-sm self-start" data-events--click.shift="@onShiftClick">
+				Shift-click me · <span class="font-mono" data-dom--text="$shiftClicks"></span>
+			</button>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="timing"
+		title="Debounce and throttle"
+		description={'`input.debounce.400ms` calls the action once typing pauses, with the last event. `scroll.throttle.200ms` calls it at most every 200ms, beside a plain `scroll` listener that counts every event.'}
+		expect={[
+			"Typing quickly leaves the search count unchanged until you pause for 400ms, then it goes up once and shows the full text.",
+			"Scrolling the box raises the raw count much faster than the throttled one.",
+		]}
+	>
+		<div data-store="timing" class="grid gap-4 sm:grid-cols-2">
+			<div class="space-y-2">
+				<input class="input" placeholder="Search" data-events--input.debounce.400ms="@search" />
+				<p class="readout" data-dom--text="$searchSummary"></p>
+			</div>
+			<div class="space-y-2">
+				<div class="h-24 overflow-y-auto rounded-md border border-line p-3 text-sm text-subtle" data-events--scroll="@onRawScroll" data-events--scroll.throttle.200ms="@onThrottledScroll">
+					<p class="h-96">Scroll this box.</p>
+				</div>
+				<p class="readout" data-dom--text="$scrollSummary"></p>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="outside"
+		title="Outside the element"
+		description={'`data-events--outside.click` sits on the element that holds both the button and its menu, so the button\'s own click isn\'t outside. The second popup listens on the panel itself, which works because outside events are skipped while the element is hidden. `outside.focusin` closes the first menu when `Tab` moves focus out of it.'}
+		expect={[
+			"`Menu` opens the menu, and clicking anywhere outside the wrapper closes it.",
+			"Clicking inside the open menu, including on its items, keeps it open.",
+			"Tabbing out of the open menu closes it.",
+			"`Popup` opens a panel that closes on any click outside the panel, including on the `Popup` button.",
+			"Each closed-from-outside count only goes up when an outside event closes something that was open.",
+		]}
+	>
+		<div class="flex flex-wrap items-start gap-6">
+			<div data-store="outsideMenu" data-events--outside.click="@close" data-events--outside.focusin="@close" class="relative">
+				<button class="btn" data-events--click="@toggle" data-bind--aria-expanded="$open">Menu</button>
+				<ul class="absolute top-full left-0 z-10 mt-2 w-44 space-y-1 rounded-md border border-line-strong bg-raised p-2 shadow-xl" data-bind--hidden="$closed" hidden>
+					<li><a href="#outside">First item</a></li>
+					<li><a href="#outside">Second item</a></li>
+					<li><button class="btn btn-sm w-full">A button</button></li>
+				</ul>
+			</div>
+			<div data-store="outsidePopup" class="relative">
+				<button class="btn" data-events--click="@open">Popup</button>
+				<div class="absolute top-full left-0 z-10 mt-2 w-56 rounded-md border border-line-strong bg-raised p-3 text-sm shadow-xl" data-events--outside.click="@close" data-bind--hidden="$closed" hidden>
+					Click anywhere outside this panel.
+				</div>
+			</div>
+			<p class="ml-auto text-sm text-muted">
+				closed from outside: menu <span class="font-mono text-fg" data-dom--text="outsideMenu:$outside"></span> ·
+				popup <span class="font-mono text-fg" data-dom--text="outsidePopup:$outside"></span>
+			</p>
 		</div>
 	</Scenario>
 

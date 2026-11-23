@@ -27,6 +27,20 @@ const createWithin = (targets: Element[]) => {
 	};
 };
 
+const getIgnoreAttribute = () =>
+	`${Catalyst.options.attributes.prefix}${Catalyst.options.attributes.ignore}`;
+
+/** Escaped, since a custom prefix such as `c:` isn't valid in a selector. */
+const getIgnoreSelector = () => `[${CSS.escape(getIgnoreAttribute())}]`;
+
+/** Whether an element is inside a `data-ignore` element, or is one. */
+const isIgnored = (element: Element) =>
+	element.closest(getIgnoreSelector()) !== null;
+
+/** Whether markup, such as a template's content, holds a `data-ignore` element. */
+export const containsIgnored = (root: ParentNode) =>
+	root.querySelector(getIgnoreSelector()) !== null;
+
 /**
  * Directives outside the targets that reference a store created by this sync,
  * such as `data-dom--text="dialog:$label"` after `refresh("dialog")`. They
@@ -43,6 +57,8 @@ const collectScopeDependents = (
 			if (registration.scopeStore === store) continue;
 			const element = registration.directive.element;
 			if (!element.isConnected || isWithin(element)) continue;
+			// It may have been moved into a `data-ignore` element since.
+			if (isIgnored(element)) continue;
 			directives.push(registration.directive);
 		}
 	}
@@ -62,19 +78,59 @@ const splitByPhase = (directives: Directive[]) => {
 	return phases;
 };
 
+type TargetsOptions = SyncOptions & {
+	/**
+	 * Whether the targets may hold `data-ignore` elements. Loops know from
+	 * their template, which saves looking inside every item.
+	 */
+	ignored?: boolean;
+};
+
+/**
+ * Leaves out elements marked `data-ignore` and everything inside them, so
+ * Catalyst never binds their markup. Elements are in document order, so an
+ * ignored subtree's elements follow it.
+ */
+const withoutIgnored = (target: Element, elements: Element[]) => {
+	const attribute = getIgnoreAttribute();
+	if (!target.querySelector(getIgnoreSelector())) return elements;
+	const kept: Element[] = [];
+	let ignored: Element | null = null;
+	for (const element of elements) {
+		if (ignored?.contains(element)) continue;
+		if (element.hasAttribute(attribute)) {
+			ignored = element;
+			continue;
+		}
+		kept.push(element);
+	}
+	return kept;
+};
+
+const collectTarget = (target: Element, options?: TargetsOptions) => {
+	// An ignored target is left out before its subtree is walked.
+	if (options?.ignored !== false && target.hasAttribute(getIgnoreAttribute())) {
+		return [];
+	}
+	const elements = collectElements(target, options);
+	return options?.ignored === false
+		? elements
+		: withoutIgnored(target, elements);
+};
+
 /**
  * Synchronises several subtrees that don't overlap, such as the items a loop
  * renders, in one pass, without flushing. Each phase runs for every target
  * before the next, so stores start once every target's refs are registered.
  */
-export const syncTargets = (targets: Element[], options?: SyncOptions) => {
+export const syncTargets = (targets: Element[], options?: TargetsOptions) => {
 	if (!Catalyst.started || targets.length === 0) return;
 	noteSync();
 
 	const collect = () =>
 		targets.length === 1 && targets[0]
-			? collectElements(targets[0], options)
-			: targets.flatMap((target) => collectElements(target, options));
+			? collectTarget(targets[0], options)
+			: targets.flatMap((target) => collectTarget(target, options));
 	let elements = collect();
 	// A disposed directive's cleanup may have changed the markup.
 	if (disposeStaleDirectives(elements)) elements = collect();
@@ -101,9 +157,16 @@ export const syncTargets = (targets: Element[], options?: SyncOptions) => {
 	}
 };
 
-/** Synchronises a subtree without flushing; used by reactions mid-update. */
-export const syncTarget = (target: Element, options?: SyncOptions) =>
+/**
+ * Synchronises a subtree without flushing; used by reactions mid-update. A
+ * target inside a `data-ignore` element is left alone. Reactions that render
+ * markup, such as loops, sync it with `syncTargets`, since they are never
+ * inside one.
+ */
+export const syncTarget = (target: Element, options?: SyncOptions) => {
+	if (target.parentElement && isIgnored(target.parentElement)) return;
 	syncTargets([target], options);
+};
 
 const sync = (target: Element, options?: SyncOptions) => {
 	if (!Catalyst.started) {

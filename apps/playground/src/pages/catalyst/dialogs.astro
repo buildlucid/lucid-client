@@ -1,0 +1,132 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+
+// Tailwind resets margins, so `m-auto` puts back the browser's centring.
+const panel =
+	"m-auto w-full max-w-md rounded-xl border border-line-strong/60 bg-panel p-6 text-fg shadow-2xl shadow-black/50 backdrop:bg-black/65 backdrop:backdrop-blur-[2px]";
+---
+
+<Playground title="Dialogs & popovers">
+	<Fragment slot="intro">
+		<p>
+			<code>data-model</code> opens and closes a <code>&lt;dialog&gt;</code>, a
+			<code>popover</code> element or a <code>&lt;details&gt;</code> from
+			boolean state, and writes <code>false</code> back when the browser closes
+			it. Dialogs open as modals, so the browser makes the page inert, moves
+			focus and closes them on <kbd class="kbd">Esc</kbd> without a
+			<code>data-trap</code>.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="dialog"
+		title="A modal dialog"
+		description={'`<dialog data-model="$open">` calls `showModal()` when `open` becomes `true`. The buttons sit in a `<form method="dialog">`, which closes the dialog natively, and the state follows.'}
+		expect={[
+			"`Delete project` opens the dialog over a dimmed backdrop, and the page behind can't be clicked.",
+			"`Escape`, `Cancel` and `Delete` all close it, and `open` reads `false` afterwards.",
+			"`Delete` also runs its action, which logs the deletion.",
+			"Focus returns to `Delete project` when the dialog closes.",
+		]}
+	>
+		<div data-store="confirm" class="flex flex-col gap-3">
+			<div class="flex items-center gap-3">
+				<button class="btn btn-danger" data-events--click="@open">Delete project</button>
+				<p class="text-sm text-muted">open: <span class="font-mono text-fg" data-dom--text="$open"></span></p>
+			</div>
+			<p class="text-sm text-muted">Deleted: <span class="font-mono text-fg" data-dom--text="$deleted"></span></p>
+			<dialog class={panel} data-model="$open" aria-labelledby="dialogs-confirm-title">
+				<h3 id="dialogs-confirm-title" class="text-base font-semibold">Delete this project?</h3>
+				<p class="mt-1.5 text-sm text-muted">This can't be undone.</p>
+				<form method="dialog" class="mt-5 flex justify-end gap-2">
+					<button class="btn btn-ghost">Cancel</button>
+					<button class="btn btn-danger" data-events--click="@delete">Delete</button>
+				</form>
+			</dialog>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="popover"
+		title="A popover"
+		description={'`<div popover data-model="$open">` opens with `showPopover()`. The `Native toggle` button uses `popovertarget`, with the id from `data-uid`, so the browser opens it without Catalyst, and the state still follows. A click outside closes it, which the browser calls light dismiss.'}
+		expect={[
+			"`Open from state` and `Native toggle` both open the popover, and `open` reads `true`.",
+			"Clicking outside the popover, or `Escape`, closes it, and `open` reads `false`.",
+			"`Native toggle` closes it too when it is open.",
+		]}
+	>
+		<div data-store="tip" class="flex flex-col gap-3">
+			<div class="flex flex-wrap items-center gap-3">
+				<button class="btn" data-events--click="@open">Open from state</button>
+				<button class="btn" data-uid--popovertarget="tip">Native toggle</button>
+				<p class="text-sm text-muted">open: <span class="font-mono text-fg" data-dom--text="$open"></span></p>
+			</div>
+			<div popover data-uid="tip" data-model="$open" class="m-auto w-72 rounded-lg border border-line-strong bg-raised p-4 text-sm text-fg shadow-2xl">
+				A popover sits in the top layer, above everything else on the page.
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="details"
+		title="Details from a loop"
+		description={'Each `<details data-model="$item.open">` writes to its own loop item. The second group shares a `name`, so the browser keeps one open at a time, and the state of the one it closes follows.'}
+		expect={[
+			"Opening and closing a question updates its `open` value in the readout.",
+			"`Expand all` and `Collapse all` open and close every question in the first group.",
+			"In the exclusive group, opening one question closes the other, and the readout shows both changes.",
+		]}
+	>
+		<div data-store="faq" class="space-y-4">
+			<div class="flex gap-2">
+				<button class="btn btn-sm" data-events--click="@expandAll">Expand all</button>
+				<button class="btn btn-sm" data-events--click="@collapseAll">Collapse all</button>
+			</div>
+			<div data-loop="$questions" class="divide-y divide-line rounded-md border border-line">
+				<template>
+					<details class="px-3 py-2 text-sm" data-model="$item.open">
+						<summary class="cursor-pointer font-medium" data-dom--text="$item.question"></summary>
+						<p class="mt-2 text-muted" data-dom--text="$item.answer"></p>
+					</details>
+				</template>
+			</div>
+			<div data-loop="$exclusive" class="divide-y divide-line rounded-md border border-line">
+				<template>
+					<details name="dialogs-exclusive" class="px-3 py-2 text-sm" data-model="$item.open">
+						<summary class="cursor-pointer font-medium" data-dom--text="$item.question"></summary>
+						<p class="mt-2 text-muted" data-dom--text="$item.answer"></p>
+					</details>
+				</template>
+			</div>
+			<pre class="readout" data-dom--text="$summary"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="misconfigured"
+		title="Elements data-model can't bind"
+		description="`data-model` needs a field, a dialog, a popover or a details element, and state it can write. The dialog here is bound to `isOpen`, a computed value of `shown`, so closing it can't write `false` back: `shown` stays `true`, and opening it again changes nothing until `shown` is reset."
+		expect={[
+			"On load the log warns that `data-model` requires an input, select, textarea, dialog, details or popover, for the `<div>`.",
+			"`Open` opens the dialog. Closing it with `Escape` warns that `isOpen` isn't declared state, and `shown` still reads `true`.",
+			"`Open` then does nothing, because `shown` is already `true`.",
+			"`Reset` sets `shown` to `false`, and `Open` works again.",
+		]}
+	>
+		<div data-store="misconfiguredDialogs" class="flex flex-wrap items-center gap-2">
+			<div class="badge" data-model="$open">A plain div</div>
+			<button class="btn btn-sm" data-events--click="@open">Open</button>
+			<button class="btn btn-sm" data-events--click="@reset">Reset</button>
+			<p class="text-sm text-muted">shown: <span class="font-mono text-fg" data-dom--text="$shown"></span></p>
+			<dialog class={panel} data-model="$isOpen">
+				<p class="text-sm">Press <kbd class="kbd">Esc</kbd>. The state can't follow, because it's computed.</p>
+			</dialog>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/dialogs";
+	</script>
+</Playground>

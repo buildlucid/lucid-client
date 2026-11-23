@@ -5,6 +5,7 @@ const DEFAULT_OPTIONS = {
 		store: "store",
 		state: "state--",
 		persist: "persist",
+		ignore: "ignore",
 		scopeSeparator: ":",
 		specifierSeparator: "--",
 	},

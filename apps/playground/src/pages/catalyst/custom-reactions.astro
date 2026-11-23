@@ -13,7 +13,7 @@ import Playground from "../../layouts/Playground.astro";
 		</p>
 		<p>
 			This page registers <code>classList</code>, <code>toggleClass</code>
-			(<code>data-class--*</code>), <code>cssVar</code>
+			(<code>data-toggle-class--*</code>), <code>cssVar</code>
 			(<code>data-css-var--*</code>), <code>inspect</code> and
 			<code>clock</code>. Their source is in
 			<code>src/scripts/catalyst/custom-reactions.ts</code>.
@@ -41,20 +41,20 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="toggle-class"
 		title="Reactive values with context.resolve"
-		description="`data-class--{name}` toggles the class in its specifier while the value is truthy, using `context.resolve` in a Solid 2 `createEffect`. Catalyst has no class binding of its own, since `data-bind--class` replaces the whole attribute."
+		description="`data-toggle-class--{name}` toggles the class in its specifier while the value is truthy, using `context.resolve` in a Solid 2 `createEffect`. It is a simpler version of the first-party `data-class--{name}`, which also restores the element's classes when it is disposed."
 		expect={[
 			"The selected plan has an accent ring; selecting another moves it.",
 			"`Mute` toggles `opacity-40` on the whole group without touching the other classes.",
 		]}
 	>
 		<div data-store="options" class="space-y-4">
-			<div class="grid gap-3 sm:grid-cols-3" data-class--opacity-40="$muted">
+			<div class="grid gap-3 sm:grid-cols-3" data-toggle-class--opacity-40="$muted">
 				<button
 					class="rounded-lg border border-line bg-raised px-4 py-3 text-left text-sm ring-offset-2 ring-offset-canvas transition"
 					data-plan="starter"
 					data-events--click="@select"
-					data-class--ring-2="$isStarter"
-					data-class--ring-accent="$isStarter"
+					data-toggle-class--ring-2="$isStarter"
+					data-toggle-class--ring-accent="$isStarter"
 					data-bind--aria-pressed="$isStarter"
 				>
 					<span class="block font-medium">Starter</span>
@@ -64,8 +64,8 @@ import Playground from "../../layouts/Playground.astro";
 					class="rounded-lg border border-line bg-raised px-4 py-3 text-left text-sm ring-offset-2 ring-offset-canvas transition"
 					data-plan="team"
 					data-events--click="@select"
-					data-class--ring-2="$isTeam"
-					data-class--ring-accent="$isTeam"
+					data-toggle-class--ring-2="$isTeam"
+					data-toggle-class--ring-accent="$isTeam"
 					data-bind--aria-pressed="$isTeam"
 				>
 					<span class="block font-medium">Team</span>
@@ -75,8 +75,8 @@ import Playground from "../../layouts/Playground.astro";
 					class="rounded-lg border border-line bg-raised px-4 py-3 text-left text-sm ring-offset-2 ring-offset-canvas transition"
 					data-plan="scale"
 					data-events--click="@select"
-					data-class--ring-2="$isScale"
-					data-class--ring-accent="$isScale"
+					data-toggle-class--ring-2="$isScale"
+					data-toggle-class--ring-accent="$isScale"
 					data-bind--aria-pressed="$isScale"
 				>
 					<span class="block font-medium">Scale</span>

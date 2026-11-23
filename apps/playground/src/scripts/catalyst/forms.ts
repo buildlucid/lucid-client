@@ -636,8 +636,38 @@ const account = defineStore({
 	},
 });
 
+// --------------------------------------------------------
+// Model modifiers
+
+const modelModifiers = defineStore({
+	state: { lazy: "", trimmed: "", query: "" },
+	computed: ({ state }) => ({
+		summary: () =>
+			[
+				`lazy     ${JSON.stringify(state.lazy)}`,
+				`trimmed  ${JSON.stringify(state.trimmed)}`,
+				`query    ${JSON.stringify(state.query)}`,
+			].join("\n"),
+	}),
+});
+
+// --------------------------------------------------------
+// Unique ids
+
+const contactIds = defineStore({
+	state: { contacts: [{ name: "Ada" }, { name: "Grace" }] },
+	actions: ({ setState }) => ({
+		add: () =>
+			setState((state) => {
+				state.contacts.push({ name: "" });
+			}),
+	}),
+});
+
 startCatalyst({
 	stores: {
+		modelModifiers,
+		contactIds,
 		profile,
 		modelled,
 		choices,
@@ -684,4 +714,24 @@ for (const readout of document.querySelectorAll<HTMLElement>(
 	};
 	render();
 	setInterval(render, 250);
+}
+
+// Shows the ids `data-uid` generated for each contact row.
+const uidReadout = document.querySelector<HTMLElement>("[data-uid-readout]");
+const uidList = uidReadout?.parentElement?.querySelector("[data-loop]");
+if (uidReadout && uidList) {
+	const render = () => {
+		uidReadout.textContent = Array.from(
+			uidList.querySelectorAll("input"),
+			(input, index) =>
+				`row ${index + 1}  label for=${input.labels?.[0]?.htmlFor ?? ""}  input id=${input.id}  describedby=${input.getAttribute("aria-describedby") ?? ""}`,
+		).join("\n");
+	};
+	render();
+	new MutationObserver(render).observe(uidList, {
+		childList: true,
+		subtree: true,
+		attributes: true,
+		attributeFilter: ["id", "for", "aria-describedby"],
+	});
 }

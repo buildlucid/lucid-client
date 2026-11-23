@@ -20,6 +20,7 @@ export type ResolvedCatalystOptions = {
 		store: string;
 		state: string;
 		persist: string;
+		ignore: string;
 		scopeSeparator: string;
 		specifierSeparator: string;
 	};

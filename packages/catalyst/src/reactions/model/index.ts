@@ -17,6 +17,19 @@ import {
 	setFieldValue,
 	toText,
 } from "../utils/fields.js";
+import {
+	DEFAULT_WAIT,
+	debounce,
+	parseDuration,
+	splitModifiers,
+} from "../utils/modifiers.js";
+import {
+	isDetails,
+	isOpen,
+	isToggle,
+	observeToggle,
+	setOpen,
+} from "./toggle.js";
 
 /** Where a model reads and writes its value. */
 type ModelTarget = {
@@ -212,19 +225,97 @@ const showValue = (element: FieldElement, value: unknown) => {
 	setFieldValue(element, value);
 };
 
+type ModelModifiers = {
+	/** Writes when the field changes, such as on blur, instead of as it is typed in. */
+	lazy: boolean;
+	/** Trims text before it is written. */
+	trim: boolean;
+	/** Waits until typing pauses for this long before writing. */
+	debounce: number | null;
+};
+
+const parseModifiers = (
+	directive: Directive,
+	context: ReactionContext,
+): ModelModifiers => {
+	const modifiers: ModelModifiers = {
+		lazy: false,
+		trim: false,
+		debounce: null,
+	};
+	const parts = splitModifiers(directive.specifier);
+	for (let index = 0; index < parts.length; index += 1) {
+		const part = parts[index];
+		if (part === "lazy" || part === "trim") {
+			modifiers[part] = true;
+		} else if (part === "debounce") {
+			// An optional duration follows, such as `debounce.500ms`.
+			const duration = parseDuration(parts[index + 1]);
+			if (duration !== null) index += 1;
+			modifiers.debounce = duration ?? DEFAULT_WAIT;
+		} else if (__DEV__) {
+			context.warn(
+				`The "${directive.attributeName}" directive has an unknown modifier "${part}". Use lazy, trim or debounce.`,
+			);
+		}
+	}
+	return modifiers;
+};
+
+/**
+ * Keeps a dialog, details or popover open while the state is truthy, and
+ * writes `true` or `false` to the state when it opens or closes by other
+ * means, such as `Escape`.
+ */
+const setUpToggle = (
+	element: HTMLElement,
+	directive: Directive,
+	context: ReactionContext,
+	target: ModelTarget,
+) => {
+	// Changes the binding makes itself aren't written back, such as closing a
+	// dialog the markup rendered open to open it again as a modal.
+	let applying = false;
+	createResolvedEffect(directive, context, (value) => {
+		applying = true;
+		try {
+			setOpen(element, Boolean(value));
+		} finally {
+			applying = false;
+		}
+	});
+	const stopObserving = observeToggle(element, () => {
+		if (applying) return;
+		const open = isOpen(element);
+		if (Boolean(target.read()) === open) return;
+		target.write(open);
+		flushUpdates();
+	});
+	// A dialog or popover left open would keep the page behind it inert after
+	// `Catalyst.destroy()`, so it closes with the directive.
+	return () => {
+		stopObserving();
+		if (element.isConnected && !isDetails(element)) {
+			setOpen(element, false);
+		}
+	};
+};
+
 /**
  * Two-way binding: the field shows the state, and the state follows the field
- * as it is edited, and after a native form reset.
+ * as it is edited, and after a native form reset. A dialog, details or
+ * popover is open while the state is truthy.
  */
 const modelReaction: Reaction = {
 	name: "model",
 	attribute: "model",
 	setup: (directive, context) => {
-		const element = directive.element;
-		if (!isField(element)) {
+		const toggle = isToggle(directive.element) ? directive.element : null;
+		const element = isField(directive.element) ? directive.element : null;
+		if (!toggle && !element) {
 			if (__DEV__)
 				context.warn(
-					`The "${directive.attributeName}" directive requires an input, select or textarea.`,
+					`The "${directive.attributeName}" directive requires an input, select, textarea, dialog, details or popover.`,
 				);
 			return;
 		}
@@ -236,13 +327,24 @@ const modelReaction: Reaction = {
 				);
 			return;
 		}
+		if (toggle) return setUpToggle(toggle, directive, context, target);
+		if (!element) return;
 
+		const modifiers = parseModifiers(directive, context);
+		const isText =
+			!isCheckable(element) && !(element instanceof HTMLSelectElement);
 		let current: { value: unknown } | null = null;
+		// Trimmed text this field just wrote, which it doesn't show again, so
+		// the spaces being typed aren't removed from under the cursor.
+		let trimmed: { value: string } | null = null;
 		createResolvedEffect(
 			directive,
 			context,
 			(value) => {
 				current = { value };
+				const echo = trimmed;
+				trimmed = null;
+				if (echo && echo.value === value) return;
 				showValue(element, value);
 			},
 			{ read: readFieldValue },
@@ -251,23 +353,48 @@ const modelReaction: Reaction = {
 		// Each write is applied straight away, so fields sharing state, such as
 		// checkboxes bound to one array, each see the previous field's change.
 		const write = (reset = false) => {
-			const next = readField(element, target.read(), directive, reset);
+			let next = readField(element, target.read(), directive, reset);
 			if (next === SKIP) return;
+			if (modifiers.trim && typeof next === "string") {
+				trimmed = next === next.trim() ? null : { value: next.trim() };
+				next = next.trim();
+			}
 			target.write(next);
 			flushUpdates();
 		};
-		const eventName =
-			isCheckable(element) || element instanceof HTMLSelectElement
-				? "change"
-				: "input";
-		const onEdit = () => write();
+		const delayed =
+			isText && modifiers.debounce !== null
+				? debounce(() => write(), modifiers.debounce)
+				: null;
+		const eventName = isText && !modifiers.lazy ? "input" : "change";
+		const onEdit = () => {
+			if (delayed) delayed.call(undefined);
+			else write();
+		};
 		element.addEventListener(eventName, onEdit);
+		// A text field that changes, such as on blur, writes its value straight
+		// away and shows its trimmed text.
+		const onChange = () => {
+			if (delayed) {
+				delayed.cancel();
+				write();
+			}
+			if (modifiers.trim && current) showValue(element, current.value);
+		};
+		const settles = isText && (delayed || modifiers.trim);
+		if (settles) element.addEventListener("change", onChange);
+		// A form submitted while an edit waits writes it first, so the submit
+		// action reads the field's value. Capturing runs before its listeners.
+		const onSubmit = () => delayed?.flush();
+		const submitted = delayed ? element.form : null;
+		submitted?.addEventListener("submit", onSubmit, true);
 
 		// A reset changes fields without firing input events, and only once the
 		// reset event has finished, so state is read back on the next task.
 		const form = element.form;
 		let resetTimer: ReturnType<typeof setTimeout> | undefined;
 		const onReset = () => {
+			clearTimeout(resetTimer);
 			resetTimer = setTimeout(() => write(true), 0);
 		};
 		form?.addEventListener("reset", onReset);
@@ -281,6 +408,9 @@ const modelReaction: Reaction = {
 
 		return () => {
 			element.removeEventListener(eventName, onEdit);
+			if (settles) element.removeEventListener("change", onChange);
+			submitted?.removeEventListener("submit", onSubmit, true);
+			delayed?.cancel();
 			form?.removeEventListener("reset", onReset);
 			clearTimeout(resetTimer);
 			stopObserving?.();

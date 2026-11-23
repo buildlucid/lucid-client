@@ -1,0 +1,136 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Conditional rendering">
+	<Fragment slot="intro">
+		<p>
+			<code>data-if</code> renders its direct <code>&lt;template&gt;</code>
+			child while a value is truthy, and removes it, with its listeners,
+			effects and stores, while it is falsy. Use it for markup that shouldn't
+			exist while it is hidden. <code>data-bind--hidden</code> hides markup and
+			keeps it.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="toggle"
+		title="Rendering and removing"
+		description={'The left panel uses `data-if="$shown"` and the right one `data-bind--hidden="$hidden"`. Type into both, then hide and show them again.'}
+		expect={[
+			"Both panels start shown, each with an empty field.",
+			"After hiding and showing, the `data-if` field is empty again, because its markup was rendered afresh, and the `data-bind--hidden` field keeps its text.",
+			"The `data-if` panel's render number goes up each time it is shown.",
+		]}
+	>
+		<div data-store="toggle" class="space-y-4">
+			<button class="btn" data-events--click="@toggle" data-dom--text="$label">Hide both</button>
+			<div class="grid gap-3 sm:grid-cols-2">
+				<div data-if="$shown">
+					<template>
+						<div class="space-y-2 rounded-md border border-line p-3">
+							<p class="text-xs text-subtle">data-if · render <span class="font-mono" data-dom--text="@renderStamp"></span></p>
+							<input class="input" placeholder="Rendered afresh" />
+						</div>
+					</template>
+				</div>
+				<div class="space-y-2 rounded-md border border-line p-3" data-bind--hidden="$hidden">
+					<p class="text-xs text-subtle">data-bind--hidden</p>
+					<input class="input" placeholder="Kept while hidden" />
+				</div>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="fields"
+		title="Fields that shouldn't submit"
+		description={'The company fields only exist while `Business account` is ticked, so a hidden field is never submitted or validated. The form shows what it would submit.'}
+		expect={[
+			"Unticked, the submitted data has only `email`.",
+			"Ticked, the company field appears, is `required`, and is submitted.",
+			"Unticking removes the field, so the form submits again without it.",
+		]}
+	>
+		<form data-store="account" data-events--submit.prevent="@submit" class="flex flex-col gap-3">
+			<input class="input" name="email" type="email" placeholder="Email" value="ada@example.com" />
+			<label class="flex items-center gap-2 text-sm"><input class="check" type="checkbox" data-model="$business" /> Business account</label>
+			<div class="contents" data-if="$business">
+				<template>
+					<input class="input" name="company" placeholder="Company name" required />
+				</template>
+			</div>
+			<button class="btn btn-primary self-start">Submit</button>
+			<pre class="readout" data-dom--text="$submitted"></pre>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="nested-store"
+		title="Stores inside a condition"
+		description={'The rendered markup holds its own `timer` store, whose `init` starts an interval and returns a cleanup. Removing the markup destroys the store, so the cleanup stops the interval.'}
+		expect={[
+			"`Start timer` renders the timer, and it counts up every second.",
+			"`Stop timer` removes it and logs that the cleanup ran.",
+			"Starting it again begins from 0.",
+		]}
+	>
+		<div data-store="timerHost" class="flex flex-col gap-3">
+			<button class="btn self-start" data-events--click="@toggle" data-dom--text="$label">Start timer</button>
+			<div class="contents" data-if="$running">
+				<template>
+					<p data-store="timer" class="text-sm text-muted">Seconds: <span class="font-mono text-fg" data-dom--text="$seconds"></span></p>
+				</template>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="loop"
+		title="Inside a loop"
+		description={'Each task renders its notes with `data-if="$item.expanded"`, reading its own loop item.'}
+		expect={[
+			"`Details` on a task shows its notes, and clicking it again hides them.",
+			"Each task expands independently.",
+		]}
+	>
+		<ul data-store="tasks" data-loop="$tasks" class="divide-y divide-line rounded-md border border-line">
+			<template>
+				<li class="px-3 py-2 text-sm">
+					<div class="flex items-center gap-3">
+						<span data-dom--text="$item.title"></span>
+						<button class="btn btn-sm ml-auto" data-events--click="@toggle">Details</button>
+					</div>
+					<div data-if="$item.expanded">
+						<template>
+							<p class="mt-2 text-muted" data-dom--text="$item.notes"></p>
+						</template>
+					</div>
+				</li>
+			</template>
+		</ul>
+	</Scenario>
+
+	<Scenario
+		id="placeholder"
+		title="Server-rendered placeholders"
+		description="Markup inside the `data-if` element other than its template is replaced on the first render, as it is for loops."
+		expect={[
+			"The `Loading…` placeholder is gone on load, and the condition's content isn't shown because `ready` is `false`.",
+			"`Mark ready` shows the content.",
+		]}
+	>
+		<div data-store="placeholder" class="flex flex-col gap-3">
+			<button class="btn btn-sm self-start" data-events--click="@markReady">Mark ready</button>
+			<div class="contents" data-if="$ready">
+				<template><p class="text-sm">Ready.</p></template>
+				<p class="text-sm text-subtle">Loading…</p>
+			</div>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/conditional";
+	</script>
+</Playground>

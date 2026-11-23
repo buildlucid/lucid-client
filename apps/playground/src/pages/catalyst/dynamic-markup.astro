@@ -208,6 +208,36 @@ import Playground from "../../layouts/Playground.astro";
 		</div>
 	</Scenario>
 
+	<Scenario
+		id="ignore"
+		title="Keeping Catalyst out with data-ignore"
+		description={'The right panel has `data-ignore`, so the directives inside it, including a `data-store`, stay as plain markup. `Inject and sync` writes the same markup into both panels and calls `Catalyst.sync` on each.'}
+		expect={[
+			"On load the left panel shows `Bound: Ada` and the right panel still shows its markup's text, `Not bound`.",
+			"Clicking the right panel's button does nothing and logs nothing.",
+			"`Inject and sync` binds the injected markup in the left panel only.",
+		]}
+	>
+		<div data-store="ignoreHost" class="space-y-3">
+			<div class="grid gap-3 sm:grid-cols-2">
+				<div class="space-y-2 rounded-md border border-line p-3 text-sm">
+					<p class="text-xs text-subtle">Synced</p>
+					<p data-dom--text="@bound">Not bound</p>
+					<button class="btn btn-sm" data-events--click="@press">Press</button>
+					<div data-ignore-target="bound"></div>
+				</div>
+				<div class="space-y-2 rounded-md border border-dashed border-line-strong p-3 text-sm" data-ignore>
+					<p class="text-xs text-subtle">data-ignore</p>
+					<p data-dom--text="@bound">Not bound</p>
+					<button class="btn btn-sm" data-events--click="@press">Press</button>
+					<div data-store="ignoredStore" data-state--name="never created"></div>
+					<div data-ignore-target="ignored"></div>
+				</div>
+			</div>
+			<button class="btn btn-sm" data-ignore-inject>Inject and sync</button>
+		</div>
+	</Scenario>
+
 	<script>
 		import "../../scripts/catalyst/dynamic-markup";
 	</script>

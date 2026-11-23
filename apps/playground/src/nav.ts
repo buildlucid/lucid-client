@@ -73,7 +73,6 @@ const nav: NavGroup[] = [
 				href: "/catalyst/persistence",
 				description:
 					"persisted() and data-persist, restore order, stale values, other tabs and clearPersisted.",
-				isNew: true,
 			},
 			{
 				title: "Bindings",
@@ -82,11 +81,16 @@ const nav: NavGroup[] = [
 					"data-bind attribute writes: booleans, aria and data attributes, nullish values and SVG.",
 			},
 			{
+				title: "Classes",
+				href: "/catalyst/classes",
+				description:
+					"data-class toggles one class or applies a list from strings, arrays and objects, keeping the element's own classes.",
+			},
+			{
 				title: "CSS variables",
 				href: "/catalyst/css-variables",
 				description:
 					"data-css custom properties from state, computed values and loops, booleans, fallbacks and restored inline values.",
-				isNew: true,
 			},
 			{
 				title: "DOM",
@@ -98,7 +102,7 @@ const nav: NavGroup[] = [
 				title: "Events",
 				href: "/catalyst/events",
 				description:
-					"Element, document and window listeners, shared targets, custom events and async actions.",
+					"Element, document, window and outside listeners, modifiers, key names, debounce, throttle and async actions.",
 			},
 			{
 				title: "Loops",
@@ -107,17 +111,40 @@ const nav: NavGroup[] = [
 					"data-loop rendering, identity reuse, nested loops, $parent and placeholder markup.",
 			},
 			{
+				title: "Conditional rendering",
+				href: "/catalyst/conditional",
+				description:
+					"data-if renders a template while a value is truthy and disposes it while it is falsy.",
+			},
+			{
 				title: "Forms",
 				href: "/catalyst/forms",
 				description:
-					"Fields, validation, submission, field arrays, multi-step forms and known gaps.",
-				isNew: true,
+					"Fields, validation, submission, field arrays, multi-step forms, model modifiers and unique ids.",
+			},
+			{
+				title: "Dialogs & popovers",
+				href: "/catalyst/dialogs",
+				description:
+					"data-model on dialog, popover and details elements, kept in sync when the browser closes them.",
 			},
 			{
 				title: "Focus traps",
 				href: "/catalyst/traps",
 				description:
 					"Modals, stacked traps, the both specifier, data-trap-allow, focus restore and scroll lock.",
+			},
+			{
+				title: "Visibility",
+				href: "/catalyst/visibility",
+				description:
+					"data-intersect for lazy loading, reveals, infinite scroll and leaving the viewport.",
+			},
+			{
+				title: "Animations",
+				href: "/catalyst/animations",
+				description:
+					"viewTransition, the transition modifier, animated loops with match-element, types and CSS show and hide.",
 			},
 			{
 				title: "Effects & lifecycle",
@@ -135,7 +162,7 @@ const nav: NavGroup[] = [
 				title: "Dynamic markup",
 				href: "/catalyst/dynamic-markup",
 				description:
-					"sync, disposal on removal, refresh, destroy and start, and Catalyst.add.",
+					"sync, disposal on removal, refresh, destroy and start, Catalyst.add and data-ignore.",
 			},
 			{
 				title: "Custom reactions",
@@ -148,7 +175,6 @@ const nav: NavGroup[] = [
 				href: "/catalyst/benchmarks",
 				description:
 					"Speed, memory and size compared with Alpine.js, petite-vue and hand-written DOM code.",
-				isNew: true,
 			},
 		],
 	},

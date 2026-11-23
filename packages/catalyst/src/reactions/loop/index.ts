@@ -1,10 +1,16 @@
 import { createSignal } from "solid-js";
 import { getLoopContext, setLoopContext } from "../../runtime/loop-context.js";
 import { markReleased } from "../../runtime/released.js";
-import { syncTargets } from "../../runtime/sync.js";
+import { containsIgnored, syncTargets } from "../../runtime/sync.js";
 import type { LoopContext, Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
 import { readItems } from "../utils/read-value.js";
+import {
+	getTemplate,
+	getTemplateNodes,
+	importNodes,
+	removeUnmanagedChildren,
+} from "../utils/template.js";
 
 type LoopEntry = {
 	item: unknown;
@@ -47,35 +53,12 @@ const findStableEntries = (previous: number[]) => {
 	return stable;
 };
 
-/** Whitespace that includes a line break, such as a template's indentation. */
-const isFormattingWhitespace = (node: Node) =>
-	node.nodeType === Node.TEXT_NODE &&
-	/^\s*$/.test(node.textContent ?? "") &&
-	/[\n\r]/.test(node.textContent ?? "");
-
-/**
- * The template's top-level nodes each item renders. Whitespace around the
- * element that includes a line break is the template's indentation, so it
- * isn't rendered, as in Vue templates. Whitespace on one line, such as a space
- * between inline items, is kept.
- */
-const getItemNodes = (template: HTMLTemplateElement) =>
-	Array.from(template.content.childNodes).filter(
-		(node) => !isFormattingWhitespace(node),
-	);
-
 /**
  * New items set up per sync. Sharing a sync shares its lookups, but a very
  * large one builds large temporary lookups that only a full garbage collection
  * frees, which costs more later than the sharing saves.
  */
 const SYNC_BATCH = 50;
-
-const getTemplate = (target: Element) =>
-	Array.from(target.children).find(
-		(element): element is HTMLTemplateElement =>
-			element instanceof HTMLTemplateElement,
-	);
 
 const loopReaction: Reaction = {
 	name: "loop",
@@ -104,7 +87,8 @@ const loopReaction: Reaction = {
 			return;
 		}
 
-		const itemNodes = getItemNodes(template);
+		const itemNodes = getTemplateNodes(template);
+		const ignored = containsIgnored(template.content);
 		let entries: LoopEntry[] = [];
 		let hasRendered = false;
 		// Items of `$item.links` belong to the same store as the outer loop's.
@@ -119,11 +103,7 @@ const loopReaction: Reaction = {
 			index: number,
 			parent: LoopContext | undefined,
 		): LoopEntry | null => {
-			// Imported rather than cloned, so the nodes belong to the page's
-			// document and needn't be adopted when they are inserted.
-			const nodes = itemNodes.map(
-				(node) => document.importNode(node, true) as ChildNode,
-			);
+			const nodes = importNodes(itemNodes);
 			const root = nodes.find(
 				(node): node is Element => node.nodeType === Node.ELEMENT_NODE,
 			);
@@ -170,15 +150,6 @@ const loopReaction: Reaction = {
 			entries = [];
 		};
 
-		// Markup the loop did not render, such as server-rendered placeholders.
-		const removeUnmanagedChildren = () => {
-			for (const child of Array.from(element.childNodes)) {
-				if (child === template) continue;
-				if (child instanceof Element) context.disposeSubtree(child);
-				child.remove();
-			}
-		};
-
 		/**
 		 * Puts entries in order after the template, moving only those that
 		 * aren't already in order. `previous` holds each entry's position before
@@ -223,7 +194,7 @@ const loopReaction: Reaction = {
 
 			if (!hasRendered) {
 				hasRendered = true;
-				removeUnmanagedChildren();
+				removeUnmanagedChildren(element, template, context.disposeSubtree);
 			}
 			if (items.length === 0) {
 				removeAllEntries();
@@ -276,6 +247,7 @@ const loopReaction: Reaction = {
 			for (let index = 0; index < created.length; index += SYNC_BATCH) {
 				syncTargets(
 					created.slice(index, index + SYNC_BATCH).map((entry) => entry.root),
+					{ ignored },
 				);
 			}
 		};

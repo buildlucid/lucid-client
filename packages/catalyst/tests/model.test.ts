@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import Catalyst, { defineStore } from "../src/index.js";
 import { bind, loop, model } from "../src/reactions.js";
 import { catalystWarnings, getStore, setStoreState, settle } from "./utils.js";
@@ -242,7 +242,9 @@ describe("model reaction", () => {
 
 		const warnings = catalystWarnings();
 		expect(warnings).toContainEqual(
-			expect.stringContaining("requires an input, select or textarea"),
+			expect.stringContaining(
+				"requires an input, select, textarea, dialog, details or popover",
+			),
 		);
 		expect(
 			warnings.filter((warning) => warning.includes("requires state")),
@@ -251,5 +253,144 @@ describe("model reaction", () => {
 			expect.stringContaining('"upper" isn\'t declared state'),
 		);
 		expect(getStore("bad")?.state.label).toBe("a");
+	});
+});
+
+describe("model modifiers", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("writes on change with lazy, and trims without moving the cursor's text", async () => {
+		document.body.innerHTML = `
+			<div data-store="m" data-state--lazy="" data-state--name="">
+				<input id="lazy" data-model--lazy="$lazy" />
+				<input id="name" data-model--trim="$name" />
+			</div>
+		`;
+		Catalyst.start({ reactions: [model] });
+
+		type(field("#lazy"), "typed");
+		await settle();
+		expect(getStore("m")?.state.lazy).toBe("");
+		change(field("#lazy"));
+		expect(getStore("m")?.state.lazy).toBe("typed");
+
+		const name = field("#name");
+		type(name, " Ada ");
+		await settle();
+		expect(getStore("m")?.state.name).toBe("Ada");
+		// The field keeps what was typed until it changes.
+		expect(name.value).toBe(" Ada ");
+		change(name);
+		expect(name.value).toBe("Ada");
+	});
+
+	it("waits for typing to pause with debounce, and writes straight away on change", async () => {
+		vi.useFakeTimers();
+		document.body.innerHTML = `
+			<div data-store="m" data-state--query="">
+				<input data-model--debounce.300ms="$query" />
+			</div>
+		`;
+		Catalyst.start({ reactions: [model] });
+		const input = field("input");
+
+		type(input, "a");
+		type(input, "ab");
+		vi.advanceTimersByTime(299);
+		expect(getStore("m")?.state.query).toBe("");
+		vi.advanceTimersByTime(1);
+		expect(getStore("m")?.state.query).toBe("ab");
+
+		type(input, "abc");
+		change(input);
+		expect(getStore("m")?.state.query).toBe("abc");
+
+		// A value set without an input event, such as by autofill.
+		input.value = "autofilled";
+		change(input);
+		expect(getStore("m")?.state.query).toBe("autofilled");
+	});
+});
+
+describe("debounced models in forms", () => {
+	it("writes a waiting edit before the form's submit listeners run", () => {
+		document.body.innerHTML = `
+			<form data-store="m" data-state--query="">
+				<input data-model--debounce="$query" />
+			</form>
+		`;
+		Catalyst.start({ reactions: [model] });
+		const form = field<HTMLFormElement>("form");
+		let submitted: unknown;
+		form.addEventListener("submit", (event) => {
+			event.preventDefault();
+			submitted = getStore("m")?.state.query;
+		});
+		type(field("input"), "new query");
+		form.requestSubmit();
+		expect(submitted).toBe("new query");
+	});
+});
+
+describe("model toggles", () => {
+	it("opens a dialog as a modal and writes false when it closes", async () => {
+		document.body.innerHTML = `
+			<div data-store="d" data-state--open="false">
+				<dialog data-model="$open"><button>Close</button></dialog>
+			</div>
+		`;
+		Catalyst.start({ reactions: [model] });
+		const dialog = field<HTMLDialogElement>("dialog");
+		expect(dialog.open).toBe(false);
+
+		setStoreState("d", "open", true);
+		await settle();
+		expect(dialog.open).toBe(true);
+
+		// Closed by the browser, as `Escape` or a form with method="dialog" do.
+		dialog.close();
+		await settle();
+		expect(getStore("d")?.state.open).toBe(false);
+	});
+
+	it("keeps a details element's open state in sync both ways", async () => {
+		document.body.innerHTML = `
+			<div data-store="d" data-state--open="true">
+				<details data-model="$open"><summary>More</summary></details>
+			</div>
+		`;
+		Catalyst.start({ reactions: [model] });
+		const details = field<HTMLDetailsElement>("details");
+		expect(details.open).toBe(true);
+
+		details.open = false;
+		details.dispatchEvent(new Event("toggle"));
+		expect(getStore("d")?.state.open).toBe(false);
+
+		setStoreState("d", "open", true);
+		await settle();
+		expect(details.open).toBe(true);
+	});
+});
+
+describe("model toggle edge cases", () => {
+	it("opens a dialog the markup rendered open as a modal, and closes it when destroyed", async () => {
+		document.body.innerHTML = `
+			<div data-store="d" data-state--open="true">
+				<dialog open data-model="$open"></dialog>
+			</div>
+		`;
+		// happy-dom doesn't match `:modal`, so showModal is watched instead.
+		const showModal = vi.spyOn(HTMLDialogElement.prototype, "showModal");
+		Catalyst.start({ reactions: [model] });
+		await settle();
+		const dialog = field<HTMLDialogElement>("dialog");
+		expect(showModal).toHaveBeenCalledTimes(1);
+		expect(dialog.open).toBe(true);
+
+		Catalyst.destroy();
+		expect(dialog.open).toBe(false);
 	});
 });

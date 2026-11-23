@@ -1,0 +1,157 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Classes">
+	<Fragment slot="intro">
+		<p>
+			<code>data-class--{"{name}"}</code> adds a class while a value is truthy.
+			<code>data-class</code> applies a list of classes from a string, an array
+			or an object. Both leave the element's other classes alone, unlike
+			<code>data-bind--class</code>, which replaces the whole attribute. Each
+			scenario shows the element's live <code>class</code> attribute.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="one-class"
+		title="Toggling one class"
+		description={'`data-class--is-open="$open"` adds `is-open` beside the classes in the markup, and `data-class--is-muted="$muted"` does the same for a second class.'}
+		expect={[
+			"On load the class list is `card`, and the card looks closed.",
+			"`Toggle open` adds and removes `is-open`, and `card` stays.",
+			"`Toggle muted` adds and removes `is-muted` independently.",
+		]}
+	>
+		<div data-store="oneClass" class="space-y-3">
+			<div id="classes-card" class="card" data-class--is-open="$open" data-class--is-muted="$muted">
+				A card styled by its classes
+			</div>
+			<div class="flex gap-2">
+				<button class="btn btn-sm" data-events--click="@toggleOpen">Toggle open</button>
+				<button class="btn btn-sm" data-events--click="@toggleMuted">Toggle muted</button>
+			</div>
+			<pre class="readout" data-class-readout="#classes-card"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="lists"
+		title="Strings, arrays and objects"
+		description={'`data-class="$classes"` reads one state value that the buttons set to a string, an array or an object. Only classes the directive added are removed when the value changes, so `chip` from the markup stays.'}
+		expect={[
+			"`String` applies `border-accent text-accent`.",
+			"`Array` applies `bg-raised` and `font-semibold`.",
+			"`Object` applies only the keys set to `true`, so `italic` but not `underline`.",
+			"`Null` removes every class the directive applied, leaving `chip`.",
+		]}
+	>
+		<div data-store="lists" class="space-y-3">
+			<span id="classes-chip" class="chip" data-class="$classes">Chip</span>
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-events--click="@useString">String</button>
+				<button class="btn btn-sm" data-events--click="@useArray">Array</button>
+				<button class="btn btn-sm" data-events--click="@useObject">Object</button>
+				<button class="btn btn-sm" data-events--click="@useNull">Null</button>
+			</div>
+			<p class="readout" data-dom--text="$described"></p>
+			<pre class="readout" data-class-readout="#classes-chip"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="loop-items"
+		title="Classes for loop items"
+		description={'Each tab calls `@tabClass`, an action that receives the loop item and returns an object. It re-runs when `selected` changes, so only the selected tab gets the accent classes. Utility classes such as `bg-accent/15` contain characters an attribute name can\'t, so they need `data-class`.'}
+		expect={[
+			"The first tab is selected on load.",
+			"Clicking a tab moves the accent classes to it.",
+			"Every tab keeps its `tab` class from the markup.",
+		]}
+	>
+		<div data-store="tabs" class="space-y-3">
+			<div role="tablist" data-loop="$tabs" class="flex gap-1 rounded-lg border border-line p-1">
+				<template>
+					<button role="tab" class="tab rounded-md px-3 py-1.5 text-sm text-muted" data-class="@tabClass" data-bind--aria-selected="@isSelected" data-events--click="@select" data-dom--text="$item"></button>
+				</template>
+			</div>
+			<pre class="readout" data-class-readout="[role=tablist]"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="restore"
+		title="Removing the directive"
+		description={'The paragraph has `class="note highlighted"` in the markup and `data-class--highlighted="$on"` with `on` set to `false`, so the directive removes `highlighted`. Removing the directive and syncing puts the markup\'s classes back.'}
+		expect={[
+			"On load the class list is `note`.",
+			"`Toggle` adds and removes `highlighted`.",
+			"`Remove directive` restores `note highlighted`, and `Toggle` no longer changes it.",
+		]}
+	>
+		<div data-store="restore" class="space-y-3">
+			<p id="classes-note" class="note highlighted" data-class--highlighted="$on">A note</p>
+			<div class="flex gap-2">
+				<button class="btn btn-sm" data-events--click="@toggle">Toggle</button>
+				<button class="btn btn-sm" data-remove-directive>Remove directive</button>
+			</div>
+			<pre class="readout" data-class-readout="#classes-note"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="misconfigured"
+		title="Misconfigured class directives"
+		description="A value that names no class, such as a number, applies nothing and warns. A class name with `.` can't be used after `data-class--`, because dots separate modifiers."
+		expect={[
+			"On load the log warns that `data-class` must resolve to a string, an array of strings or an object.",
+			"It warns that the class name in `data-class--w-1.5` can't contain `.`.",
+		]}
+	>
+		<div data-store="misconfiguredClasses" class="flex gap-2">
+			<span class="badge" data-class="$count">A number</span>
+			<span class="badge" data-class--w-1.5="$on">A dot</span>
+		</div>
+	</Scenario>
+
+	<style is:global>
+		.card {
+			border: 1px solid var(--color-line);
+			border-radius: 0.5rem;
+			padding: 0.75rem 1rem;
+			font-size: 0.875rem;
+			color: var(--color-muted);
+			transition:
+				border-color 150ms,
+				color 150ms,
+				opacity 150ms;
+		}
+		.card.is-open {
+			border-color: var(--color-accent);
+			color: var(--color-fg);
+		}
+		.card.is-muted {
+			opacity: 0.45;
+		}
+		.chip {
+			display: inline-flex;
+			border: 1px solid var(--color-line);
+			border-radius: 999px;
+			padding: 0.125rem 0.625rem;
+			font-size: 0.8125rem;
+		}
+		.note {
+			font-size: 0.875rem;
+		}
+		.note.highlighted {
+			background: color-mix(in oklch, var(--color-accent) 20%, transparent);
+			border-radius: 0.25rem;
+			padding-inline: 0.25rem;
+		}
+	</style>
+
+	<script>
+		import "../../scripts/catalyst/classes";
+	</script>
+</Playground>

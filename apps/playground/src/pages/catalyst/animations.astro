@@ -1,0 +1,296 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Animations">
+	<Fragment slot="intro">
+		<p>
+			<code>viewTransition(update)</code> runs a state change in a
+			<a href="https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API">view transition</a>,
+			and the <code>transition</code> event modifier does the same from markup.
+			Loops keep each item's element, so
+			<code>view-transition-name: match-element</code> animates items as they
+			move, arrive and leave. Elements shown with <code>hidden</code> can
+			animate with CSS alone.
+		</p>
+		<p>
+			A transition covers the whole page, so each scenario names its elements
+			only during transitions of its own type, and the page's cross-fade is
+			turned off. Actions pass a type with <code>viewTransition</code>, and the
+			<code>transition</code> modifier uses the store's scope as its type.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="support"
+		title="Browser support"
+		description="What this browser supports. Without view transitions or transition types, or with reduced motion turned on, every scenario still works and changes straight away."
+		expect={[
+			"The readout shows whether view transitions, transition types and `match-element` are supported, and whether reduced motion is on.",
+		]}
+	>
+		<pre data-store="support" class="readout" data-dom--text="$summary"></pre>
+	</Scenario>
+
+	<Scenario
+		id="list"
+		title="A list that moves"
+		description={'Each item has `view-transition-name: match-element`. `Shuffle`, `Sort` and `Add` call `viewTransition(update, { types: ["gallery"] })` in their actions, and each item\'s `×` uses `data-events--click.transition="@remove"`, whose type is the `gallery` scope. `Replace with copies` renders new elements, so they cross-fade instead of moving.'}
+		expect={[
+			"`Shuffle` and `Sort` slide every item to its new place.",
+			"`Add` makes room for a new item, which fades in.",
+			"`×` fades the item out while the rest close the gap.",
+			"`Replace with copies` cross-fades the whole list without movement.",
+			"Clicking `Shuffle` quickly several times skips to the end of each transition rather than queueing them.",
+			"Nothing in the other scenarios moves or fades while the list animates.",
+		]}
+	>
+		<div data-store="gallery" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-events--click="@shuffle">Shuffle</button>
+				<button class="btn btn-sm" data-events--click="@sort">Sort</button>
+				<button class="btn btn-sm" data-events--click="@add">Add</button>
+				<button class="btn btn-sm" data-events--click="@replace">Replace with copies</button>
+			</div>
+			<ul data-loop="$tiles" class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+				<template>
+					<li class="vt-tile flex h-16 items-center justify-between rounded-md px-3 text-sm font-medium" data-css--hue="$item.hue">
+						<span data-dom--text="$item.label"></span>
+						<button class="btn btn-ghost btn-sm" aria-label="Remove" data-events--click.transition="@remove">×</button>
+					</li>
+				</template>
+			</ul>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="layout"
+		title="Switching layouts with the transition modifier"
+		description={'`data-events--click.transition="@toggleLayout"` switches the container between a grid and a list with `data-class--is-grid`. The action itself is an ordinary state change, and the cards are only named during `layout` transitions.'}
+		expect={[
+			"`Switch layout` moves every card smoothly between the grid and the list.",
+			"The button label follows the layout.",
+			"The scenarios below move to their new place straight away, without animating, as the page's height changes.",
+		]}
+	>
+		<div data-store="layout" class="space-y-4">
+			<button class="btn btn-sm" data-events--click.transition="@toggleLayout" data-dom--text="$label">Show as list</button>
+			<div class="vt-cards" data-class--is-grid="$grid">
+				<div class="vt-card">Revenue</div>
+				<div class="vt-card">Customers</div>
+				<div class="vt-card">Orders</div>
+				<div class="vt-card">Refunds</div>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="types"
+		title="Transition types"
+		description={'`viewTransition(next, { types: ["forward"] })` lets CSS match `:active-view-transition-type(forward)`, so `Next` slides the step left and `Back` slides it right. Without support for types, the step cross-fades.'}
+		expect={[
+			"`Next` slides the current step out to the left and the next one in from the right.",
+			"`Back` slides the other way.",
+		]}
+	>
+		<div data-store="steps" class="space-y-4">
+			<div class="vt-step rounded-lg border border-line bg-raised p-5">
+				<p class="text-xs text-subtle">Step <span data-dom--text="$number"></span> of 4</p>
+				<p class="mt-1 text-base font-semibold" data-dom--text="$title"></p>
+			</div>
+			<div class="flex gap-2">
+				<button class="btn btn-sm" data-events--click="@back" data-bind--disabled="$isFirst">Back</button>
+				<button class="btn btn-sm btn-primary" data-events--click="@next" data-bind--disabled="$isLast">Next</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="removing"
+		title="Animating markup out"
+		description={'Markup that `data-if` removes leaves the page straight away. Running the change in a view transition animates it out: the banner has its own `view-transition-name`, with its own enter and exit animations.'}
+		expect={[
+			"`Dismiss` slides the banner up and fades it out, and the content below moves up after it.",
+			"`Show banner` brings it back with the reverse animation.",
+		]}
+	>
+		<div data-store="banner" class="flex flex-col gap-3">
+			<button class="btn btn-sm self-start" data-events--click.transition="@toggle" data-dom--text="$label">Dismiss</button>
+			<div class="contents" data-if="$shown">
+				<template>
+					<div class="vt-banner rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm">A banner rendered by <code>data-if</code>.</div>
+				</template>
+			</div>
+			<p class="vt-after rounded-lg border border-line px-4 py-3 text-sm text-muted">Content after the banner</p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="timing"
+		title="Reading state after the change"
+		description={'The change runs once the browser has captured the page, a frame later. `viewTransition` returns the `ViewTransition`, so the action can `await transition?.updateCallbackDone` before reading the new state.'}
+		expect={[
+			"Each click of `Increment` logs the count straight after `viewTransition` returns, which is still the old value, then the new value after `updateCallbackDone`.",
+			"Without support, both lines show the new value, because the change runs straight away.",
+		]}
+	>
+		<div data-store="timing" class="flex items-center gap-3">
+			<button class="btn btn-sm" data-events--click="@increment">Increment</button>
+			<p class="vt-count font-mono text-lg" data-dom--text="$count"></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="css"
+		title="Showing and hiding with CSS"
+		description={'No view transition here: the panel is shown with `data-bind--hidden`, `@starting-style` sets where it animates in from, and `transition-behavior: allow-discrete` keeps it on screen while it animates out.'}
+		expect={[
+			"`Toggle panel` fades and slides the panel in, and out again.",
+			"While hidden, the panel has the `hidden` attribute and takes no space.",
+		]}
+	>
+		<div data-store="cssPanel" class="flex flex-col gap-3">
+			<button class="btn btn-sm self-start" data-events--click="@toggle">Toggle panel</button>
+			<div class="css-panel rounded-lg border border-line bg-raised px-4 py-3 text-sm" data-bind--hidden="$hidden" hidden>
+				Animated with CSS only.
+			</div>
+		</div>
+	</Scenario>
+
+	<style is:global>
+		::view-transition-group(*) {
+			animation-duration: 280ms;
+		}
+
+		/*
+		 * A transition covers the whole page, so elements are only named during
+		 * their own scenario's transitions, and the rest of the page changes
+		 * without cross-fading.
+		 */
+		::view-transition-old(root),
+		::view-transition-new(root) {
+			animation: none;
+		}
+		:active-view-transition-type(gallery) .vt-tile,
+		:active-view-transition-type(layout) .vt-card {
+			view-transition-name: match-element;
+		}
+		:active-view-transition-type(forward, backward) .vt-step {
+			view-transition-name: vt-step;
+		}
+		:active-view-transition-type(banner) .vt-banner {
+			view-transition-name: vt-banner;
+		}
+		:active-view-transition-type(banner) .vt-after {
+			view-transition-name: vt-after;
+		}
+		:active-view-transition-type(timing) .vt-count {
+			view-transition-name: vt-count;
+		}
+
+		.vt-tile {
+			background: oklch(0.42 0.12 var(--hue, 277) / 0.4);
+			border: 1px solid oklch(0.6 0.12 var(--hue, 277) / 0.5);
+		}
+
+		.vt-cards {
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+		.vt-cards.is-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.vt-card {
+			border: 1px solid var(--color-line);
+			border-radius: 0.5rem;
+			background: var(--color-raised);
+			padding: 0.75rem 1rem;
+			font-size: 0.875rem;
+		}
+		.vt-cards.is-grid .vt-card {
+			padding-block: 1.75rem;
+		}
+
+		html:active-view-transition-type(forward)::view-transition-old(vt-step) {
+			animation: vt-out-left 280ms ease both;
+		}
+		html:active-view-transition-type(forward)::view-transition-new(vt-step) {
+			animation: vt-in-right 280ms ease both;
+		}
+		html:active-view-transition-type(backward)::view-transition-old(vt-step) {
+			animation: vt-out-right 280ms ease both;
+		}
+		html:active-view-transition-type(backward)::view-transition-new(vt-step) {
+			animation: vt-in-left 280ms ease both;
+		}
+
+		::view-transition-old(vt-banner) {
+			animation: vt-up-out 220ms ease both;
+		}
+		::view-transition-new(vt-banner) {
+			animation: vt-down-in 220ms ease both;
+		}
+
+
+		.css-panel {
+			transition:
+				opacity 220ms,
+				translate 220ms,
+				display 220ms allow-discrete;
+		}
+		.css-panel[hidden] {
+			opacity: 0;
+			translate: 0 -8px;
+		}
+		@starting-style {
+			.css-panel:not([hidden]) {
+				opacity: 0;
+				translate: 0 -8px;
+			}
+		}
+
+		@keyframes vt-out-left {
+			to {
+				opacity: 0;
+				translate: -40px 0;
+			}
+		}
+		@keyframes vt-in-right {
+			from {
+				opacity: 0;
+				translate: 40px 0;
+			}
+		}
+		@keyframes vt-out-right {
+			to {
+				opacity: 0;
+				translate: 40px 0;
+			}
+		}
+		@keyframes vt-in-left {
+			from {
+				opacity: 0;
+				translate: -40px 0;
+			}
+		}
+		@keyframes vt-up-out {
+			to {
+				opacity: 0;
+				translate: 0 -12px;
+			}
+		}
+		@keyframes vt-down-in {
+			from {
+				opacity: 0;
+				translate: 0 -12px;
+			}
+		}
+	</style>
+
+	<script>
+		import "../../scripts/catalyst/animations";
+	</script>
+</Playground>
