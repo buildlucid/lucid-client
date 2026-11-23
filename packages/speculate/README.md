@@ -42,10 +42,12 @@ destroy();
 #### Configuring Links
 
 ```html
-<a href="/page-1" rel="prefetch:visible">Prefetch in viewport</a>
-<a href="/page-2" rel="prefetch:moderate">Prefetch on interaction</a>
-<a href="/page-3" rel="prerender:visible">Prerender in viewport</a>
+<a href="/page-1" data-speculate="visible">Prefetch in viewport</a>
+<a href="/page-2" data-speculate--prefetch="moderate">Prefetch on interaction</a>
+<a href="/page-3" data-speculate--prerender="visible">Prerender in viewport</a>
 ```
+
+The specifier is the action and the value is the trigger. `data-speculate` on its own prefetches, like `data-speculate--prefetch`, and an empty or unknown trigger uses `moderate`. A link with both actions is prerendered.
 
 Aside from the `visible` trigger, the others are based on the [Speculation Rule Eagerness](https://developer.chrome.com/docs/web-platform/prerender-pages#eagerness) values and are used only when Speculation Rules are supported. 
 

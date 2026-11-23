@@ -8,6 +8,8 @@ const C: {
 	fallbackAction: SpeculationActions;
 	validActions: SpeculationActions[];
 	validTriggers: SpeculationTriggers[];
+	attribute: string;
+	selector: string;
 	genSpeculate: string;
 } = {
 	moderateEvents: ["mouseenter", "touchstart", "focus"],
@@ -16,6 +18,12 @@ const C: {
 	fallbackAction: "prefetch",
 	validActions: ["prefetch", "prerender"],
 	validTriggers: ["visible", "immediate", "eager", "moderate", "conservative"],
+	/**
+	 * Links follow the suite's `data-{namespace}--{specifier}` grammar: the action is the specifier and the trigger is the value
+	 */
+	attribute: "data-speculate",
+	selector:
+		"a[data-speculate], a[data-speculate--prefetch], a[data-speculate--prerender]",
 	genSpeculate: "gen-speculate",
 };
 
@@ -66,7 +74,7 @@ const removeEventListeners = (element: HTMLAnchorElement) => {
 const intentEvent = (e: Event) => {
 	const target = e.target as HTMLAnchorElement | null;
 	if (!target) return;
-	triggerAction(target, parseLinkRel(target.rel));
+	triggerAction(target, parseLinkConfig(target));
 };
 
 const triggerAction = (
@@ -132,25 +140,29 @@ const addLinkPrefetch = (href: string) => {
 };
 
 /**
- * Parses the link rel attribute and determines the correct action and trigger based on support
- * @param rel The link rel attribute
+ * Reads the link's action and trigger, and determines the correct ones based on support
+ * - `data-speculate--prerender` and `data-speculate--prefetch` name the action, and their value is the trigger
+ * - `data-speculate` prefetches, and its value is the trigger
+ * - An empty or unknown trigger falls back to `moderate`
  * @returns A tuple of the action and trigger
  */
-const parseLinkRel = (
-	rel: string,
+const parseLinkConfig = (
+	link: HTMLAnchorElement,
 ): [SpeculationActions, SpeculationTriggers] => {
-	let action: string | undefined;
-	let trigger: string | undefined;
+	let action: string = C.fallbackAction;
+	let trigger = link.getAttribute(C.attribute);
 
-	for (const part of rel.split(" ")) {
-		if (part.startsWith("prefetch:") || part.startsWith("prerender:")) {
-			[action, trigger] = part.split(":");
+	// prerender is checked first, so it wins when a link has both
+	for (const candidate of ["prerender", "prefetch"] as const) {
+		const value = link.getAttribute(`${C.attribute}--${candidate}`);
+		if (value !== null) {
+			action = candidate;
+			trigger = value;
 			break;
 		}
 	}
 
-	if (!action) action = C.fallbackAction;
-	if (!trigger) trigger = C.fallbackTrigger;
+	trigger = trigger?.trim() || C.fallbackTrigger;
 
 	if (!speculationSupport) {
 		// prerender defaults to prefetch when speculation rules are not supported
@@ -206,7 +218,7 @@ const speculationLinks = () => {
 			for (const entry of entries) {
 				if (entry.isIntersecting && entry.target instanceof HTMLAnchorElement) {
 					const target = entry.target;
-					const [action, trigger] = parseLinkRel(target.rel);
+					const [action, trigger] = parseLinkConfig(target);
 
 					if (trigger === "visible") triggerAction(target, [action, trigger]);
 					else unobserve(target);
@@ -216,11 +228,11 @@ const speculationLinks = () => {
 
 	// setup link config, observers and events
 	const targetLinks: NodeListOf<HTMLAnchorElement> = document.querySelectorAll(
-		'a[rel*="prefetch:"], a[rel*="prerender:"]',
+		C.selector,
 	);
 
 	for (const l of targetLinks) {
-		const [action, trigger] = parseLinkRel(l.rel);
+		const [action, trigger] = parseLinkConfig(l);
 
 		if (trigger === "visible") {
 			observer.observe(l);

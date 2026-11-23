@@ -1,6 +1,10 @@
 # @lucidclient/speculate
 
-## v1.1.3 (unreleased)
+## v1.2.0 (unreleased)
+
+## Breaking Changes
+
+- Links are configured with `data-speculate` attributes instead of `rel`, following the suite's `data-{namespace}--{specifier}` grammar. `rel="prefetch:visible"` is now `data-speculate--prefetch="visible"`, or `data-speculate="visible"`, and `rel="prerender:moderate"` is now `data-speculate--prerender="moderate"`. `rel` is left to the tokens browsers, validators and SEO plugins expect, and `rel` values are no longer read.
 
 ## Patch Changes
 
