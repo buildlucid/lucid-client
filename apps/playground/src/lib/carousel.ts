@@ -2,6 +2,7 @@ import carousel, {
 	type CarouselChange,
 	type Options,
 } from "@lucidclient/carousel";
+import drag from "@lucidclient/carousel/drag";
 import { createLogger } from "./log";
 
 const log = createLogger("carousel");
@@ -23,7 +24,7 @@ export const startCarousel = (options?: Options) => {
 			`${name(event.target)}: page ${previousIndex + 1} → ${index + 1} of ${count}`,
 		);
 	});
-	carousel.init(options);
+	carousel.init({ drag, ...options });
 };
 
 export { carousel };

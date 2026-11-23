@@ -1,8 +1,6 @@
 import cookieController, {
 	type ConsentChange,
 } from "@lucidclient/cookie-controller";
-import { consentStore } from "@lucidclient/cookie-controller/catalyst";
-import { startCatalyst } from "../lib/catalyst";
 import { createLogger, formatData } from "../lib/log";
 
 const log = createLogger("consent");
@@ -109,7 +107,6 @@ log.info("getConsent() before init reads the cookie directly", {
 });
 init();
 renderStatus();
-startCatalyst({ stores: { consent: consentStore } });
 
 // --------------------------------------------------------
 // Method buttons

@@ -55,7 +55,7 @@ const nav: NavGroup[] = [
 		package: carousel.name,
 		version: carousel.version,
 		description:
-			"A scroll snap carousel that JavaScript enhances, with markers, looping, mouse drag, autoplay and a Catalyst store.",
+			"A scroll snap carousel that JavaScript enhances, with markers, looping, mouse drag and autoplay.",
 		pages: [
 			{
 				title: "Basics",
@@ -83,13 +83,6 @@ const nav: NavGroup[] = [
 				href: "/carousel/autoplay",
 				description:
 					"Autoplay with a rotation control, pausing on hover and focus, and inert slides out of view.",
-				isNew: true,
-			},
-			{
-				title: "Catalyst store",
-				href: "/carousel/catalyst",
-				description:
-					"carouselStore: controls and progress anywhere in a store, markers from a loop and slides from state.",
 				isNew: true,
 			},
 			{

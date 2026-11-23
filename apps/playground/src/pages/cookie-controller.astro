@@ -33,8 +33,7 @@ const gatePill =
 	<Fragment slot="intro">
 		<p>
 			Cookie Controller brings no markup or styles: the banner and dialog below
-			are wired up entirely with <code>data-cookie--*</code> attributes, and a
-			Catalyst store follows the same consent. This
+			are wired up entirely with <code>data-cookie--*</code> attributes. This
 			page runs on policy version
 			<code data-consent-policy>1.0.2</code>. Every consent change is logged
 			with its full payload.
@@ -264,50 +263,6 @@ const gatePill =
 				<button type="button" class="btn btn-sm" data-add-gated-image>Add a marketing image</button>
 				<button type="button" class="btn btn-sm" data-call="refresh">refresh()</button>
 			</pg-controls>
-		</div>
-	</Scenario>
-
-	<Scenario
-		id="catalyst-store"
-		title="Catalyst store"
-		description="`consentStore` from `@lucidclient/cookie-controller/catalyst` is registered as the `consent` store. These bindings read `$granted`, `$denied` and `$decided`, the switches use `data-model`, and the buttons call its actions."
-		expect={[
-			"The values update with every consent change, from this page's banner, dialog, method buttons and category buttons.",
-			"The placeholder shows until marketing is granted, and the marketing content shows once it is.",
-			"A switch here saves its category straight away and logs type `update`. The dialog's toggles follow it.",
-			"`$decided` is `false` on a first visit and turns `true` after any choice.",
-		]}
-	>
-		<div data-store="consent" class="space-y-4">
-			<dl class="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1.5 text-[13px]">
-				<dt class="font-mono text-subtle">$decided</dt>
-				<dd class="font-mono" data-dom--text="$decided"></dd>
-				<dt class="font-mono text-subtle">$granted.analytics</dt>
-				<dd class="font-mono" data-dom--text="$granted.analytics"></dd>
-				<dt class="font-mono text-subtle">$granted.marketing</dt>
-				<dd class="font-mono" data-dom--text="$granted.marketing"></dd>
-				<dt class="font-mono text-subtle">$denied.marketing</dt>
-				<dd class="font-mono" data-dom--text="$denied.marketing"></dd>
-			</dl>
-			<div class="grid gap-2 sm:grid-cols-2">
-				<p class="rounded-md bg-raised px-3 py-2.5 text-[13px] text-muted" data-bind--hidden="$granted.marketing">Placeholder: hidden once marketing is granted</p>
-				<p class="rounded-md bg-emerald-400/10 px-3 py-2.5 text-[13px] text-emerald-200" data-bind--hidden="$denied.marketing">Marketing content: shown once marketing is granted</p>
-			</div>
-			<div class="flex flex-wrap gap-6">
-				<label class="flex items-center gap-3 text-sm">
-					<input type="checkbox" role="switch" class="switch" data-model="$granted.analytics" />
-					Analytics
-				</label>
-				<label class="flex items-center gap-3 text-sm">
-					<input type="checkbox" role="switch" class="switch" data-model="$granted.marketing" />
-					Marketing
-				</label>
-			</div>
-			<div class="flex flex-wrap gap-2">
-				<button type="button" class="btn btn-sm" data-events--click="@acceptAll">@acceptAll</button>
-				<button type="button" class="btn btn-sm" data-events--click="@rejectAll">@rejectAll</button>
-				<button type="button" class="btn btn-sm" data-events--click="@openDetails">@openDetails</button>
-			</div>
 		</div>
 	</Scenario>
 
