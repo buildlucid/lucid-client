@@ -54,6 +54,7 @@ Code shared by every suite lives in `src/`, and code for one suite in `src/{suit
 ## Rules for pages
 
 - Every library must render the same DOM as the suite's first library. The runner checks this before it times anything, comparing text, `class`, `hidden` and `aria-*` attributes.
-- Write pages the way the library's own documentation recommends. Use its stores or components, bindings, loops and events.
-- Use the suite's data as it is, and do the same work in every library. For example, every search page filters with `matchesQuery`.
+- Keyed updates must keep the elements they update. For scenarios marked `keepsElements`, such as swapping and selecting rows, the check fails if the timed step renders elements again.
+- Write pages the way the library's own documentation recommends, at their best: use its stores or components, keyed loops, bindings and events, and its fastest idiomatic form where it has more than one, such as a ternary class binding.
+- Use the suite's data as it is, and do the same work in every library. For example, every search page filters with `filterRows`, and every rows page removes a row by its loop index.
 - Pages expose anything a scenario calls, such as `start`, with `defineHarness` from `src/harness.ts`.

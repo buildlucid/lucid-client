@@ -66,6 +66,12 @@ export const perform = async (page: Page, step: Step) => {
 	await page.evaluate(runStep, { step, timed: false });
 };
 
-/** Performs the timed step after collecting garbage, and returns its time in ms. */
-export const time = (page: Page, step: Step) =>
-	page.evaluate(runStep, { step, timed: true });
+/**
+ * Performs the timed step after collecting garbage, and returns its time in ms.
+ * Garbage is collected once beforehand as well, so the collection just before
+ * the step has almost nothing left to free and leaves no clean-up for the step.
+ */
+export const time = async (page: Page, step: Step) => {
+	await page.evaluate(() => (globalThis as { gc?: () => void }).gc?.());
+	return page.evaluate(runStep, { step, timed: true });
+};
