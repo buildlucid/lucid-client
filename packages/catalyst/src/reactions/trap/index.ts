@@ -121,7 +121,12 @@ const activateTrap = (target: HTMLElement) => {
 	stack.push(trap);
 	target.removeAttribute("inert");
 	applyStack();
-	focusTrap(trap);
+	// Focus moves once the rest of this update has run, so a binding that
+	// shows the trap, such as data-bind--hidden, applies first wherever it is
+	// in the markup.
+	queueMicrotask(() => {
+		if (stack.at(-1) === trap) focusTrap(trap);
+	});
 };
 
 const releaseTrap = (target: HTMLElement) => {

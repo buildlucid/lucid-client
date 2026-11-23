@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vite-plus/test";
-import Catalyst from "../src/index.js";
-import { trap } from "../src/reactions.js";
+import { describe, expect, it, vi } from "vite-plus/test";
+import Catalyst, { defineStore } from "../src/index.js";
+import { bind, trap } from "../src/reactions.js";
 import { setStoreState, settle } from "./utils.js";
 
 const setState = async (store: string, key: string, value: unknown) => {
@@ -41,6 +41,40 @@ describe("trap reaction", () => {
 		expect(isInert("#intro")).toBe(false);
 		expect(isInert("#footer")).toBe(false);
 		expect(document.activeElement).toBe(trigger);
+	});
+
+	it("moves focus after the binding that shows the trap has run", async () => {
+		document.body.innerHTML = `
+			<div data-store="shown">
+				<button id="opener">Open</button>
+				<div id="dialog" data-trap="$open" data-bind--hidden="$closed" hidden>
+					<button id="inside">Close</button>
+				</div>
+			</div>
+		`;
+		const shown = defineStore({
+			state: { open: false },
+			computed: ({ state }) => ({ closed: () => !state.open }),
+		});
+		Catalyst.start({ stores: { shown }, reactions: [trap, bind] });
+		document.querySelector<HTMLElement>("#opener")?.focus();
+
+		const hiddenWhenFocused: boolean[] = [];
+		const dialog = document.querySelector("#dialog");
+		const focus = HTMLElement.prototype.focus;
+		vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (
+			this: HTMLElement,
+			options?: FocusOptions,
+		) {
+			if (dialog?.contains(this)) {
+				hiddenWhenFocused.push(dialog.hasAttribute("hidden"));
+			}
+			focus.call(this, options);
+		});
+
+		await setState("shown", "open", true);
+		expect(hiddenWhenFocused).toEqual([false]);
+		expect(document.activeElement?.id).toBe("inside");
 	});
 
 	it("restores only the inert state it changed", async () => {
