@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Search · petite-vue</title>
+	</head>
+	<body>
+		<main id="app">
+			<input type="search" aria-label="Search" v-model="query" />
+			<p><span>{{ matches.length }}</span> results</p>
+			<ul>
+				<li v-for="item in matches" :key="item.id">{{ item.label }}</li>
+			</ul>
+		</main>
+		<script type="module" src="./search.ts"></script>
+	</body>
+</html>

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Search · Alpine.js</title>
+	</head>
+	<body>
+		<main id="app" x-data="search">
+			<input type="search" aria-label="Search" x-model="query" />
+			<p><span x-text="matches.length"></span> results</p>
+			<ul>
+				<template x-for="item in matches" :key="item.id">
+					<li x-text="item.label"></li>
+				</template>
+			</ul>
+		</main>
+		<script type="module" src="./search.ts"></script>
+	</body>
+</html>

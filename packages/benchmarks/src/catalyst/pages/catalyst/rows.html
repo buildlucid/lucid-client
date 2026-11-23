@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Rows · Catalyst</title>
+	</head>
+	<body>
+		<main id="app" data-store="rows">
+			<div>
+				<button id="run" data-events--click="@run">Create 1,000 rows</button>
+				<button id="add" data-events--click="@add">Append 1,000 rows</button>
+				<button id="update" data-events--click="@update">
+					Update every 10th row
+				</button>
+				<button id="clear" data-events--click="@clear">Clear</button>
+				<button id="swap" data-events--click="@swap">Swap rows</button>
+			</div>
+			<table>
+				<tbody data-loop="$rows">
+					<template>
+						<tr data-bind--class="@rowClass">
+							<td data-dom--text="$item.id"></td>
+							<td>
+								<button
+									class="select"
+									data-events--click="@select"
+									data-dom--text="$item.label"
+								></button>
+							</td>
+							<td>
+								<button class="remove" data-events--click="@remove">
+									Remove
+								</button>
+							</td>
+						</tr>
+					</template>
+				</tbody>
+			</table>
+		</main>
+		<script type="module" src="./rows.ts"></script>
+	</body>
+</html>

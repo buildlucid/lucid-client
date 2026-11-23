@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Rows · Alpine.js</title>
+	</head>
+	<body>
+		<main id="app" x-data="rows">
+			<div>
+				<button id="run" @click="run">Create 1,000 rows</button>
+				<button id="add" @click="add">Append 1,000 rows</button>
+				<button id="update" @click="update">Update every 10th row</button>
+				<button id="clear" @click="clear">Clear</button>
+				<button id="swap" @click="swap">Swap rows</button>
+			</div>
+			<table>
+				<tbody>
+					<template x-for="row in rows" :key="row.id">
+						<tr :class="{ danger: selected === row.id }">
+							<td x-text="row.id"></td>
+							<td>
+								<button
+									class="select"
+									@click="select(row.id)"
+									x-text="row.label"
+								></button>
+							</td>
+							<td>
+								<button class="remove" @click="remove(row.id)">Remove</button>
+							</td>
+						</tr>
+					</template>
+				</tbody>
+			</table>
+		</main>
+		<script type="module" src="./rows.ts"></script>
+	</body>
+</html>

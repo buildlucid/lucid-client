@@ -1,0 +1,645 @@
+{
+	"suite": "catalyst",
+	"name": "Catalyst",
+	"date": "2026-11-23",
+	"commit": "226dc2a",
+	"environment": {
+		"browser": "Chromium 159.0.8154.6",
+		"node": "26.13.1",
+		"os": "Darwin 25.3.0 (arm64)",
+		"cpu": "Apple M4 Pro",
+		"cores": 12,
+		"memoryGb": 24
+	},
+	"settings": {
+		"samples": 15,
+		"warmups": 5,
+		"throttle": 1
+	},
+	"libraries": [
+		{
+			"id": "catalyst",
+			"name": "Catalyst",
+			"package": "@lucidclient/catalyst",
+			"homepage": "https://github.com/ProtoDigitalUK/lucid_client",
+			"version": "0.6.0"
+		},
+		{
+			"id": "alpine",
+			"name": "Alpine.js",
+			"package": "alpinejs",
+			"homepage": "https://alpinejs.dev/",
+			"version": "3.17.5"
+		},
+		{
+			"id": "petite-vue",
+			"name": "petite-vue",
+			"package": "petite-vue",
+			"homepage": "https://github.com/vuejs/petite-vue",
+			"version": "0.4.1"
+		},
+		{
+			"id": "vanilla",
+			"name": "Vanilla JS",
+			"package": null,
+			"homepage": null,
+			"version": null
+		}
+	],
+	"summary": [
+		{
+			"library": "vanilla",
+			"geometricMean": 1.0064812619941303
+		},
+		{
+			"library": "catalyst",
+			"geometricMean": 3.6346544148273425
+		},
+		{
+			"library": "petite-vue",
+			"geometricMean": 3.692087353442451
+		},
+		{
+			"library": "alpine",
+			"geometricMean": 4.056000318763793
+		}
+	],
+	"scenarios": [
+		{
+			"id": "start-up",
+			"name": "Start-up",
+			"description": "Starts the library on a page with 250 server-rendered cards. Each card has its own state, a toggle and a like button.",
+			"features": [
+				"Stores",
+				"State attributes",
+				"Computed values",
+				"Bindings"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 0.45500004291534424,
+					"meanMs": 0.46099998950958254,
+					"p95Ms": 0.5,
+					"minMs": 0.4299999475479126,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 7.814999938011169,
+					"meanMs": 7.77599999109904,
+					"p95Ms": 8.110999929904938,
+					"minMs": 7.494999885559082,
+					"samples": 15,
+					"relative": 17.175822419571073
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 12.159999966621399,
+					"meanMs": 12.204666662216187,
+					"p95Ms": 12.881499981880188,
+					"minMs": 11.81499993801117,
+					"samples": 15,
+					"relative": 26.72527213120252
+				},
+				{
+					"library": "alpine",
+					"medianMs": 17.794999957084656,
+					"meanMs": 17.76233332157135,
+					"p95Ms": 18.325999999046324,
+					"minMs": 16.68500006198883,
+					"samples": 15,
+					"relative": 39.109886326748175
+				}
+			]
+		},
+		{
+			"id": "create-rows",
+			"name": "Create rows",
+			"description": "Renders 1,000 rows into an empty table.",
+			"features": [
+				"Loops",
+				"Bindings",
+				"Events"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 17.62999999523163,
+					"meanMs": 17.614999969800312,
+					"p95Ms": 18.068999969959258,
+					"minMs": 16.450000047683716,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 25.225000023841858,
+					"meanMs": 25.213333320617675,
+					"p95Ms": 26.15900000333786,
+					"minMs": 24.259999990463257,
+					"samples": 15,
+					"relative": 1.4307997748533434
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 26.080000042915344,
+					"meanMs": 26.080333312352497,
+					"p95Ms": 27.450499975681304,
+					"minMs": 24.644999980926514,
+					"samples": 15,
+					"relative": 1.4792966562659773
+				},
+				{
+					"library": "alpine",
+					"medianMs": 35.6599999666214,
+					"meanMs": 35.59933333396911,
+					"p95Ms": 36.5885000705719,
+					"minMs": 34.544999957084656,
+					"samples": 15,
+					"relative": 2.0226885976328037
+				}
+			]
+		},
+		{
+			"id": "replace-rows",
+			"name": "Replace rows",
+			"description": "Replaces all 1,000 rows with new ones.",
+			"features": [
+				"Loops"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 13.599999904632568,
+					"meanMs": 13.534666657447815,
+					"p95Ms": 13.978000009059906,
+					"minMs": 12.774999976158142,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 27.634999990463257,
+					"meanMs": 27.726000022888183,
+					"p95Ms": 29.102499973773956,
+					"minMs": 26.695000052452087,
+					"samples": 15,
+					"relative": 2.0319853076653294
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 38.764999985694885,
+					"meanMs": 38.99066666762034,
+					"p95Ms": 40.11799999475479,
+					"minMs": 37.88499999046326,
+					"samples": 15,
+					"relative": 2.850367665994642
+				},
+				{
+					"library": "alpine",
+					"medianMs": 41.90499997138977,
+					"meanMs": 42.11599998474121,
+					"p95Ms": 44.5939999461174,
+					"minMs": 40.550000071525574,
+					"samples": 15,
+					"relative": 3.0812500195029906
+				}
+			]
+		},
+		{
+			"id": "partial-update",
+			"name": "Partial update",
+			"description": "Changes the label of every 10th row in a table of 1,000.",
+			"features": [
+				"Nested state",
+				"Fine-grained updates"
+			],
+			"results": [
+				{
+					"library": "catalyst",
+					"medianMs": 3.0549999475479126,
+					"meanMs": 3.0403333346048993,
+					"p95Ms": 3.2105000376701356,
+					"minMs": 2.8799999952316284,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "vanilla",
+					"medianMs": 3.2799999713897705,
+					"meanMs": 3.325,
+					"p95Ms": 3.787000000476837,
+					"minMs": 2.975000023841858,
+					"samples": 15,
+					"relative": 1.073649763569539
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 3.475000023841858,
+					"meanMs": 3.43166667620341,
+					"p95Ms": 3.755499982833862,
+					"minMs": 2.75,
+					"samples": 15,
+					"relative": 1.1374795690687514
+				},
+				{
+					"library": "alpine",
+					"medianMs": 3.680000066757202,
+					"meanMs": 3.6770000139872234,
+					"p95Ms": 3.7929999947547914,
+					"minMs": 3.5049999952316284,
+					"samples": 15,
+					"relative": 1.2045826939247395
+				}
+			]
+		},
+		{
+			"id": "select-row",
+			"name": "Select row",
+			"description": "Highlights the row that was clicked in a table of 1,000, by binding each row's class.",
+			"features": [
+				"Bindings",
+				"Loop items in actions"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 0.11000001430511475,
+					"meanMs": 0.11433331966400147,
+					"p95Ms": 0.13149999380111693,
+					"minMs": 0.09999990463256836,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 1.0199999809265137,
+					"meanMs": 1.0296666701634725,
+					"p95Ms": 1.1310000300407408,
+					"minMs": 0.9500000476837158,
+					"samples": 15,
+					"relative": 9.272725893446417
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 1.4849998950958252,
+					"meanMs": 1.4763333082199097,
+					"p95Ms": 1.5484999895095826,
+					"minMs": 1.3600000143051147,
+					"samples": 15,
+					"relative": 13.499997290698317
+				},
+				{
+					"library": "alpine",
+					"medianMs": 3.809999942779541,
+					"meanMs": 3.8479999860127765,
+					"p95Ms": 4.041500043869019,
+					"minMs": 3.6699999570846558,
+					"samples": 15,
+					"relative": 34.636358611840514
+				}
+			]
+		},
+		{
+			"id": "swap-rows",
+			"name": "Swap rows",
+			"description": "Swaps the 2nd and 999th rows in a table of 1,000.",
+			"features": [
+				"Loops",
+				"Reusing items"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 1.2300000190734863,
+					"meanMs": 1.2023333231608073,
+					"p95Ms": 1.3214999675750732,
+					"minMs": 1.090000033378601,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "alpine",
+					"medianMs": 2.9149999618530273,
+					"meanMs": 2.9043333371480307,
+					"p95Ms": 3.1010000228881833,
+					"minMs": 2.7300000190734863,
+					"samples": 15,
+					"relative": 2.369918631423103
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 6.449999928474426,
+					"meanMs": 6.511999996503194,
+					"p95Ms": 7.009000015258788,
+					"minMs": 6.179999947547913,
+					"samples": 15,
+					"relative": 5.243902299556852
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 14.419999957084656,
+					"meanMs": 14.248666675885518,
+					"p95Ms": 14.883999991416932,
+					"minMs": 13.325000047683716,
+					"samples": 15,
+					"relative": 11.723577019085504
+				}
+			]
+		},
+		{
+			"id": "remove-row",
+			"name": "Remove row",
+			"description": "Removes the row whose button was clicked from a table of 1,000.",
+			"features": [
+				"Loops",
+				"Loop items in actions",
+				"Cleanup"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 0.9600000381469727,
+					"meanMs": 1.0079999844233194,
+					"p95Ms": 1.2830000042915344,
+					"minMs": 0.8549998998641968,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 1.8600000143051147,
+					"meanMs": 1.9163333336512247,
+					"p95Ms": 2.2295000195503234,
+					"minMs": 1.7799999713897705,
+					"samples": 15,
+					"relative": 1.9374999379118307
+				},
+				{
+					"library": "alpine",
+					"medianMs": 3.25,
+					"meanMs": 3.2576666673024497,
+					"p95Ms": 3.3894999861717223,
+					"minMs": 3.125,
+					"samples": 15,
+					"relative": 3.3854165321423
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 19.2849999666214,
+					"meanMs": 19.26633332570394,
+					"p95Ms": 19.980000030994415,
+					"minMs": 18.395000100135803,
+					"samples": 15,
+					"relative": 20.0885408336504
+				}
+			]
+		},
+		{
+			"id": "append-rows",
+			"name": "Append rows",
+			"description": "Adds 1,000 rows to a table of 1,000.",
+			"features": [
+				"Loops"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 14.649999976158142,
+					"meanMs": 14.628333346048992,
+					"p95Ms": 15.196000039577484,
+					"minMs": 13.675000071525574,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 27.875,
+					"meanMs": 27.886000005404153,
+					"p95Ms": 28.912999963760377,
+					"minMs": 26.820000052452087,
+					"samples": 15,
+					"relative": 1.9027303785231828
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 33.424999952316284,
+					"meanMs": 33.353333338101706,
+					"p95Ms": 34.19650005102157,
+					"minMs": 32.264999985694885,
+					"samples": 15,
+					"relative": 2.2815699663285427
+				},
+				{
+					"library": "alpine",
+					"medianMs": 40.4650000333786,
+					"meanMs": 40.514666652679445,
+					"p95Ms": 41.49149998426437,
+					"minMs": 39.33500003814697,
+					"samples": 15,
+					"relative": 2.762116047729186
+				}
+			]
+		},
+		{
+			"id": "clear-rows",
+			"name": "Clear rows",
+			"description": "Removes all 1,000 rows, and cleans up their bindings and listeners.",
+			"features": [
+				"Loops",
+				"Cleanup"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 1.2950000762939453,
+					"meanMs": 1.2983333508173625,
+					"p95Ms": 1.4595000386238097,
+					"minMs": 1.1799999475479126,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 3.244999885559082,
+					"meanMs": 3.1079999923706056,
+					"p95Ms": 3.622500002384186,
+					"minMs": 2.5850000381469727,
+					"samples": 15,
+					"relative": 2.5057912697933435
+				},
+				{
+					"library": "alpine",
+					"medianMs": 6.745000004768372,
+					"meanMs": 6.676000006993612,
+					"p95Ms": 6.854500019550324,
+					"minMs": 6.205000042915344,
+					"samples": 15,
+					"relative": 5.208493905321871
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 13.450000047683716,
+					"meanMs": 13.451999990145366,
+					"p95Ms": 13.922999989986419,
+					"minMs": 12.964999914169312,
+					"samples": 15,
+					"relative": 10.386099811032576
+				}
+			]
+		},
+		{
+			"id": "live-search",
+			"name": "Live search",
+			"description": "Types into a search box that filters a list of 1,000 items down to 122, with a count of the matches.",
+			"features": [
+				"Two-way binding",
+				"Computed values",
+				"Loops"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 2.015000104904175,
+					"meanMs": 1.9676666816075643,
+					"p95Ms": 2.237499964237213,
+					"minMs": 1.5399999618530273,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "alpine",
+					"medianMs": 3.1649999618530273,
+					"meanMs": 3.1179999748865765,
+					"p95Ms": 3.487000012397766,
+					"minMs": 2.4649999141693115,
+					"samples": 15,
+					"relative": 1.5707195022719573
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 3.4350000619888306,
+					"meanMs": 3.4523333311080933,
+					"p95Ms": 3.785000002384186,
+					"minMs": 2.7649999856948853,
+					"samples": 15,
+					"relative": 1.7047145822119871
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 4.294999957084656,
+					"meanMs": 4.231666676203409,
+					"p95Ms": 4.451000046730042,
+					"minMs": 3.8450000286102295,
+					"samples": 15,
+					"relative": 2.1315135153746847
+				}
+			]
+		},
+		{
+			"id": "dynamic-markup",
+			"name": "Dynamic markup",
+			"description": "Inserts 100 cards into a running page, as markup fetched from a server would be, and sets them up.",
+			"features": [
+				"Syncing markup",
+				"Stores",
+				"Bindings",
+				"Events"
+			],
+			"results": [
+				{
+					"library": "vanilla",
+					"medianMs": 3.350000023841858,
+					"meanMs": 3.2743333419164022,
+					"p95Ms": 4.20250004529953,
+					"minMs": 1.6150000095367432,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "petite-vue",
+					"medianMs": 5.7200000286102295,
+					"meanMs": 5.389666676521301,
+					"p95Ms": 6.528500056266783,
+					"minMs": 3.21999990940094,
+					"samples": 15,
+					"relative": 1.7074626829555661
+				},
+				{
+					"library": "catalyst",
+					"medianMs": 6.334999918937683,
+					"meanMs": 6.015666651725769,
+					"p95Ms": 7.109499990940093,
+					"minMs": 3.869999885559082,
+					"samples": 15,
+					"relative": 1.891044738463183
+				},
+				{
+					"library": "alpine",
+					"medianMs": 8.879999995231628,
+					"meanMs": 8.049333333969116,
+					"p95Ms": 9.708999955654145,
+					"minMs": 4.754999995231628,
+					"samples": 15,
+					"relative": 2.6507462483680335
+				}
+			]
+		}
+	],
+	"memory": {
+		"description": "The JavaScript heap of the rows page when it has loaded, and with 1,000 rows, after collecting garbage.",
+		"results": [
+			{
+				"library": "vanilla",
+				"readyMb": 0.6747856140136719,
+				"afterMb": 0.9621429443359375
+			},
+			{
+				"library": "petite-vue",
+				"readyMb": 0.7786064147949219,
+				"afterMb": 4.2415618896484375
+			},
+			{
+				"library": "catalyst",
+				"readyMb": 0.9113311767578125,
+				"afterMb": 6.396221160888672
+			},
+			{
+				"library": "alpine",
+				"readyMb": 0.8819046020507812,
+				"afterMb": 14.38162612915039
+			}
+		]
+	},
+	"size": {
+		"description": "The JavaScript the rows page loads: the library, the page's own code and its data, minified by Vite.",
+		"results": [
+			{
+				"library": "vanilla",
+				"minBytes": 2411,
+				"gzipBytes": 1255,
+				"brotliBytes": 1100
+			},
+			{
+				"library": "petite-vue",
+				"minBytes": 18065,
+				"gzipBytes": 7733,
+				"brotliBytes": 7131
+			},
+			{
+				"library": "alpine",
+				"minBytes": 55980,
+				"gzipBytes": 19647,
+				"brotliBytes": 17793
+			},
+			{
+				"library": "catalyst",
+				"minBytes": 79879,
+				"gzipBytes": 28586,
+				"brotliBytes": 26002
+			}
+		]
+	}
+}

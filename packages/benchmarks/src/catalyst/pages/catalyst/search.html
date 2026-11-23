@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Search · Catalyst</title>
+	</head>
+	<body>
+		<main id="app" data-store="search">
+			<input type="search" aria-label="Search" data-model="$query" />
+			<p><span data-dom--text="$matches.length"></span> results</p>
+			<ul data-loop="$matches">
+				<template>
+					<li data-dom--text="$item.label"></li>
+				</template>
+			</ul>
+		</main>
+		<script type="module" src="./search.ts"></script>
+	</body>
+</html>

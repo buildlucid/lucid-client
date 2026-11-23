@@ -4,6 +4,7 @@
 	"scripts": {
 		"build": "vp run -r build",
 		"dev": "vp run -r --parallel dev",
+		"bench": "vp run @lucidclient/benchmarks#bench",
 		"format": "vp fmt --check",
 		"format:fix": "vp fmt",
 		"lint": "vp lint",

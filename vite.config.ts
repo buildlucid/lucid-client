@@ -6,7 +6,11 @@ export default defineConfig({
 		printWidth: 80,
 		sortImports: { newlinesBetween: false },
 		sortPackageJson: false,
-		ignorePatterns: ["**/*.md"],
+		ignorePatterns: [
+			"**/*.md",
+			// Written by the benchmark runner.
+			"packages/benchmarks/results/**",
+		],
 	},
 	lint: {
 		jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
