@@ -143,6 +143,13 @@ const nav: NavGroup[] = [
 				description:
 					"Writing reactions with literal values, context.resolve and reactive effects.",
 			},
+			{
+				title: "Benchmarks",
+				href: "/catalyst/benchmarks",
+				description:
+					"Speed, memory and size compared with Alpine.js, petite-vue and hand-written DOM code.",
+				isNew: true,
+			},
 		],
 	},
 ];

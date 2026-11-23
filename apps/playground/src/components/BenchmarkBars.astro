@@ -1,0 +1,72 @@
+---
+import { barWidth, libraryFor } from "../lib/benchmarks";
+
+type Row = {
+	library: string;
+	/** Times slower than the fastest library. Sets the bar's length. */
+	relative: number;
+	value: string;
+	extra?: string;
+	/** Shown on hover. */
+	hint?: string;
+};
+
+interface Props {
+	/** Headings for the value and extra columns. */
+	headers: { value: string; extra?: string };
+	/** Fastest first. */
+	rows: Row[];
+}
+
+const { headers, rows } = Astro.props;
+---
+
+<table class="w-full text-[13px]">
+	<thead>
+		<tr class="text-left text-xs text-subtle">
+			<th class="py-2 pr-4 pl-5 font-medium sm:pl-6">Library</th>
+			<th class="w-full py-2 pr-4 font-medium">{headers.value}</th>
+			{
+				headers.extra && (
+					<th class="hidden py-2 pr-5 text-right font-medium whitespace-nowrap sm:table-cell sm:pr-6">
+						{headers.extra}
+					</th>
+				)
+			}
+		</tr>
+	</thead>
+	<tbody>
+		{
+			rows.map((row) => {
+				const library = libraryFor(row.library);
+				const isCatalyst = library.id === "catalyst";
+				return (
+					<tr class:list={["border-t border-line", isCatalyst ? "text-fg" : "text-muted"]}>
+						<td class="py-2.5 pr-4 pl-5 whitespace-nowrap sm:pl-6">
+							<span class:list={[isCatalyst && "font-medium"]}>{library.name}</span>
+							{library.version && (
+								<span class="ml-1 font-mono text-[11px] text-subtle">{library.version}</span>
+							)}
+						</td>
+						<td class="py-2.5 pr-4">
+							<div class="flex items-center gap-3" title={row.hint}>
+								<div class="h-2 min-w-12 flex-1" aria-hidden="true">
+									<div
+										class:list={["h-2 rounded-r", isCatalyst ? "bg-accent" : "bg-line-strong"]}
+										style={`width: ${barWidth(row.relative)}`}
+									/>
+								</div>
+								<span class="w-16 text-right whitespace-nowrap tabular-nums">{row.value}</span>
+							</div>
+						</td>
+						{headers.extra && (
+							<td class="hidden py-2.5 pr-5 text-right whitespace-nowrap tabular-nums sm:table-cell sm:pr-6">
+								{row.extra}
+							</td>
+						)}
+					</tr>
+				);
+			})
+		}
+	</tbody>
+</table>

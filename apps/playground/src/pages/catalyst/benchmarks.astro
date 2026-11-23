@@ -1,0 +1,227 @@
+---
+import BenchmarkBars from "../../components/BenchmarkBars.astro";
+import Playground from "../../layouts/Playground.astro";
+import {
+	benchmarks,
+	formatDate,
+	formatKb,
+	formatMb,
+	formatMs,
+	formatRelative,
+	libraryFor,
+} from "../../lib/benchmarks";
+
+const { environment, settings } = benchmarks;
+const others = benchmarks.libraries
+	.filter((library) => library.id !== "catalyst")
+	.map((library) => library.name);
+
+const sectionClass =
+	"scroll-mt-20 overflow-hidden rounded-xl border border-line bg-panel lg:scroll-mt-8";
+const headerClass = "px-5 pt-5 pb-3 sm:px-6";
+const tableHeadClass = "py-2 pr-4 font-medium text-right whitespace-nowrap";
+---
+
+<Playground title="Benchmarks" log={false}>
+	<Fragment slot="intro">
+		<p>
+			How long Catalyst takes to do common jobs in a browser, compared with
+			{others.slice(0, -1).join(", ")} and {others.at(-1)}. Vanilla JS is
+			hand-written DOM code, so it shows the least work a page could do.
+		</p>
+		<p>
+			Longer bars are faster, and the fastest library is listed first. The last
+			run was on {formatDate(benchmarks.date)}, in {environment.browser} on
+			{environment.cpu}. Read <a href="#how-it-works">how the benchmark works</a>
+			before you compare libraries.
+		</p>
+	</Fragment>
+
+	<section id="overall" data-scenario="Overall" class={sectionClass}>
+		<header class={headerClass}>
+			<h2 class="text-[15px] font-semibold tracking-tight">Overall</h2>
+			<p class="mt-1.5 text-[13px] leading-6 text-muted">
+				How many times slower each library is than the fastest, averaged over
+				every scenario below with a geometric mean, so no single scenario
+				outweighs the rest.
+			</p>
+		</header>
+		<BenchmarkBars
+			headers={{ value: "Times slower than the fastest" }}
+			rows={benchmarks.summary.map((item) => ({
+				library: item.library,
+				relative: item.geometricMean,
+				value: formatRelative(item.geometricMean),
+			}))}
+		/>
+	</section>
+
+	{
+		benchmarks.scenarios.map((scenario) => (
+			<section id={scenario.id} data-scenario={scenario.name} class={sectionClass}>
+				<header class={headerClass}>
+					<h2 class="text-[15px] font-semibold tracking-tight">{scenario.name}</h2>
+					<p class="mt-1.5 text-[13px] leading-6 text-muted">{scenario.description}</p>
+					<p class="mt-2 flex flex-wrap gap-1.5">
+						{scenario.features.map((feature) => (
+							<span class="badge">{feature}</span>
+						))}
+					</p>
+				</header>
+				<BenchmarkBars
+					headers={{ value: "Median time", extra: "Compared with fastest" }}
+					rows={scenario.results.map((result) => ({
+						library: result.library,
+						relative: result.relative,
+						value: formatMs(result.medianMs),
+						extra: formatRelative(result.relative),
+						hint: `p95 ${formatMs(result.p95Ms)}, fastest ${formatMs(result.minMs)}, ${result.samples} samples`,
+					}))}
+				/>
+			</section>
+		))
+	}
+
+	<section id="memory" data-scenario="Memory" class={sectionClass}>
+		<header class={headerClass}>
+			<h2 class="text-[15px] font-semibold tracking-tight">Memory</h2>
+			<p class="mt-1.5 text-[13px] leading-6 text-muted">
+				{benchmarks.memory.description} Less is better.
+			</p>
+		</header>
+		<table class="w-full text-[13px]">
+			<thead>
+				<tr class="text-left text-xs text-subtle">
+					<th class="w-full py-2 pr-4 pl-5 font-medium sm:pl-6">Library</th>
+					<th class={tableHeadClass}>Loaded</th>
+					<th class:list={[tableHeadClass, "pr-5 sm:pr-6"]}>1,000 rows</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					benchmarks.memory.results.map((result) => (
+						<tr class="border-t border-line text-muted">
+							<td class="py-2.5 pr-4 pl-5 sm:pl-6">{libraryFor(result.library).name}</td>
+							<td class="py-2.5 pr-4 text-right whitespace-nowrap tabular-nums">{formatMb(result.readyMb)}</td>
+							<td class="py-2.5 pr-5 text-right whitespace-nowrap tabular-nums sm:pr-6">{formatMb(result.afterMb)}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+
+	<section id="size" data-scenario="Size" class={sectionClass}>
+		<header class={headerClass}>
+			<h2 class="text-[15px] font-semibold tracking-tight">Size</h2>
+			<p class="mt-1.5 text-[13px] leading-6 text-muted">
+				{benchmarks.size.description} Catalyst's size includes Solid, which it is
+				built on. Smaller is better.
+			</p>
+		</header>
+		<table class="w-full text-[13px]">
+			<thead>
+				<tr class="text-left text-xs text-subtle">
+					<th class="w-full py-2 pr-4 pl-5 font-medium sm:pl-6">Library</th>
+					<th class={tableHeadClass}>Minified</th>
+					<th class={tableHeadClass}>gzip</th>
+					<th class:list={[tableHeadClass, "pr-5 sm:pr-6"]}>brotli</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					benchmarks.size.results.map((result) => (
+						<tr class="border-t border-line text-muted">
+							<td class="py-2.5 pr-4 pl-5 sm:pl-6">{libraryFor(result.library).name}</td>
+							<td class="py-2.5 pr-4 text-right whitespace-nowrap tabular-nums">{formatKb(result.minBytes)}</td>
+							<td class="py-2.5 pr-4 text-right whitespace-nowrap tabular-nums">{formatKb(result.gzipBytes)}</td>
+							<td class="py-2.5 pr-5 text-right whitespace-nowrap tabular-nums sm:pr-6">{formatKb(result.brotliBytes)}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+
+	<section id="how-it-works" data-scenario="How it works" class={sectionClass}>
+		<div class="space-y-4 px-5 py-5 text-[13px] leading-6 text-muted sm:px-6">
+			<h2 class="text-[15px] font-semibold tracking-tight text-fg">How the benchmark works</h2>
+			<ul class="list-disc space-y-2 pl-5">
+				<li>
+					<strong class="text-fg">Same DOM.</strong> Before timing anything, every
+					library runs every scenario and the benchmark checks its DOM matches
+					Catalyst's: the same elements, text, classes and ARIA attributes. A
+					library can't win by doing less.
+				</li>
+				<li>
+					<strong class="text-fg">Idiomatic pages.</strong> Each library's pages
+					are written the way its documentation recommends, with its own stores or
+					components, bindings, loops and events. Every library gets the same data
+					and the same search filter.
+				</li>
+				<li>
+					<strong class="text-fg">Production builds.</strong> Every page is built
+					for production with Vite and loads only its own library.
+				</li>
+				<li>
+					<strong class="text-fg">What is timed.</strong> Each sample opens a fresh
+					page, warms up by repeating the scenario's steps {settings.warmups} times,
+					collects garbage, then times one step: from the click, call or typing
+					that starts it until the library has finished and the browser has worked
+					out styles and layout. Painting isn't timed, since every library paints
+					the same DOM.
+				</li>
+				<li>
+					<strong class="text-fg">Samples.</strong> Each result is the median of
+					{settings.samples} samples. Libraries take turns in a different order
+					each round, so a change in the machine's speed can't favour one.
+					{settings.throttle > 1 ? ` The CPU was slowed down ${settings.throttle} times.` : ""}
+				</li>
+				<li>
+					<strong class="text-fg">Start-up.</strong> Catalyst store scopes must be
+					unique, so the card definition is registered once for each card's scope.
+					Alpine.js and petite-vue reuse one component for every card.
+				</li>
+			</ul>
+			<p>
+				Numbers depend on the machine and the browser. Compare libraries within
+				one run, not with numbers from another computer.
+			</p>
+		</div>
+	</section>
+
+	<section id="run-it-yourself" data-scenario="Run it yourself" class={sectionClass}>
+		<div class="space-y-4 px-5 py-5 text-[13px] leading-6 text-muted sm:px-6">
+			<h2 class="text-[15px] font-semibold tracking-tight text-fg">Run it yourself</h2>
+			<p>
+				From the root of the repository, install Playwright's Chromium once with
+				<code>npx playwright install --no-shell chromium</code>, then run
+				<code>npm run bench</code>. It builds Catalyst and the pages, checks every
+				library's output, runs the benchmark and writes
+				<code>packages/benchmarks/results/catalyst.json</code>, which this page
+				reads. The pages for every library are in
+				<code>packages/benchmarks/src/catalyst/pages</code>.
+			</p>
+		</div>
+		<table class="w-full text-[13px]">
+			<tbody>
+				{
+					[
+						["Date", formatDate(benchmarks.date)],
+						["Commit", benchmarks.commit ?? "Unknown"],
+						["Browser", environment.browser],
+						["CPU", `${environment.cpu}, ${environment.cores} cores`],
+						["Memory", `${environment.memoryGb} GB`],
+						["Operating system", environment.os],
+						["Node", environment.node],
+					].map(([label, value]) => (
+						<tr class="border-t border-line">
+							<th class="py-2.5 pr-4 pl-5 text-left font-medium whitespace-nowrap text-subtle sm:pl-6">{label}</th>
+							<td class="w-full py-2.5 pr-5 text-muted sm:pr-6">{value}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+</Playground>
