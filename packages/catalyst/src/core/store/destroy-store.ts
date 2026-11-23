@@ -1,5 +1,6 @@
 import Catalyst from "../../runtime/catalyst.js";
 import { debug } from "../../runtime/log.js";
+import { releaseScopeDependents } from "../../runtime/pending-registration.js";
 import type { RuntimeStore } from "../../runtime/types.js";
 import runStoreCleanup from "./run-store-cleanup.js";
 
@@ -31,6 +32,7 @@ const destroyStore = (store: RuntimeStore) => {
 	if (Catalyst.storesByElement.get(store.element) === store) {
 		Catalyst.storesByElement.delete(store.element);
 	}
+	attempt(() => releaseScopeDependents(store));
 	debug(`Store destroyed for scope "${store.key}".`);
 };
 

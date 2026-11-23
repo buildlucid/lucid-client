@@ -31,12 +31,40 @@ const reportUnregisteredReaction = (attributeName: string) => {
 	}
 };
 
+/**
+ * Whether an element belongs to a `data-store` element that was skipped
+ * because another element already uses its scope. Results are cached per
+ * sync, since siblings share their ancestors.
+ */
+const createDuplicateCheck = () => {
+	const storeAttribute = `${Catalyst.options.attributes.prefix}${Catalyst.options.attributes.store}`;
+	const cache = new Map<Element, boolean>();
+	const isInDuplicate = (element: Element): boolean => {
+		const cached = cache.get(element);
+		if (cached !== undefined) return cached;
+		let result = false;
+		const key = element.getAttribute(storeAttribute);
+		if (key !== null) {
+			const store = key ? Catalyst.stores.get(key) : undefined;
+			result = store !== undefined && store.element !== element;
+		} else if (element.parentElement) {
+			result = isInDuplicate(element.parentElement);
+		}
+		cache.set(element, result);
+		return result;
+	};
+	return isInDuplicate;
+};
+
 const collectDirectives = (target: Element, options?: SyncOptions) => {
 	const directives: Directive[] = [];
 	const separator = Catalyst.options.attributes.specifierSeparator;
 	const prefix = Catalyst.options.attributes.prefix;
+	const isInDuplicate = createDuplicateCheck();
 
 	for (const element of collectElements(target, options)) {
+		// Directives inside a skipped duplicate store are left unbound.
+		if (isInDuplicate(element)) continue;
 		for (const attribute of element.attributes) {
 			let matched = false;
 			for (const reaction of Catalyst.reactions.values()) {

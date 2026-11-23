@@ -115,6 +115,107 @@ describe("runtime robustness", () => {
 		);
 	});
 
+	it("leaves a duplicate store's directives unbound", async () => {
+		document.body.innerHTML = `
+			<div data-store="dup" data-state--value="first">
+				<span id="first" data-dom--text="$value"></span>
+			</div>
+			<div data-store="dup" data-state--value="second">
+				<span id="second" data-dom--text="$value">server text</span>
+				<button data-events--click="@report"></button>
+			</div>
+		`;
+		let reports = 0;
+		const dup = defineStore({
+			actions: () => ({
+				report: () => {
+					reports += 1;
+				},
+			}),
+		});
+		Catalyst.start({ stores: { dup }, reactions: [dom, events] });
+
+		expect(document.querySelector("#first")?.textContent).toBe("first");
+		expect(document.querySelector("#second")?.textContent).toBe("server text");
+		document.querySelector<HTMLButtonElement>("button")?.click();
+		await settle();
+		expect(reports).toBe(0);
+		expect(catalystWarnings()).toEqual([
+			expect.stringContaining('"dup" is already used by another element'),
+		]);
+	});
+
+	it("leaves directives for a missing store untouched until it exists", async () => {
+		document.body.innerHTML = `
+			<span data-dom--text="late:$label">waiting</span>
+			<button data-events--click="late:@ping"></button>
+			<div id="host"></div>
+		`;
+		let pings = 0;
+		const late = defineStore({
+			state: { label: "" },
+			actions: () => ({
+				ping: () => {
+					pings += 1;
+				},
+			}),
+		});
+		Catalyst.start({ stores: { late }, reactions: [dom, events] });
+		const span = document.querySelector("span");
+		const button = document.querySelector("button");
+		const host = document.querySelector("#host");
+		if (!span || !button || !host) throw new Error("Missing markup");
+
+		expect(span.textContent).toBe("waiting");
+		button.click();
+		expect(pings).toBe(0);
+		expect(catalystWarnings()).toEqual([]);
+
+		host.innerHTML = `<div data-store="late" data-state--label="ready"></div>`;
+		Catalyst.sync(host);
+		expect(span.textContent).toBe("ready");
+		button.click();
+		expect(pings).toBe(1);
+
+		// Removing the store leaves the directives waiting for a new one.
+		host.innerHTML = "";
+		await settle();
+		button.click();
+		expect(pings).toBe(1);
+		expect(span.textContent).toBe("ready");
+		expect(catalystWarnings()).toEqual([]);
+
+		host.innerHTML = `<div data-store="late" data-state--label="again"></div>`;
+		Catalyst.sync(host);
+		expect(span.textContent).toBe("again");
+		button.click();
+		expect(pings).toBe(2);
+	});
+
+	it("replaces a store's markup and syncs it in the same task", async () => {
+		document.body.innerHTML = `<div id="slot"></div>`;
+		const cleanups: string[] = [];
+		const injected = defineStore({
+			state: { label: "" },
+			init: ({ state }) => () => cleanups.push(state.label),
+		});
+		Catalyst.start({ stores: { injected }, reactions: [dom] });
+		const slot = document.querySelector("#slot");
+		if (!slot) throw new Error("Missing slot");
+
+		slot.innerHTML = `<div data-store="injected" data-state--label="one"><span data-dom--text="$label"></span></div>`;
+		Catalyst.sync(slot);
+		slot.innerHTML = `<div data-store="injected" data-state--label="two"><span data-dom--text="$label"></span></div>`;
+		Catalyst.sync(slot);
+
+		expect(slot.querySelector("span")?.textContent).toBe("two");
+		expect(getStore("injected")?.element).toBe(slot.firstElementChild);
+		expect(cleanups).toEqual(["one"]);
+		await settle();
+		expect(getStore("injected")?.element).toBe(slot.firstElementChild);
+		expect(catalystWarnings()).toEqual([]);
+	});
+
 	it("replaces a store when its data-store value changes", () => {
 		document.body.innerHTML = `
 			<div data-store="before" data-state--label="value">

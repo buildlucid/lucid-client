@@ -6,6 +6,7 @@ import disposeRegistration, {
 } from "./dispose-registration.js";
 import disposeSubtree from "./dispose-subtree.js";
 import { debug, warn } from "./log.js";
+import { registerPending } from "./pending-registration.js";
 import { createOwnedRoot } from "./reactive.js";
 import resolveReference from "./resolve-reference.js";
 import { syncTarget } from "./sync.js";
@@ -20,12 +21,15 @@ const context: ReactionContext = {
 	debug,
 };
 
-const getScopeStore = (directive: Directive): RuntimeStore | undefined => {
+const getScope = (directive: Directive) => {
 	const reference = directive.reference;
-	if (!reference || reference.type === "loop" || !reference.scope) {
-		return undefined;
-	}
-	return Catalyst.stores.get(reference.scope);
+	if (!reference || reference.type === "loop") return null;
+	return reference.scope;
+};
+
+const getScopeStore = (directive: Directive): RuntimeStore | undefined => {
+	const scope = getScope(directive);
+	return scope ? Catalyst.stores.get(scope) : undefined;
 };
 
 const referencesMatch = (
@@ -74,6 +78,13 @@ const initialiseDirective = (directive: Directive) => {
 		?.get(directive.attributeName);
 	if (existing && registrationMatches(existing, directive, scopeStore)) return;
 	if (existing) disposeRegistration(existing);
+
+	// A directive referencing a store that doesn't exist yet waits for it,
+	// leaving its element untouched until a sync creates the store.
+	if (getScope(directive) && !scopeStore) {
+		registerPending(directive);
+		return;
+	}
 
 	let elementRegistrations = Catalyst.registrations.get(directive.element);
 	if (!elementRegistrations) {

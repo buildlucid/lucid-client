@@ -3,6 +3,7 @@ import { destroyStore, initialiseStore } from "../core/store/index.js";
 import type { SyncOptions } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import collectElements from "./collect-elements.js";
+import disposeSubtree from "./dispose-subtree.js";
 import { warn } from "./log.js";
 import type { RuntimeStore } from "./types.js";
 
@@ -22,9 +23,16 @@ const collectStores = (target: Element, options?: SyncOptions) => {
 		}
 
 		const existingStore = Catalyst.stores.get(key);
-		if (existingStore) {
+		// A store whose element was removed in this same task is disposed now,
+		// rather than when the removal observer runs, so its replacement can
+		// take the scope.
+		if (existingStore && !existingStore.element.isConnected) {
+			disposeSubtree(existingStore.element);
+		} else if (existingStore) {
 			if (existingStore.element !== element) {
-				warn(`The store scope "${key}" is already used by another element.`);
+				warn(
+					`The store scope "${key}" is already used by another element, so this element and its directives are skipped.`,
+				);
 				continue;
 			}
 			syncStateAttributes(existingStore);
