@@ -1,13 +1,24 @@
-import { stringifyState } from "../../helpers.js";
 import type { Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
+import {
+	isCheckable,
+	isField,
+	observeOptions,
+	readFieldValue,
+	setFieldValue,
+	toText,
+} from "../utils/fields.js";
 import { readSerialised } from "../utils/read-value.js";
 
-const SPECIFIERS = ["text", "html", "value", "focus", "blur", "scrollto"];
-
-/** Nullish values render as empty content rather than "null"/"undefined". */
-const toText = (value: unknown) =>
-	value === null || value === undefined ? "" : stringifyState(value);
+const SPECIFIERS = [
+	"text",
+	"html",
+	"value",
+	"checked",
+	"focus",
+	"blur",
+	"scrollto",
+];
 
 const isFocusable = (element: Element): element is HTMLElement | SVGElement =>
 	"focus" in element && typeof element.focus === "function";
@@ -18,13 +29,12 @@ const updateDom = (element: Element, specifier: string, value: unknown) => {
 			element.innerHTML = toText(value);
 			return;
 		case "value":
-			if (
-				element instanceof HTMLInputElement ||
-				element instanceof HTMLTextAreaElement ||
-				element instanceof HTMLSelectElement
-			) {
-				element.value = toText(value);
-			}
+			if (isField(element)) setFieldValue(element, value);
+			return;
+		case "checked":
+			// The property, not the attribute: the attribute is only the default,
+			// and stops applying once the field has been clicked.
+			if (isCheckable(element)) element.checked = Boolean(value);
 			return;
 		case "focus":
 			if (value === true && isFocusable(element)) {
@@ -64,15 +74,28 @@ const domReaction: Reaction = {
 			return;
 		}
 
+		// A select's value is applied again when its options change, so a value
+		// whose option is rendered later, such as by a loop, is still selected.
+		const select =
+			specifier === "value" && directive.element instanceof HTMLSelectElement
+				? directive.element
+				: null;
+		let current: { value: unknown } | null = null;
+
 		createResolvedEffect(
 			directive,
 			context,
 			(value) => {
+				current = { value };
 				updateDom(directive.element, specifier, value);
 			},
-			{ read: readSerialised },
+			{ read: specifier === "value" ? readFieldValue : readSerialised },
 		);
-		return undefined;
+
+		if (!select) return undefined;
+		return observeOptions(select, () => {
+			if (current) setFieldValue(select, current.value);
+		});
 	},
 };
 
