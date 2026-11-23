@@ -1,11 +1,13 @@
 import Catalyst from "../../runtime/catalyst.js";
+import { NO_ROOT } from "../../runtime/reactive.js";
 import type { Reaction } from "../../types/index.js";
 
 /**
  * Registers `data-ref="#name"` and `data-ref="#name[]"` elements on their
  * store. Refs are part of the core, so this reaction is always registered.
  */
-const refsReaction: Reaction = {
+const refsReaction: Reaction & { [NO_ROOT]: true } = {
+	[NO_ROOT]: true,
 	name: "refs",
 	attribute: "ref",
 	phase: "beforeStoreInit",

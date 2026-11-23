@@ -24,9 +24,12 @@ export const indexRegistration = (registration: DirectiveRegistration) => {
 		Catalyst.scopeDependents.set(scope, dependents);
 	}
 	dependents.add(registration);
+	registration.indexed = true;
 };
 
 const unindexRegistration = (registration: DirectiveRegistration) => {
+	if (!registration.indexed) return;
+	registration.indexed = false;
 	const scope = getRegistrationScope(registration);
 	if (!scope) return;
 	const dependents = Catalyst.scopeDependents.get(scope);

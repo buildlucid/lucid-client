@@ -1,5 +1,10 @@
 import { parseReference } from "../helpers.js";
-import type { Directive, LoopContext, Reaction } from "../types/index.js";
+import type {
+	Directive,
+	LoopContext,
+	MemberReference,
+	Reaction,
+} from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import { warn } from "./log.js";
 import { getElementLoopContext } from "./loop-context.js";
@@ -123,6 +128,24 @@ const findReaction = (
 	return null;
 };
 
+/** Parsed attribute values by scope separator and value. */
+const parsed = new Map<string, MemberReference | null>();
+
+/**
+ * Parses an attribute value, reusing an earlier parse of the same value, since
+ * loop items repeat the same few. Each directive gets its own copy.
+ */
+const parseValue = (value: string, scopeSeparator: string) => {
+	const key = `${scopeSeparator} ${value}`;
+	let reference = parsed.get(key);
+	if (reference === undefined) {
+		if (parsed.size >= 1000) parsed.clear();
+		reference = parseReference(value, scopeSeparator);
+		parsed.set(key, reference);
+	}
+	return reference && { ...reference, path: [...reference.path] };
+};
+
 /** Reads the directives of `elements`, which a sync collects in document order. */
 const collectDirectives = (elements: Element[]) => {
 	const directives: Directive[] = [];
@@ -147,7 +170,7 @@ const collectDirectives = (elements: Element[]) => {
 			if (context.inDuplicate) break;
 
 			const value = element.getAttribute(name) ?? "";
-			const reference = parseReference(value, scopeSeparator);
+			const reference = parseValue(value, scopeSeparator);
 			directives.push({
 				element,
 				reaction: match.reaction.name,

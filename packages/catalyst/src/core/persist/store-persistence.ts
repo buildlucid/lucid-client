@@ -91,6 +91,7 @@ const registerEntry = (store: RuntimeStore, entry: PersistEntry) => {
 					if (json !== UNSAVEABLE) entry.saved = json;
 					writeStored(store.key, entry, snapshot(store.raw[entry.key]));
 				}),
+			{ sync: true },
 		);
 		return disposeRoot;
 	});

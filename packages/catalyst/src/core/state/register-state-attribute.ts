@@ -35,6 +35,7 @@ const registerStateAttribute = (store: RuntimeStore, key: string) => {
 					store.internalStateWrites.set(attributeName, value.text);
 					store.element.setAttribute(attributeName, value.text);
 				}),
+			{ sync: true },
 		);
 	});
 };

@@ -76,6 +76,25 @@ describe("defineStore", () => {
 		expect(computations).toBe(2);
 	});
 
+	it("resolves a computed value that returns a promise", async () => {
+		document.body.innerHTML = `
+			<div data-store="greeting"><span data-dom--text="$label"></span></div>
+		`;
+		const greeting = defineStore({
+			state: { name: "Ada" },
+			computed: ({ state }) => ({
+				label: () => Promise.resolve(`Hello ${state.name}`),
+			}),
+		});
+		Catalyst.start({ stores: { greeting }, reactions: [dom] });
+		await settle();
+		expect(document.querySelector("span")?.textContent).toBe("Hello Ada");
+
+		setStoreState("greeting", "name", "Grace");
+		await settle();
+		expect(document.querySelector("span")?.textContent).toBe("Hello Grace");
+	});
+
 	it("exposes computed values on state to actions and init", () => {
 		document.body.innerHTML = `<div data-store="derived"></div>`;
 		let seen: string | undefined;

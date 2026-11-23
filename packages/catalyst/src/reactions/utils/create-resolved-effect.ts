@@ -82,12 +82,13 @@ const createResolvedEffect = (
 		},
 	};
 
+	// Computes return a box, never a promise, so Solid can skip checking for one.
 	if (!options?.immediate) {
-		createEffect(compute, effect);
+		createEffect(compute, effect, { sync: true });
 		return;
 	}
 
-	const resolved = createMemo(compute, { equals: false });
+	const resolved = createMemo(compute, { equals: false, sync: true });
 	let initialCleanup: (() => void) | undefined;
 	try {
 		initialCleanup = apply(untrack(resolved), onValue);
@@ -105,7 +106,7 @@ const createResolvedEffect = (
 			},
 			error: effect.error,
 		},
-		{ defer: true },
+		{ defer: true, sync: true },
 	);
 };
 

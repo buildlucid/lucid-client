@@ -78,6 +78,8 @@ export type DirectiveRegistration = {
 	directive: Directive;
 	/** The store the directive's scope resolved to when it was initialised. */
 	scopeStore: RuntimeStore | undefined;
+	/** Whether it is in `scopeDependents`. */
+	indexed?: boolean;
 	dispose: () => void;
 };
 

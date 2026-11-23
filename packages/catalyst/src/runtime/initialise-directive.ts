@@ -1,5 +1,5 @@
 import { onCleanup } from "solid-js";
-import type { Directive, ReactionContext } from "../types/index.js";
+import type { Directive, Reaction, ReactionContext } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import disposeRegistration, {
 	indexRegistration,
@@ -7,7 +7,7 @@ import disposeRegistration, {
 import disposeSubtree from "./dispose-subtree.js";
 import { debug, warn } from "./log.js";
 import { registerPending } from "./pending-registration.js";
-import { createOwnedRoot } from "./reactive.js";
+import { createOwnedRoot, NO_ROOT } from "./reactive.js";
 import resolveReference from "./resolve-reference.js";
 import { syncTarget } from "./sync.js";
 import type { DirectiveRegistration, RuntimeStore } from "./types.js";
@@ -71,6 +71,28 @@ const registrationMatches = (
 	registration.directive.value === directive.value &&
 	referencesMatch(registration.directive.reference, directive.reference);
 
+/** Runs a reaction's setup. Returns its cleanup, which never throws. */
+const setUp = (reaction: Reaction, directive: Directive) => {
+	let cleanup: (() => void) | undefined;
+	try {
+		cleanup = reaction.setup(directive, context);
+	} catch (error) {
+		console.error(error);
+	}
+	if (!cleanup) return undefined;
+	const run = cleanup;
+	return () => {
+		try {
+			run();
+		} catch (error) {
+			console.error(error);
+		}
+	};
+};
+
+const setUpWithoutRoot = (reaction: Reaction, directive: Directive) =>
+	setUp(reaction, directive) ?? (() => {});
+
 const initialiseDirective = (directive: Directive) => {
 	const reaction = Catalyst.reactions.get(directive.reaction);
 	if (!reaction) return;
@@ -103,23 +125,14 @@ const initialiseDirective = (directive: Directive) => {
 	elementRegistrations.set(directive.attributeName, registration);
 	indexRegistration(registration);
 
-	registration.dispose = createOwnedRoot((disposeRoot) => {
-		try {
-			const cleanup = reaction.setup(directive, context);
-			if (cleanup) {
-				onCleanup(() => {
-					try {
-						cleanup();
-					} catch (error) {
-						console.error(error);
-					}
+	registration.dispose =
+		NO_ROOT in reaction
+			? setUpWithoutRoot(reaction, directive)
+			: createOwnedRoot((disposeRoot) => {
+					const cleanup = setUp(reaction, directive);
+					if (cleanup) onCleanup(cleanup);
+					return disposeRoot;
 				});
-			}
-		} catch (error) {
-			console.error(error);
-		}
-		return disposeRoot;
-	});
 };
 
 export default initialiseDirective;

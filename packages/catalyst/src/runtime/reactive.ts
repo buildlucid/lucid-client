@@ -93,3 +93,11 @@ export const flushUpdates = () => {
 		console.error(error);
 	}
 };
+
+/**
+ * Marks a first-party reaction whose setup creates no reactive computations,
+ * such as events. Its directives skip the Solid root every other directive is
+ * set up in, which saves creating and disposing one per directive. Custom
+ * reactions always get a root.
+ */
+export const NO_ROOT = Symbol("catalyst.noRoot");

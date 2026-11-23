@@ -1,3 +1,4 @@
+import { NO_ROOT } from "../../runtime/reactive.js";
 import type { Reaction, MemberReference } from "../../types/index.js";
 
 type EventRegistration = {
@@ -52,7 +53,8 @@ const callAction = (
 	}
 };
 
-const eventsReaction: Reaction = {
+const eventsReaction: Reaction & { [NO_ROOT]: true } = {
+	[NO_ROOT]: true,
 	name: "events",
 	attribute: "events",
 	setup: (directive, context) => {
