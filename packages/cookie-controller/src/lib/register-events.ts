@@ -5,8 +5,8 @@ import lib from "./index.js";
 const { value } = C.attributes.action;
 
 /**
- * Runs the action for a clicked `data-cookie-action` element.
- * - `accept` and `reject` only update one category when the element also has a `data-cookie-category` attribute
+ * Runs the action for a clicked `data-cookie--action` element.
+ * - `accept` and `reject` only update one category when the element also has a `data-cookie--category` attribute
  * - `dismiss` closes the alert when it is inside the alert, otherwise it closes the details element
  */
 const onActionClick = (event: Event) => {

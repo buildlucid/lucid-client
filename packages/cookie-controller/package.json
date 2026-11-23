@@ -15,12 +15,27 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
 			"require": "./dist/index.cjs"
+		},
+		"./catalyst": {
+			"types": "./dist/catalyst.d.ts",
+			"import": "./dist/catalyst.js",
+			"require": "./dist/catalyst.cjs"
 		}
 	},
 	"scripts": {
 		"dev": "vp pack --watch"
 	},
+	"peerDependencies": {
+		"@lucidclient/catalyst": "^0.6.0"
+	},
+	"peerDependenciesMeta": {
+		"@lucidclient/catalyst": {
+			"optional": true
+		}
+	},
 	"devDependencies": {
+		"@lucidclient/catalyst": "*",
+		"happy-dom": "^20.11.1",
 		"vite-plus": "1.7.0",
 		"typescript": "^7.0.2"
 	},

@@ -6,14 +6,21 @@ export default {
 		details: "cookie-details",
 		alert: "cookie-alert",
 	},
+	/**
+	 * Every attribute follows the suite's `data-{namespace}--{specifier}` grammar, with `cookie` as the namespace
+	 */
 	attributes: {
-		details: "data-cookie-details",
-		alert: "data-cookie-alert",
-		cookieCategory: "data-cookie-category",
-		activated: "data-cookie-activated",
-		scriptType: "data-type",
+		details: "data-cookie--details",
+		alert: "data-cookie--alert",
+		cookieCategory: "data-cookie--category",
+		activated: "data-cookie--activated",
+		scriptType: "data-cookie--type",
+		sources: [
+			["data-cookie--src", "src"],
+			["data-cookie--srcset", "srcset"],
+		],
 		action: {
-			attribute: "data-cookie-action",
+			attribute: "data-cookie--action",
 			value: {
 				dismiss: "dismiss",
 				accept: "accept",
@@ -23,4 +30,4 @@ export default {
 			},
 		},
 	},
-};
+} as const;

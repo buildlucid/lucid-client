@@ -1,11 +1,6 @@
 import C from "../constants.js";
 import lib from "./index.js";
 
-const SOURCE_ATTRIBUTES = [
-	["data-src", "src"],
-	["data-srcset", "srcset"],
-] as const;
-
 /**
  * Consent gated elements: anything with a category that is not a category checkbox or an action element, and has not been activated yet
  */
@@ -21,9 +16,9 @@ const isConsented = (element: Element) => {
 	);
 };
 
-/** Moves data-src/data-srcset onto src/srcset. */
+/** Moves data-cookie--src/data-cookie--srcset onto src/srcset. */
 const swapSources = (element: Element) => {
-	for (const [from, to] of SOURCE_ATTRIBUTES) {
+	for (const [from, to] of C.attributes.sources) {
 		const value = element.getAttribute(from);
 		if (value === null) continue;
 		element.setAttribute(to, value);
@@ -51,7 +46,7 @@ const activateMedia = (element: Element) => {
 
 /**
  * Builds a runnable copy of a script, as changing the type of an existing script does not run it
- * - The type comes from data-type, or defaults to classic JavaScript
+ * - The type comes from data-cookie--type, or defaults to classic JavaScript
  * - The nonce is copied from the property, as browsers hide the attribute value
  */
 const createScript = (script: HTMLScriptElement) => {
@@ -96,7 +91,7 @@ const activateScripts = async (scripts: HTMLScriptElement[]) => {
 
 /**
  * Activates the consent gated scripts and media whose categories are consented
- * - Each element is activated once, and is marked with data-cookie-activated
+ * - Each element is activated once, and is marked with data-cookie--activated
  * - Withdrawing consent does not undo anything that has already loaded
  */
 const activateElements = () => {

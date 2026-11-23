@@ -2,7 +2,7 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
 	pack: {
-		entry: ["src/index.ts"],
+		entry: ["src/index.ts", "src/catalyst.ts"],
 		platform: "browser",
 		target: "es2022",
 		format: ["esm", "cjs"],
@@ -14,6 +14,16 @@ export default defineConfig({
 		deps: {
 			neverBundle: true,
 		},
+	},
+	resolve: {
+		conditions: ["browser"],
+	},
+	test: {
+		environment: "happy-dom",
+		// The preference cookie needs a page URL to be stored against.
+		environmentOptions: { happyDOM: { url: "https://example.com/" } },
+		include: ["tests/**/*.test.ts"],
+		setupFiles: ["./tests/setup.ts"],
 	},
 	run: {
 		tasks: {

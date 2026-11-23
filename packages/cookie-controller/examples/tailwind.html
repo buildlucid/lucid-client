@@ -1,7 +1,7 @@
 <!-- Alert -->
 <div
-	data-cookie-alert
-	class="bg-black rounded-md p-5 text-white fixed bottom-2.5 left-2.5 right-2.5 translate-y-[calc(100%+10px)] pointer-events-none data-[cookie-alert=true]:pointer-events-auto data-[cookie-alert=true]:translate-y-0 data-[cookie-alert=true]:flex data-[cookie-alert=false]:hidden z-50 md:items-end justify-between gap-5 transition-transform duration-200 flex-col md:flex-row"
+	data-cookie--alert
+	class="bg-black rounded-md p-5 text-white fixed bottom-2.5 left-2.5 right-2.5 translate-y-[calc(100%+10px)] pointer-events-none data-[cookie--alert=true]:pointer-events-auto data-[cookie--alert=true]:translate-y-0 data-[cookie--alert=true]:flex data-[cookie--alert=false]:hidden z-50 md:items-end justify-between gap-5 transition-transform duration-200 flex-col md:flex-row"
 	aria-labelledby="cookie-details-title-1"
 >
 	<div class="max-w-4xl">
@@ -23,39 +23,42 @@
 	</div>
 	<div class="gap-4 flex min-w-max md:flex-row flex-col">
 		<button
-			data-cookie-action="details"
+			data-cookie--action="details"
 			class="p-2 border-white border rounded-md hover:bg-indigo-500 transition-colors duration-200 hover:border-indigo-500 px-5 w-full md:w-auto"
 		>
 			Settings
 		</button>
 		<button
-			data-cookie-action="accept"
+			data-cookie--action="accept"
 			class="p-2 border-white border rounded-md hover:bg-indigo-500 transition-colors duration-200 hover:border-indigo-500 px-5 w-full md:w-auto"
 		>
 			Accept
 		</button>
 		<button
-			data-cookie-action="reject"
+			data-cookie--action="reject"
 			class="p-2 border-white border rounded-md hover:bg-indigo-500 transition-colors duration-200 hover:border-indigo-500 px-5 w-full md:w-auto"
 		>
 			Reject
 		</button>
 	</div>
-	<button data-cookie-action="dismiss" class="underline absolute top-5 right-5">
+	<button
+		data-cookie--action="dismiss"
+		class="underline absolute top-5 right-5"
+	>
 		close
 	</button>
 </div>
 
 <!-- Settings -->
 <div
-	data-cookie-details
-	class="fixed top-0 left-0 bottom-0 bg-black w-full md:w-[500px] -translate-x-full data-[cookie-details=true]:translate-x-0 data-[cookie-details=false]:-translate-x-full overflow-y-auto p-7 text-white h-screen flex flex-col justify-between transition-transform duration-200 z-50"
+	data-cookie--details
+	class="fixed top-0 left-0 bottom-0 bg-black w-full md:w-[500px] -translate-x-full data-[cookie--details=true]:translate-x-0 data-[cookie--details=false]:-translate-x-full overflow-y-auto p-7 text-white h-screen flex flex-col justify-between transition-transform duration-200 z-50"
 	aria-labelledby="cookie-details-title-2"
 >
 	<div>
 		<div class="mb-5 pb-5 border-b border-neutral-800">
 			<button
-				data-cookie-action="dismiss"
+				data-cookie--action="dismiss"
 				class="absolute top-5 right-5 hover:fill-red-500 fill-white transition-colors duration-200"
 			>
 				<svg
@@ -91,13 +94,13 @@
 			</p>
 			<div class="flex gap-2.5 mt-4">
 				<button
-					data-cookie-action="accept"
+					data-cookie--action="accept"
 					class="p-2 border-white border rounded-md w-1/2 hover:bg-indigo-500 transition-colors duration-200 hover:border-indigo-500"
 				>
 					Accept all
 				</button>
 				<button
-					data-cookie-action="reject"
+					data-cookie--action="reject"
 					class="p-2 border-white border rounded-md w-1/2 hover:bg-indigo-500 transition-colors duration-200 hover:border-indigo-500"
 				>
 					Reject all
@@ -153,7 +156,7 @@
 				<input
 					id="analytics"
 					type="checkbox"
-					data-cookie-category="analytics"
+					data-cookie--category="analytics"
 				/>
 			</li>
 			<li
@@ -163,13 +166,13 @@
 				<input
 					id="marketing"
 					type="checkbox"
-					data-cookie-category="marketing"
+					data-cookie--category="marketing"
 				/>
 			</li>
 		</ul>
 	</div>
 	<button
-		data-cookie-action="save"
+		data-cookie--action="save"
 		class="p-2 border-white border rounded-md w-full hover:bg-indigo-500 transition-colors duration-200 hover:border-indigo-500"
 	>
 		Save preferences
@@ -178,7 +181,7 @@
 
 <!-- Toggle Btn -->
 <button
-	data-cookie-action="details"
+	data-cookie--action="details"
 	class="flex items-center justify-center fixed bottom-5 right-5 h-14 w-14 rounded-full bg-black"
 >
 	<svg

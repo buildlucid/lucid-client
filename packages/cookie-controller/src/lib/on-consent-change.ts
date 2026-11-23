@@ -6,10 +6,11 @@ import lib from "./index.js";
 /**
  * Applies a consent change
  * - Activates the consent gated scripts and media that are now consented
- * - Fires the onConsentChange callback
+ * - Tells the internal listeners, then fires the onConsentChange callback
  */
 const onConsentChange = (type: ConsentChange["type"]) => {
 	lib.activateElements();
+	for (const listener of S.listeners) listener();
 	if (S.options.onConsentChange) {
 		const categories = Object.entries(S.state.categories).map(
 			([category, consented]) => ({
@@ -22,9 +23,7 @@ const onConsentChange = (type: ConsentChange["type"]) => {
 		categories.push({
 			category: "essential",
 			consented: true,
-			cookies: [
-				...new Set([C.key, ...(S.options.cookies.essential ?? [])]),
-			],
+			cookies: [...new Set([C.key, ...(S.options.cookies.essential ?? [])])],
 		});
 
 		S.options.onConsentChange({

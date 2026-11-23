@@ -8,7 +8,7 @@ A lightweight, bring your own markup and styles, cookie consent solution. Perfec
 
 - No Markup/Styles: This library supplies no styles or markup allowing you to fully customise the look and feel of the cookie controller to match your website's design.
 - Tiny Footprint: The library is only **~3.6KB** minified and gzipped.
-- Attribute Driven: Hook up your markup using data attributes entirely.
+- Attribute Driven: Hook up your markup using `data-cookie--*` attributes entirely.
 - Consent Callbacks: Read the current preferences on load and after each saved decision.
 - Category Consent: Grant or withdraw individual categories from anywhere on the page, such as an "Allow marketing cookies" button on an embed placeholder.
 - Scripts and Media: Hold back scripts, iframes, images, video and audio until their category is consented.
@@ -19,6 +19,7 @@ A lightweight, bring your own markup and styles, cookie consent solution. Perfec
 - Accessibility: The library is fully accessible and as its attribute driven, you can easily customise the HTML to further meet your accessibility requirements.
 - Refresh: Pick up markup added or replaced after initialisation, such as after a client side navigation.
 - Destroy: Destroy the cookie controller instance and remove all event listeners. Useful for using within SPA's.
+- Catalyst: Bind any markup to the visitor's consent with an optional Catalyst store, imported on its own so it adds nothing for sites that don't use it.
 
 ## Examples
 
@@ -143,19 +144,19 @@ type Options = {
 | `openDetails()` | Opens the details element with its checkboxes set to the saved choices. |
 | `closeDetails()` | Closes the details element without saving, discarding unsaved checkbox edits. |
 
-Each method has a matching `data-cookie-action` value: `accept`, `reject`, `save`, `details` (which toggles the details element) and `dismiss`.
+Each method has a matching `data-cookie--action` value: `accept`, `reject`, `save`, `details` (which toggles the details element) and `dismiss`.
 
 `getConsent` also works before `init`, as it reads the saved choices straight from the cookie. Before `init` it cannot check the policy version for you, so pass it to ignore choices saved for another version: `getConsent({ policyVersion: "1.0.2" })`.
 
 ### HTML Markup
 
-On each page, include one `data-cookie-details` element and, optionally, one `data-cookie-alert` element. Leave the alert out to show your own banner from `onConsentChange` instead. With the `data-cookie-action` attributes, you can add as many as you like.
+On each page, include one `data-cookie--details` element and, optionally, one `data-cookie--alert` element. Leave the alert out to show your own banner from `onConsentChange` instead. With the `data-cookie--action` attributes, you can add as many as you like.
 
 ```html
-<dialog data-cookie-details aria-label="Cookie settings" hidden>
-  <button data-cookie-action="dismiss">Close</button>
-  <button data-cookie-action="accept">Accept Recommended</button>
-  <button data-cookie-action="reject">Reject</button>
+<dialog data-cookie--details aria-label="Cookie settings" hidden>
+  <button data-cookie--action="dismiss">Close</button>
+  <button data-cookie--action="accept">Accept Recommended</button>
+  <button data-cookie--action="reject">Reject</button>
   <a href="https://www.example.com/privacy-policy" target="_blank">
     Cookie Policy
   </a>
@@ -165,27 +166,27 @@ On each page, include one `data-cookie-details` element and, optionally, one `da
       <p>...</p>
     </li>
     <li>
-      <input id="analytics" type="checkbox" data-cookie-category="analytics" />
+      <input id="analytics" type="checkbox" data-cookie--category="analytics" />
       <label for="analytics">Analytics:</label>
       <p>...</p>
     </li>
     <li>
-      <input id="marketing" type="checkbox" data-cookie-category="marketing" />
+      <input id="marketing" type="checkbox" data-cookie--category="marketing" />
       <label for="marketing">Marketing:</label>
       <p>...</p>
     </li>
   </ul>
-  <button data-cookie-action="save">Save My Preferences</button>
+  <button data-cookie--action="save">Save My Preferences</button>
 </dialog>
 
-<div data-cookie-alert hidden>
-  <button data-cookie-action="accept">Accept All</button>
-  <button data-cookie-action="reject">Reject</button>
-  <button data-cookie-action="details">Details</button>
-  <button data-cookie-action="dismiss">Close</button>
+<div data-cookie--alert hidden>
+  <button data-cookie--action="accept">Accept All</button>
+  <button data-cookie--action="reject">Reject</button>
+  <button data-cookie--action="details">Details</button>
+  <button data-cookie--action="dismiss">Close</button>
 </div>
 
-<button data-cookie-action="details">Open Cookie Modal</button>
+<button data-cookie--action="details">Open Cookie Modal</button>
 ```
 
 > For a styled example, see `examples/tailwind.html`.
@@ -194,78 +195,133 @@ Use a native `<dialog>` for the details element to get modal focus management an
 
 A `dismiss` action closes whichever element it is in:
 
-- Inside the `data-cookie-alert` element, it hides the alert for the current page without saving a decision. No consent is given, and the alert shows again on the next page until the visitor chooses.
+- Inside the `data-cookie--alert` element, it hides the alert for the current page without saving a decision. No consent is given, and the alert shows again on the next page until the visitor chooses.
 - Anywhere else, it closes the details element and discards unsaved checkbox edits. Visitors who have yet to decide return to the alert, unless they closed it on this page.
 
 Version 1.0.0 asks visitors who have a 0.1.0 preference cookie to choose again, since that format also saved unsaved checkbox edits.
 
 #### Category Buttons
 
-Add a `data-cookie-category` attribute to an `accept` or `reject` action to update only that category. This works anywhere on the page, for example on an embed placeholder:
+Add a `data-cookie--category` attribute to an `accept` or `reject` action to update only that category. This works anywhere on the page, for example on an embed placeholder:
 
 ```html
 <div class="video-placeholder">
   <p>This video needs marketing cookies.</p>
-  <button data-cookie-action="accept" data-cookie-category="marketing">
+  <button data-cookie--action="accept" data-cookie--category="marketing">
     Allow marketing cookies
   </button>
 </div>
 ```
 
-The category needs a matching checkbox in the `data-cookie-details` element.
+The category needs a matching checkbox in the `data-cookie--details` element.
 
 #### Scripts and Media
 
-Give a script `type="text/plain"` and a `data-cookie-category` attribute to stop it running until that category is consented. Browsers do not run or download scripts with a type they do not recognise.
+Give a script `type="text/plain"` and a `data-cookie--category` attribute to stop it running until that category is consented. Browsers do not run or download scripts with a type they do not recognise.
 
 ```html
 <script
   type="text/plain"
-  data-cookie-category="analytics"
+  data-cookie--category="analytics"
   src="https://www.example.com/analytics.js"
 ></script>
 
-<script type="text/plain" data-cookie-category="analytics">
+<script type="text/plain" data-cookie--category="analytics">
   console.log("Analytics consented");
 </script>
 
-<!-- Add data-type to keep a non classic type, such as a module -->
-<script type="text/plain" data-type="module" data-cookie-category="analytics">
+<!-- Add data-cookie--type to keep a non classic type, such as a module -->
+<script type="text/plain" data-cookie--type="module" data-cookie--category="analytics">
   import "https://www.example.com/analytics.mjs";
 </script>
 ```
 
-For iframes, images, video and audio, use `data-src` and `data-srcset` in place of `src` and `srcset`. The `source` elements inside a `video`, `audio` or `picture` element are swapped too.
+For iframes, images, video and audio, use `data-cookie--src` and `data-cookie--srcset` in place of `src` and `srcset`. The `source` elements inside a `video`, `audio` or `picture` element are swapped too.
 
 ```html
 <iframe
-  data-cookie-category="marketing"
-  data-src="https://www.youtube-nocookie.com/embed/VIDEO_ID"
+  data-cookie--category="marketing"
+  data-cookie--src="https://www.youtube-nocookie.com/embed/VIDEO_ID"
   title="Video"
 ></iframe>
 
-<img data-cookie-category="marketing" data-src="https://www.example.com/pixel.gif" alt="" />
+<img data-cookie--category="marketing" data-cookie--src="https://www.example.com/pixel.gif" alt="" />
 
-<video data-cookie-category="marketing" controls>
-  <source data-src="https://cdn.example.com/video.mp4" type="video/mp4" />
+<video data-cookie--category="marketing" controls>
+  <source data-cookie--src="https://cdn.example.com/video.mp4" type="video/mp4" />
 </video>
 ```
 
 - Elements are activated on load for visitors who have already consented, and whenever consent is given. Each element is only activated once.
-- Activated elements get a `data-cookie-activated` attribute, which you can use to hide placeholders with CSS.
+- Activated elements get a `data-cookie--activated` attribute, which you can use to hide placeholders with CSS.
 - Scripts run in page order, and each external script loads before the next one runs, unless it has the `async` attribute. A CSP `nonce` is kept.
-- Space separate categories to require all of them, for example `data-cookie-category="analytics marketing"`.
+- Space separate categories to require all of them, for example `data-cookie--category="analytics marketing"`.
 - Withdrawing consent does not unload anything that has already run or loaded. Reload the page, or clean up in `onConsentChange`.
 - Tracking pixels inside `<noscript>` only render without JavaScript, so they cannot be held back. Use the script version of the pixel instead.
 - Third party fonts and stylesheets are not covered. Host them yourself instead.
 
 #### Essential Cookies
 
-The `essential` category is always consented, and it always lists the `CookieController` cookie this library uses to store preferences. Add any other essential cookies with `cookies.essential`. If you add a checkbox with `data-cookie-category="essential"`, it is shown checked and disabled.
+The `essential` category is always consented, and it always lists the `CookieController` cookie this library uses to store preferences. Add any other essential cookies with `cookies.essential`. If you add a checkbox with `data-cookie--category="essential"`, it is shown checked and disabled.
 
 #### Dynamic Markup
 
-Action elements work as soon as they are added to the page. If the `data-cookie-details` or `data-cookie-alert` elements, the category checkboxes, or consent gated scripts and media are added or replaced after `init`, such as after a client side navigation, call `refresh()`.
+Action elements work as soon as they are added to the page. If the `data-cookie--details` or `data-cookie--alert` elements, the category checkboxes, or consent gated scripts and media are added or replaced after `init`, such as after a client side navigation, call `refresh()`.
+
+## Catalyst
+
+`@lucidclient/cookie-controller/catalyst` exports `consentStore`, a [Catalyst](https://github.com/ProtoDigitalUK/lucid_client/tree/master/packages/catalyst) store that follows the visitor's consent, so any markup can show, hide or toggle with it. It is a separate import, so sites that don't use Catalyst don't load it. It needs `@lucidclient/catalyst` 0.6 or later.
+
+```typescript
+import Catalyst from "@lucidclient/catalyst";
+import { bind, events, model } from "@lucidclient/catalyst/reactions";
+import cookieController from "@lucidclient/cookie-controller";
+import { consentStore } from "@lucidclient/cookie-controller/catalyst";
+
+cookieController.init();
+
+Catalyst.start({
+  stores: { consent: consentStore },
+  reactions: [bind, events, model],
+});
+```
+
+```html
+<body data-store="consent">
+  <div data-bind--hidden="$granted.marketing">
+    <p>This video needs marketing cookies.</p>
+    <button data-cookie--action="accept" data-cookie--category="marketing">
+      Allow marketing cookies
+    </button>
+  </div>
+  <iframe
+    data-bind--hidden="$denied.marketing"
+    data-cookie--category="marketing"
+    data-cookie--src="https://www.youtube-nocookie.com/embed/VIDEO_ID"
+    title="Video"
+  ></iframe>
+
+  <label>
+    <input type="checkbox" data-model="$granted.analytics" />
+    Allow analytics cookies
+  </label>
+
+  <header data-store="nav">
+    <a href="/cookies" data-bind--hidden="consent:$decided">Choose your cookie settings</a>
+  </header>
+</body>
+```
+
+| Reference | Description |
+| --- | --- |
+| `$granted.{category}` | `true` when the category is consented. `essential` is always `true`. |
+| `$denied.{category}` | The opposite of `$granted`, as Catalyst references have no negation. |
+| `$decided` | `true` once the visitor has made a choice for the current policy version. |
+| `@acceptAll`, `@rejectAll`, `@saveDetails`, `@openDetails`, `@closeDetails` | Call the matching methods. |
+
+- The store follows every consent change, and starting Catalyst before or after `init` both work. Categories come from the checkboxes in the details element, so before `init` a category the visitor hasn't saved reads `undefined`, which leaves both of the `hidden` bindings above showing.
+- `data-model` on `$granted.{category}` saves that category as soon as it is toggled, as `updateConsent` does, and fires `onConsentChange` with the `update` type. Checkboxes in the details element still wait for Save. A change the library refuses, such as turning off `essential`, is put back.
+- Register the store under any scope, or several: each scope gets its own copy of the consent.
 
 ## Google Tag Manager
 
@@ -318,7 +374,7 @@ Here are some tips for achieving compliance:
 
 - Cookie Policy Link: Include a link to your cookie or privacy policy.
 - Define Cookie Controls: Clearly define what each checkbox controls, providing details like the name, duration, and purpose of the cookies.
-- Necessary Cookies: Inform users about necessary cookies. These are for informational purposes only, so do not give them a `data-cookie-category` checkbox they can toggle. The `essential` category is always consented, and a checkbox with `data-cookie-category="essential"` is shown checked and disabled.
+- Necessary Cookies: Inform users about necessary cookies. These are for informational purposes only, so do not give them a `data-cookie--category` checkbox they can toggle. The `essential` category is always consented, and a checkbox with `data-cookie--category="essential"` is shown checked and disabled.
 - Equal Prominence: Ensure 'Accept' and 'Reject' options are equally prominent in your design.
 - Accessibility: Make sure the cookie controller is accessible to all users.
 - Consent Recording: Save the consent data to ensure compliance with the consent recording requirements of GDPR.

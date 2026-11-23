@@ -10,6 +10,8 @@ const S: {
 	/** Set when the alert is closed without a decision. Only lasts for the current page. */
 	alertClosed: boolean;
 	initialised: boolean;
+	/** Internal listeners told about every consent change, such as the Catalyst store. Kept across init and destroy. */
+	listeners: Set<() => void>;
 } = {
 	state: {
 		uuid: "",
@@ -32,6 +34,7 @@ const S: {
 	opener: null,
 	alertClosed: false,
 	initialised: false,
+	listeners: new Set(),
 };
 
 export default S;

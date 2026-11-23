@@ -44,10 +44,7 @@ const initialise = (initOptions?: Partial<Options>) => {
 	S.initialised = true;
 
 	if (previousVersion !== undefined && S.options.policyVersion !== null) {
-		S.options.onPolicyVersionChange?.(
-			previousVersion,
-			S.options.policyVersion,
-		);
+		S.options.onPolicyVersionChange?.(previousVersion, S.options.policyVersion);
 	}
 	lib.onConsentChange("load");
 };
