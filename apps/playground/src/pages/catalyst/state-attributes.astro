@@ -204,15 +204,14 @@ const typedRows = [
 	<Scenario
 		id="late-attributes"
 		title="Attributes added after start"
-		description="A `data-state--*` attribute added to an existing store element is picked up by the next `Catalyst.sync`. `known` is declared in the definition but has no attribute until you add one."
+		description="`known` is declared in the definition but has no attribute until you add one, and an attribute added later for declared state is kept in sync both ways straight away. `late` isn't declared, so its attribute is picked up by the next `Catalyst.sync`."
 		expect={[
 			"On load, the log warns that state `late` can't be found, because nothing declares it yet.",
+			"`Add data-state--known` changes `known` straight away.",
+			"`Change known` then rewrites the attribute without a sync, and the readout and the types list agree.",
 			"`Add data-state--late` adds the attribute, but `$late` stays empty until `Run sync`.",
 			"After `Run sync`, `$late` renders `hello` and the types list includes `late`.",
-			"`Add data-state--known` changes `known` straight away, because the definition declares it.",
-			"After adding `data-state--known` and running sync, `Change known` rewrites the attribute.",
 		]}
-		gap="Between `Add data-state--known` and the next sync, the attribute only syncs one way. The attribute updates `known`, but `Change known` doesn't write back, so the readout and the types list disagree until `Run sync`."
 	>
 		<div id="late-store" data-store="late" class="space-y-4">
 			<pg-controls class="flex flex-wrap gap-2">

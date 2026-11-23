@@ -84,12 +84,12 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="unresolved"
 		title="References that can't be resolved"
-		description="Four references that point at nothing: an unscoped one outside any store, an unknown scope, unknown state on a real store, and an unknown action."
+		description="Four references that point at nothing: an unscoped one outside any store, an unknown scope, unknown state on a real store, and an unknown action. A scope with no store isn't an error: the directive waits for that store, as in the next scenarios."
 		expect={[
 			"On load the log warns that Catalyst can't infer a store for `$name`.",
 			"The log warns that there is no state `nickname` on the `profile` store.",
-			"The log warns that there is no store with the scope `profiel`.",
-			"All four lines stay empty and the rest of the page keeps working.",
+			"`profiel:$name` logs no warning. With Debug ticked, the log shows it waiting for a store with the scope `profiel`.",
+			"All three lines stay empty and the rest of the page keeps working.",
 			"Clicking `Call a missing action` warns that `missing` can't be found on `profile`.",
 		]}
 	>
@@ -104,13 +104,11 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="duplicates"
 		title="Duplicate scopes"
-		description={'Two elements use `data-store="duplicate"`. The second is skipped, and its directives must not read the store of the first.'}
-		gap={'The directives inside the skipped element are still initialised, just without a scope. They replace its server text `not bound` with nothing, and log a `Cannot infer a store` warning for each reference, which never mentions the duplicate.'}
+		description={'Two elements use `data-store="duplicate"`. The second is skipped, and the directives inside it are left unbound, so its markup stays as it was rendered.'}
 		expect={[
 			"The first element shows `first element`, and its `Report` logs that label.",
-			"The second element never shows `first element`, and its `Report` does nothing.",
-			"The log warns that the `duplicate` scope is already used by another element.",
-			"Ideally the second element keeps its server text and logs nothing else; today its text is cleared and two more warnings follow.",
+			"The second element keeps its server text `not bound`, and its `Report` does nothing.",
+			"The log shows one warning: the `duplicate` scope is already used by another element, so that element and its directives are skipped.",
 		]}
 	>
 		<div class="grid gap-3 sm:grid-cols-2">
@@ -128,13 +126,13 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="late-store"
 		title="A store that appears later"
-		description="The line and button below reference `late:` before any `late` element exists. The plain JavaScript buttons insert the store's markup and call `Catalyst.sync`, or remove it."
-		gap={'A directive that references a store that does not exist yet is initialised anyway. It clears its server text, `Waiting for the late store…`, and warns `Cannot find a store with the scope "late"` on load, even though a store appearing later is supported.'}
+		description="The line and button below reference `late:` before any `late` element exists. Directives for a missing store are left as they are until a sync creates it. The plain JavaScript buttons insert the store's markup and call `Catalyst.sync`, or remove it."
 		expect={[
-			"Before the store exists, `Ping` does nothing but warn that there is no `late` store.",
+			"On load the line keeps its server text, `Waiting for the late store…`, and nothing is logged. With Debug ticked, the log shows both directives waiting for the `late` store.",
+			"Before the store exists, `Ping` does nothing and logs nothing.",
 			"`Add the store` logs the store's creation, and the outside line switches to its message.",
 			"`Ping` then increments the late store's pings.",
-			"`Remove the store` logs its destruction, and the outside line keeps the last message it showed.",
+			"`Remove the store` logs its destruction. The outside line keeps the last message it showed, and `Ping` does nothing again.",
 			"Adding it again creates a new store, the outside line binds to it, and its pings start from 0.",
 		]}
 	>

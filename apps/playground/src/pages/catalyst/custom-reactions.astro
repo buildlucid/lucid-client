@@ -162,13 +162,12 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="conflicts"
 		title="Conflicting registrations"
-		description="The reactions list also contains `classListCopy`, which reuses the `class-list` attribute, and a different reaction named `bind` on the `bind-again` attribute."
+		description="The reactions list also contains `classListCopy`, which reuses the `class-list` attribute, and a different reaction named `bind` on the `bind-again` attribute. Neither is registered, and each logs a warning."
 		expect={[
 			"The log shows a warning on load that a reaction already uses the `class-list` attribute.",
-			"`classList` keeps working: the first scenario is styled.",
-			"The second `bind` should log a warning too, rather than being dropped.",
+			"The log shows a warning on load that a reaction named `bind` is already registered.",
+			"`classList` and the first-party `bind` keep working: the first scenario is styled.",
 		]}
-		gap="`Catalyst.start` skips any reaction whose name is already registered before calling `registerReaction`, so a different reaction reusing a name (here a second `bind`) is dropped without a warning. Stores warn in the same situation."
 		markup={false}
 	>
 		<pre class="readout">{`Catalyst.start({

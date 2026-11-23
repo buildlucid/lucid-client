@@ -3,9 +3,8 @@ import AttributeReadout from "../../components/AttributeReadout.astro";
 import Scenario from "../../components/Scenario.astro";
 import Playground from "../../layouts/Playground.astro";
 
-// Overlays are shown by a `data-open` attribute bound to the same state as the
-// trap, placed before `data-trap`. See the "Shown with data-bind--hidden"
-// scenario for why.
+// Most overlays are shown by a `data-open` attribute bound to the same state as
+// the trap. The last scenario shows one with `data-bind--hidden` instead.
 const overlayBase =
 	"fixed inset-0 grid place-items-center p-4 data-[open=false]:hidden";
 const overlay = `${overlayBase} z-50 bg-black/65 backdrop-blur-[2px]`;
@@ -269,10 +268,9 @@ const status = "readout mt-4 block text-[11px]";
 	<Scenario
 		id="hidden-binding"
 		title="A dialog shown with data-bind--hidden"
-		description={'The usual way to show a dialog: `data-bind--hidden="$closed"`, where `closed` is a computed value. Everything else matches the first scenario.'}
-		gap={'The trap moves focus as soon as its value turns true, before other bindings in the same update have run. Here the element still has `hidden` when the trap calls `focus()`, so focus lands on `<body>`. It only works when the binding that shows the element reads the same state and comes before `data-trap` in the markup, as in the scenarios above; swapping their order breaks those too.'}
+		description={'The usual way to show a dialog: `data-bind--hidden="$closed"`, where `closed` is a computed value. The trap moves focus once the rest of the update has run, so it works even with `data-trap` before the binding that shows the dialog, as here.'}
 		expect={[
-			"Opening should move focus to the Name field (today it ends up on `<body>`, as the status line shows).",
+			"Opening moves focus to the Name field, as the status line shows.",
 			"Closing returns focus to `Open dialog`.",
 		]}
 	>
@@ -280,8 +278,8 @@ const status = "readout mt-4 block text-[11px]";
 			<button class="btn btn-primary" data-events--click="@open">Open dialog</button>
 			<div
 				class="fixed inset-0 z-50 grid place-items-center bg-black/65 p-4 backdrop-blur-[2px]"
-				data-bind--hidden="$closed"
 				data-trap="$open"
+				data-bind--hidden="$closed"
 				data-events--click="@closeOnBackdrop"
 				data-events--document.keydown="@closeOnEscape"
 				hidden

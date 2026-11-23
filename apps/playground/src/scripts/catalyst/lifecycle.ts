@@ -1,4 +1,4 @@
-import Catalyst, { defineStore, untrack } from "@lucidclient/catalyst";
+import Catalyst, { defineStore } from "@lucidclient/catalyst";
 import { startCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
@@ -156,6 +156,15 @@ const fragile = defineStore({
 			},
 			(value) => effectsLog.info(`computeThrowsFromThree ran for ${value}`),
 		),
+		// The cleanup for an even value throws when the next value arrives.
+		cleanupThrowsOnEven: effect(
+			() => state.value,
+			(value) => () => {
+				if (value > 0 && value % 2 === 0) {
+					throw new Error(`cleanupThrowsOnEven's cleanup threw for ${value}`);
+				}
+			},
+		),
 		steady: effect(
 			() => state.value,
 			(value) => effectsLog.success(`steady ran for ${value}`),
@@ -183,20 +192,13 @@ const reads = defineStore({
 			}),
 	}),
 	effects: ({ state, effect }) => ({
-		direct: effect(
+		// The callback runs untracked, so reading `label` here is fine and doesn't
+		// re-run the effect when `label` changes.
+		logLabel: effect(
 			() => state.count,
 			(count, { isInitial }) => {
 				if (isInitial) return;
-				readsLog.info(`direct read for count ${count}: ${state.label}`);
-			},
-		),
-		withUntrack: effect(
-			() => state.count,
-			(count, { isInitial }) => {
-				if (isInitial) return;
-				readsLog.info(
-					`untrack read for count ${count}: ${untrack(() => state.label)}`,
-				);
+				readsLog.info(`logLabel read for count ${count}: ${state.label}`);
 			},
 		),
 	}),

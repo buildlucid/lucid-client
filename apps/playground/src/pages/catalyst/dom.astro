@@ -10,8 +10,8 @@ const valueNames = ["string", "number", "zero", "boolean", "null", "undefined", 
 		<p>
 			<code>data-dom--{"{specifier}"}</code> writes to the element itself rather
 			than an attribute. The specifiers are <code>text</code> (the default),
-			<code>html</code>, <code>value</code>, <code>focus</code>,
-			<code>blur</code> and <code>scrollto</code>.
+			<code>html</code>, <code>value</code>, <code>checked</code>,
+			<code>focus</code>, <code>blur</code> and <code>scrollto</code>.
 		</p>
 	</Fragment>
 
@@ -122,22 +122,52 @@ const valueNames = ["string", "number", "zero", "boolean", "null", "undefined", 
 
 	<Scenario
 		id="one-way-value"
-		title="A value without an input action"
-		description="This field has `data-dom--value` but no event action, so typing doesn't change `oneWay`. The buttons write `oneWay` from state."
+		title="One-way and two-way values"
+		description="`data-dom--value` is one-way: the first field shows `oneWay`, but typing doesn't change it, and writing the value it already holds changes nothing. The second field uses `data-model`, so typing updates `twoWay` and a reset is a real change."
 		expect={[
-			"Typing changes the field but not the readout.",
-			"`Set to pear` replaces whatever you typed with `pear`.",
-			"`Reset to apple` after `Set to pear` puts `apple` back.",
+			"Typing in the first field changes the field but not `oneWay`. Typing in the second updates `twoWay` as you type.",
+			"Type in both, then `Reset to apple`: the second field shows `apple` again. The first keeps your text, because `oneWay` was already `apple`.",
+			"`Set to pear` replaces both fields with `pear`, and `Reset to apple` then puts `apple` back in both.",
 		]}
-		gap="Writing the value state already holds doesn't rewrite the field. Type something, then press `Reset to apple` while `oneWay` is still `apple`: your text stays, because the state didn't change. A form reset has to change state twice, or set the field directly."
 	>
 		<div data-store="oneWay" class="space-y-3">
-			<input class="input" data-dom--value="$oneWay" />
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="space-y-1.5">
+					<span class="label">data-dom--value</span>
+					<input class="input" data-dom--value="$oneWay" />
+				</label>
+				<label class="space-y-1.5">
+					<span class="label">data-model</span>
+					<input class="input" data-model="$twoWay" />
+				</label>
+			</div>
 			<div class="flex flex-wrap items-center gap-2">
 				<button class="btn btn-sm" data-events--click="@setOneWayPear">Set to pear</button>
 				<button class="btn btn-sm" data-events--click="@resetOneWay">Reset to apple</button>
-				<p class="ml-auto font-mono text-xs text-subtle">oneWay=<span class="text-fg" data-dom--text="$oneWay"></span></p>
+				<p class="ml-auto font-mono text-xs text-subtle">
+					oneWay=<span class="text-fg" data-dom--text="$oneWay"></span>
+					twoWay=<span class="text-fg" data-dom--text="$twoWay"></span>
+				</p>
 			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="checked"
+		title="Checked"
+		description="`data-dom--checked` sets a checkbox or radio's `checked` property. Unlike `data-bind--checked`, which only sets the default, it keeps working after the box has been clicked."
+		expect={[
+			"Clicking the box updates `subscribed` through its `change` action.",
+			"`Toggle from state` flips the box, including after you've clicked it yourself.",
+		]}
+	>
+		<div data-store="checked" class="flex flex-wrap items-center gap-3">
+			<label class="flex items-center gap-2.5 text-sm">
+				<input type="checkbox" class="check" data-dom--checked="$subscribed" data-events--change="@fromField" />
+				Subscribed
+			</label>
+			<button class="btn btn-sm" data-events--click="@toggle">Toggle from state</button>
+			<span class="badge ml-auto font-mono" data-dom--text="$subscribed"></span>
 		</div>
 	</Scenario>
 

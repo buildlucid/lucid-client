@@ -119,23 +119,48 @@ const values = defineStore({
 });
 
 // --------------------------------------------------------
-// A value without an input action
+// One-way and two-way values
 
 const oneWayLog = createLogger("one-way value");
 const oneWay = defineStore({
-	state: { oneWay: "apple" },
+	state: { oneWay: "apple", twoWay: "apple" },
 	actions: ({ setState }) => ({
 		resetOneWay: () => {
 			setState((state) => {
 				state.oneWay = "apple";
+				state.twoWay = "apple";
 			});
-			oneWayLog.info('Set oneWay to "apple"');
+			oneWayLog.info('Set oneWay and twoWay to "apple"');
 		},
 		setOneWayPear: () => {
 			setState((state) => {
 				state.oneWay = "pear";
+				state.twoWay = "pear";
 			});
-			oneWayLog.info('Set oneWay to "pear"');
+			oneWayLog.info('Set oneWay and twoWay to "pear"');
+		},
+	}),
+});
+
+// --------------------------------------------------------
+// Checked
+
+const checkedLog = createLogger("checked");
+const checked = defineStore({
+	state: { subscribed: false },
+	actions: ({ state, setState }) => ({
+		toggle: () => {
+			setState((draft) => {
+				draft.subscribed = !draft.subscribed;
+			});
+			checkedLog.info(`Set subscribed to ${!state.subscribed}`);
+		},
+		fromField: (event: Event) => {
+			const box = event.target;
+			if (!(box instanceof HTMLInputElement)) return;
+			setState((draft) => {
+				draft.subscribed = box.checked;
+			});
 		},
 	}),
 });
@@ -263,6 +288,7 @@ startCatalyst({
 		html,
 		values,
 		oneWay,
+		checked,
 		focus,
 		blur,
 		scroll,

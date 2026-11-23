@@ -154,11 +154,11 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="item-actions"
 		title="Actions inside loop items"
-		description={'Each row calls `@vote` and `@remove`. The action reads which row was used from a `data-index` attribute that the row binds with `data-bind--data-index="$index"`.'}
-		gap="Actions called from a loop item receive only the `Event`, not `$item` or `$index`. Every per-item action has to bind the index to an attribute and read it back from `event.currentTarget`."
+		description={'Actions called from inside a loop item receive a `LoopItem` with its `item`, `index`, `indexOne` and `parent`. `@vote` and `@remove` get it after the `Event`, and `@describe`, used with `data-dom--text`, gets it as its only argument.'}
 		expect={[
-			"`Vote` increments only that row's votes; the log shows the index it read and that it only received the Event.",
-			"`Remove` removes that row, and the remaining rows' `data-index` values update so later clicks hit the right row.",
+			"`Vote` increments only that row's votes, and the log shows the index and title it received.",
+			"Each row's summary from `@describe` updates as its votes change.",
+			"`Remove` removes that row. The remaining rows' numbers update, and later clicks still hit the right row.",
 		]}
 	>
 		<div data-store="tasks">
@@ -166,9 +166,9 @@ import Playground from "../../layouts/Playground.astro";
 				<template>
 					<li class="flex items-center gap-3 px-3 py-2 text-sm">
 						<span class="flex-1" data-dom--text="$item.title"></span>
-						<span class="font-mono text-xs text-subtle"><span data-dom--text="$item.votes"></span> votes</span>
-						<button class="btn btn-sm" data-bind--data-index="$index" data-events--click="@vote">Vote</button>
-						<button class="btn btn-sm btn-ghost" data-bind--data-index="$index" data-events--click="@remove">Remove</button>
+						<span class="font-mono text-xs text-subtle" data-dom--text="@describe"></span>
+						<button class="btn btn-sm" data-events--click="@vote">Vote</button>
+						<button class="btn btn-sm btn-ghost" data-events--click="@remove">Remove</button>
 					</li>
 				</template>
 			</ul>

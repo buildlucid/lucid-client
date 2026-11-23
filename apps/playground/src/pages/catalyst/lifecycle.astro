@@ -73,13 +73,13 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="failing"
 		title="A failing effect is isolated"
-		description="`throwsOnOdd` throws from its callback for odd values, `computeThrowsFromThree` throws from its compute once the value reaches 3, and `steady` never throws. `notAnEffect` wasn't made with the `effect` helper."
-		gap="An error thrown from an effect's callback is logged as a bare error, without the store or effect name. Only errors thrown from the compute are logged with a Catalyst message naming the effect."
+		description="`throwsOnOdd` throws from its callback for odd values, `computeThrowsFromThree` throws from its compute once the value reaches 3, `cleanupThrowsOnEven` returns a cleanup that throws after an even value, and `steady` never throws. `notAnEffect` wasn't made with the `effect` helper. Every error is logged with the effect and store names."
 		expect={[
 			"On load the log warns that `notAnEffect` must be created with `effect(compute, callback)`.",
 			"Every `Bump` logs `steady`, and the value on the page keeps updating.",
-			"Odd values log the error from `throwsOnOdd`, and even values log it running normally again.",
-			"From 3 onwards the log shows Catalyst's error for `computeThrowsFromThree`, and the other effects keep running.",
+			'Odd values log `The effect "throwsOnOdd" on store "fragile" threw.`, and even values log it running normally again.',
+			"Bumping past 2, 4 and so on logs the same error for `cleanupThrowsOnEven`, from its cleanup.",
+			"From 3 onwards the log shows the error for `computeThrowsFromThree`, and the other effects keep running.",
 		]}
 	>
 		<div data-store="fragile" class="flex items-center gap-3">
@@ -91,12 +91,11 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="callback-reads"
 		title="Reading other state in an effect callback"
-		description="Both effects compute `count` and log `label` from their callback. `direct` reads `state.label` as is; `withUntrack` wraps the read in `untrack`."
-		gap="Reading store state directly in an effect callback logs Solid's `STRICT_READ_UNTRACKED` warning in development, even though the callback is where Catalyst says side effects belong. Wrapping the read in `untrack` or returning it from the compute avoids it."
+		description="`logLabel` computes `count` and reads `state.label` in its callback. Callbacks run untracked, so they can read any state without `untrack`, and only what the compute reads re-runs them."
 		expect={[
-			"`Bump count` logs the current label from both effects.",
-			"`Change label` logs nothing, because neither effect computes `label`.",
-			"Today each bump also logs a `STRICT_READ_UNTRACKED` warning from the `direct` effect.",
+			"`Bump count` logs the current label.",
+			"`Change label` logs nothing, because the effect doesn't compute `label`.",
+			"No `STRICT_READ_UNTRACKED` warning is logged.",
 		]}
 	>
 		<div data-store="reads" class="flex flex-wrap items-center gap-3">

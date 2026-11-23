@@ -19,15 +19,15 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="sync-injected"
 		title="sync on injected markup"
-		description="`injector` replaces the contents of its `#slot` ref with a new `injected` store. The `injected` definition is registered at start, before its element exists."
+		description="`injector` replaces the contents of its `#slot` ref with a new `injected` store. The `injected` definition is registered at start, before its element exists. A store whose markup was just removed is disposed by the next `sync`, so its replacement can be synced in the same task."
 		expect={[
 			"`Inject only` adds the markup but nothing in it works: no count, the button does nothing and the probe count stays at 0.",
 			"`Sync slot` then wires it up: `injected` init runs, the count shows 0 and the button counts.",
 			"`Sync slot` again is idempotent: each click still adds exactly 1 and the probe count doesn't grow.",
 			"`Toggle open` updates the `injector:$open` binding inside the injected markup.",
-			"Replacing existing markup removes the old `injected` store: its cleanup runs.",
+			"`Inject and sync` works every time, including when something is already injected: the old store's cleanup runs, then the new store's init, and the new button counts from 0. No duplicate-scope warning is logged.",
+			"`Inject, sync next task` does the same one task later.",
 		]}
-		gap="Replacing a store's markup and calling `Catalyst.sync` in the same task (`Inject and sync` once something is already injected) skips the new store with a duplicate-scope warning. The removed store is only disposed when the MutationObserver runs afterwards, so the new element is left unbound. Syncing on the next task works."
 	>
 		<div data-store="injector" class="space-y-4">
 			<div class="flex flex-wrap gap-2">

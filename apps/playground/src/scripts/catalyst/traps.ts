@@ -74,10 +74,10 @@ const modal = defineStore({
 	}),
 	effects: ({ state, effect }) => ({
 		report: effect(
-			() => ({ open: state.open, name: state.name }),
-			({ open, name }, { isInitial }) => {
+			() => state.open,
+			(open, { isInitial }) => {
 				if (isInitial) return;
-				return logAfterChange(`${name} ${open ? "opened" : "closed"}`);
+				return logAfterChange(`${state.name} ${open ? "opened" : "closed"}`);
 			},
 		),
 	}),

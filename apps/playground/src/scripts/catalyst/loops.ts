@@ -1,4 +1,5 @@
 import { defineStore } from "@lucidclient/catalyst";
+import type { LoopItem } from "@lucidclient/catalyst/types";
 import { startCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
@@ -189,12 +190,7 @@ const nested = defineStore({
 
 const itemLog = createLogger("item actions");
 
-/** Loop item actions only receive the event, so the index comes from markup. */
-const indexFrom = (event: Event) => {
-	const target = event.currentTarget;
-	if (!(target instanceof HTMLElement)) return -1;
-	return Number(target.dataset.index ?? -1);
-};
+type Task = { title: string; votes: number };
 
 const tasks = defineStore({
 	state: {
@@ -202,27 +198,30 @@ const tasks = defineStore({
 			{ title: "Write the forms page", votes: 2 },
 			{ title: "Fix the checked gap", votes: 0 },
 			{ title: "Ship 0.6.0", votes: 5 },
-		],
+		] as Task[],
 	},
-	actions: ({ state, setState }) => ({
-		vote: (event: Event) => {
-			const index = indexFrom(event);
+	actions: ({ setState }) => ({
+		// Event actions receive the loop item after the event.
+		vote: (event: Event, { item, index }: LoopItem<Task>) => {
 			setState((draft) => {
 				const task = draft.tasks[index];
 				if (task) task.votes += 1;
 			});
 			itemLog.info(`vote received index ${index}`, {
-				arguments: "only the Event",
-				title: state.tasks[index]?.title,
+				event: event.type,
+				title: item.title,
 			});
 		},
-		remove: (event: Event) => {
-			const index = indexFrom(event);
-			itemLog.info(`remove received index ${index}`, state.tasks[index]?.title);
+		remove: (_event: Event, { item, index }: LoopItem<Task>) => {
+			itemLog.info(`remove received index ${index}`, item.title);
 			setState((draft) => {
 				draft.tasks.splice(index, 1);
 			});
 		},
+		// Actions that provide a value receive the loop item as their only
+		// argument, and re-run when what they read changes, including the index.
+		describe: ({ item, indexOne }: LoopItem<Task>) =>
+			`#${indexOne} · ${item.votes} ${item.votes === 1 ? "vote" : "votes"}`,
 	}),
 });
 

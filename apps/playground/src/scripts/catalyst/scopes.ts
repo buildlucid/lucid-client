@@ -72,12 +72,15 @@ const duplicate = defineStore({
 
 const late = defineStore({
 	state: { message: "default message", pings: 0 },
-	actions: ({ state, setState }) => ({
+	actions: ({ setState }) => ({
 		ping: () => {
+			// Writes apply on the next microtask, so the count is read from the draft.
+			let pings = 0;
 			setState((draft) => {
 				draft.pings += 1;
+				pings = draft.pings;
 			});
-			log.info(`late store pinged (${state.pings + 1})`);
+			log.info(`late store pinged (${pings})`);
 		},
 	}),
 	init: ({ state }) => {
