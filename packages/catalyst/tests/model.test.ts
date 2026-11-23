@@ -176,6 +176,27 @@ describe("model reaction", () => {
 		expect(getStore("report")?.state.flags).toEqual(["a"]);
 	});
 
+	it("clears a radio group's state when a reset leaves none chosen", async () => {
+		document.body.innerHTML = `
+			<form data-store="plans">
+				<input id="free" type="radio" name="plan" value="free" data-model="$plan" />
+				<input id="pro" type="radio" name="plan" value="pro" data-model="$plan" />
+				<input id="size-s" type="radio" name="size" value="s" checked data-model="$size" />
+				<input id="size-m" type="radio" name="size" value="m" data-model="$size" />
+			</form>
+		`;
+		const plans = defineStore({ state: { plan: "pro", size: "m" } });
+		Catalyst.start({ stores: { plans }, reactions: [model] });
+		expect(field("#pro").checked).toBe(true);
+		expect(field("#size-m").checked).toBe(true);
+
+		field<HTMLFormElement>("form").reset();
+		await settle();
+		// No plan radio has a default, so none is chosen; size returns to "s".
+		expect(getStore("plans")?.state.plan).toBeNull();
+		expect(getStore("plans")?.state.size).toBe("s");
+	});
+
 	it("keeps checkbox groups of different stores apart", async () => {
 		document.body.innerHTML = `
 			<div data-store="first">

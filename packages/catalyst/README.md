@@ -408,7 +408,8 @@ state, and the state follows the field as it is edited.
 - A select writes its value, and a `<select multiple>` writes an array.
 - Values keep the type of the state they replace, so a select bound to a number
   writes a number.
-- After a native form reset, state follows the reset fields.
+- After a native form reset, state follows the reset fields. A radio group
+  with no default choice sets its state to `null`.
 
 `data-model` writes state the store declares, or a property of a loop item, such
 as `data-model="$item.qty"`, which is written to the store the loop renders.

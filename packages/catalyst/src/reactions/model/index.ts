@@ -129,13 +129,16 @@ const sameTarget = (left: MemberReference, right: MemberReference) => {
 		: false;
 };
 
-/** Every checkbox bound to the same state as this one, in page order. */
-const getCheckboxGroup = (element: HTMLInputElement, directive: Directive) => {
+/**
+ * Every checkbox or radio bound to the same state as this one, in page
+ * order.
+ */
+const getGroup = (element: HTMLInputElement, directive: Directive) => {
 	const reference = directive.reference;
 	if (!reference) return [element];
 	const group = Array.from(
 		document.querySelectorAll<HTMLInputElement>(
-			`input[type="checkbox"][${directive.attributeName}]`,
+			`input[type="${element.type}"][${directive.attributeName}]`,
 		),
 	).filter((candidate) => {
 		const other = Catalyst.registrations
@@ -146,11 +149,15 @@ const getCheckboxGroup = (element: HTMLInputElement, directive: Directive) => {
 	return group.includes(element) ? group : [...group, element];
 };
 
-/** The value a field holds, for the state it's bound to. */
+/**
+ * The value a field holds, for the state it's bound to. `reset` is set when
+ * reading fields back after a native form reset.
+ */
 const readField = (
 	element: FieldElement,
 	current: unknown,
 	directive: Directive,
+	reset: boolean,
 ): unknown => {
 	if (element instanceof HTMLInputElement && element.type === "checkbox") {
 		if (!Array.isArray(current)) return element.checked;
@@ -158,7 +165,7 @@ const readField = (
 		// read from the page rather than from state, so changes made in the same
 		// task, such as a reset, don't read a stale array. Values no checkbox
 		// represents are kept.
-		const group = getCheckboxGroup(element, directive);
+		const group = getGroup(element, directive);
 		const represented = new Set(group.map((checkbox) => checkbox.value));
 		const kept = current.filter((item) => !represented.has(toText(item)));
 		const checked = group
@@ -167,7 +174,11 @@ const readField = (
 		return [...kept, ...checked];
 	}
 	if (element instanceof HTMLInputElement && element.type === "radio") {
-		return element.checked ? coerce(element.value, current) : SKIP;
+		if (element.checked) return coerce(element.value, current);
+		// A reset that leaves no radio of the group chosen clears the state.
+		const noneChosen =
+			reset && !getGroup(element, directive).some((radio) => radio.checked);
+		return noneChosen ? null : SKIP;
 	}
 	if (element instanceof HTMLSelectElement && element.multiple) {
 		const sample = Array.isArray(current) ? current[0] : undefined;
@@ -235,8 +246,8 @@ const modelReaction: Reaction = {
 
 		// Each write is applied straight away, so fields sharing state, such as
 		// checkboxes bound to one array, each see the previous field's change.
-		const write = () => {
-			const next = readField(element, target.read(), directive);
+		const write = (reset = false) => {
+			const next = readField(element, target.read(), directive, reset);
 			if (next === SKIP) return;
 			target.write(next);
 			flushUpdates();
@@ -245,14 +256,15 @@ const modelReaction: Reaction = {
 			isCheckable(element) || element instanceof HTMLSelectElement
 				? "change"
 				: "input";
-		element.addEventListener(eventName, write);
+		const onEdit = () => write();
+		element.addEventListener(eventName, onEdit);
 
 		// A reset changes fields without firing input events, and only once the
 		// reset event has finished, so state is read back on the next task.
 		const form = element.form;
 		let resetTimer: ReturnType<typeof setTimeout> | undefined;
 		const onReset = () => {
-			resetTimer = setTimeout(write, 0);
+			resetTimer = setTimeout(() => write(true), 0);
 		};
 		form?.addEventListener("reset", onReset);
 
@@ -264,7 +276,7 @@ const modelReaction: Reaction = {
 				: undefined;
 
 		return () => {
-			element.removeEventListener(eventName, write);
+			element.removeEventListener(eventName, onEdit);
 			form?.removeEventListener("reset", onReset);
 			clearTimeout(resetTimer);
 			stopObserving?.();
