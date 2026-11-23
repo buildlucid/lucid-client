@@ -53,9 +53,10 @@ const logError = (error: unknown) => console.error(error);
 /**
  * Runs an effect callback. Solid 2 halts the whole reactive system when an
  * effect callback throws or returns anything other than a cleanup function, so
- * every Catalyst effect callback is isolated here. Callbacks run untracked:
- * reading state in them is intended, so Solid's dev warning about untracked
- * reads doesn't apply. Errors from the callback and its cleanup go to `onError`.
+ * every Catalyst effect callback is isolated here. Solid runs effect callbacks
+ * without tracking, so reading state in them is intended; the development
+ * build wraps them in `untrack` only to silence Solid's warning about it.
+ * Errors from the callback and its cleanup go to `onError`.
  */
 export const runEffectCallback = (
 	fn: () => unknown,
@@ -63,7 +64,7 @@ export const runEffectCallback = (
 ): (() => void) | undefined => {
 	effectCallbackDepth += 1;
 	try {
-		const cleanup = untrack(fn);
+		const cleanup = __DEV__ ? untrack(fn) : fn();
 		if (typeof cleanup !== "function") return undefined;
 		return () => {
 			try {

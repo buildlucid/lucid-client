@@ -69,17 +69,22 @@ const cssReaction: Reaction = {
 		const initialValue = style.getPropertyValue(property);
 		const initialPriority = style.getPropertyPriority(property);
 
-		createResolvedEffect(directive, context, (value) => {
-			const next = toPropertyValue(value);
-			if (next === undefined) {
-				if (__DEV__)
-					context.warn(
-						`The "${attributeName}" directive must resolve to a string, number or boolean.`,
-					);
-			}
-			if (next) style.setProperty(property, next);
-			else style.removeProperty(property);
-		});
+		createResolvedEffect(
+			directive,
+			context,
+			(value) => {
+				const next = toPropertyValue(value);
+				if (next === undefined) {
+					if (__DEV__)
+						context.warn(
+							`The "${attributeName}" directive must resolve to a string, number or boolean.`,
+						);
+				}
+				if (next) style.setProperty(property, next);
+				else style.removeProperty(property);
+			},
+			{ distinct: true },
+		);
 
 		return () => {
 			if (initialValue) {

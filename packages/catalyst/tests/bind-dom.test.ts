@@ -204,6 +204,30 @@ describe("server-rendered markup", () => {
 	});
 });
 
+describe("unchanged values", () => {
+	it("aren't written again when the state a binding reads changes", async () => {
+		document.body.innerHTML = `
+			<div data-store="badge">
+				<p data-dom--html="@markup"></p>
+			</div>
+		`;
+		const badge = defineStore({
+			state: { count: 1 },
+			actions: ({ state }) => ({
+				markup: () => (state.count > 0 ? "<b>Active</b>" : ""),
+			}),
+		});
+		Catalyst.start({ stores: { badge }, reactions: [dom] });
+		const paragraph = document.querySelector("p") as HTMLParagraphElement;
+		const bold = paragraph.firstElementChild;
+
+		setStoreState("badge", "count", 2);
+		await settle();
+
+		expect(paragraph.firstElementChild).toBe(bold);
+	});
+});
+
 describe("removed loop items", () => {
 	it("are disposed as before when other code sets them up again straight away", async () => {
 		document.body.innerHTML = `

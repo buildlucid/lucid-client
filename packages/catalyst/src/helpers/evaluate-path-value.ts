@@ -1,9 +1,11 @@
+/** Reads `path` from `value`, or `undefined` when a step along it isn't an object. */
 const evaluatePathValue = (value: unknown, path: readonly string[]) => {
-	return path.reduce<unknown>((currentValue, part) => {
-		if (currentValue === null || currentValue === undefined) return undefined;
-		if (typeof currentValue !== "object") return undefined;
-		return (currentValue as Record<string, unknown>)[part];
-	}, value);
+	let current = value;
+	for (const part of path) {
+		if (typeof current !== "object" || current === null) return undefined;
+		current = (current as Record<string, unknown>)[part];
+	}
+	return current;
 };
 
 export default evaluatePathValue;

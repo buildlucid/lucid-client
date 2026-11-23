@@ -126,7 +126,7 @@ const bindReaction: Reaction = {
 			(value) => {
 				writeAttribute(directive.element, name, value);
 			},
-			{ read: readSerialised },
+			{ read: readSerialised, distinct: true },
 		);
 		return undefined;
 	},

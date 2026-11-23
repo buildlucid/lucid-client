@@ -19,7 +19,17 @@ type ResolvedEffectOptions = {
 	 * them here to update when they change, not only when they are replaced.
 	 */
 	read?: (value: unknown) => unknown;
+	/**
+	 * Skips `onValue` when the resolved value is the same as last time, for
+	 * reactions where writing the same value again changes nothing, such as
+	 * text and attributes. Reactions that apply a value on purpose, such as
+	 * resetting a field the user edited, leave it off.
+	 */
+	distinct?: boolean;
 };
+
+/** No value has been applied yet. */
+const UNSET = Symbol("unset");
 
 // The resolved value is boxed so Solid never sees a Promise returned from a
 // compute. An action that returns a Promise would otherwise become an async
@@ -76,9 +86,17 @@ const createResolvedEffect = (
 		const value = context.resolve(reference);
 		return { value: read && !isPromiseLike(value) ? read(value) : value };
 	};
+	const distinct = options?.distinct ?? false;
+	let last: unknown = UNSET;
 	const effect = {
-		effect: (resolved: Resolved) =>
-			runEffectCallback(() => apply(resolved, onValue)),
+		effect: (resolved: Resolved) => {
+			const value = resolved.value;
+			if (distinct) {
+				if (Object.is(value, last) && !isPromiseLike(value)) return undefined;
+				last = value;
+			}
+			return runEffectCallback(() => apply(resolved, onValue));
+		},
 		error: logError,
 	};
 

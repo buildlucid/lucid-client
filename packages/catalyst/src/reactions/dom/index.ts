@@ -102,14 +102,22 @@ const domReaction: Reaction = {
 				: null;
 		let current: { value: unknown } | null = null;
 
+		const element = directive.element;
 		createResolvedEffect(
 			directive,
 			context,
-			(value) => {
-				current = { value };
-				updateDom(directive.element, specifier, value);
+			select
+				? (value) => {
+						current = { value };
+						updateDom(element, specifier, value);
+					}
+				: (value) => updateDom(element, specifier, value),
+			{
+				read: specifier === "value" ? readFieldValue : readSerialised,
+				// Text and markup are the same when written again. The other
+				// specifiers apply their value on purpose, such as to a field.
+				distinct: specifier === "text" || specifier === "html",
 			},
-			{ read: specifier === "value" ? readFieldValue : readSerialised },
 		);
 
 		if (!select) return undefined;
