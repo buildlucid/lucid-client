@@ -1,7 +1,7 @@
 import C from "../constants.js";
 import { isAutoplayAction } from "./autoplay.js";
 import type { Context } from "./context.js";
-import { measurePending } from "./measure.js";
+import { measureIfResized } from "./measure.js";
 import { applyInert, update } from "./render.js";
 import { interrupt, settle, waitForSettle } from "./settle.js";
 
@@ -82,7 +82,7 @@ const registerListeners = (ctx: Context) => {
 		() => {
 			ctx.scrolling = true;
 			waitForSettle(ctx);
-			measurePending(ctx);
+			measureIfResized(ctx);
 			update(ctx);
 		},
 		{ passive: true, signal },
@@ -90,7 +90,7 @@ const registerListeners = (ctx: Context) => {
 	track.addEventListener(
 		"scrollend",
 		() => {
-			measurePending(ctx);
+			measureIfResized(ctx);
 			settle(ctx, false);
 		},
 		{ signal },

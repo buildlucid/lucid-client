@@ -26,6 +26,7 @@ import { step } from "./navigation.js";
 import createRecorder from "./recorder.js";
 import { applyInert, setState, update } from "./render.js";
 import { createHeldStyles, resumeSnap } from "./scroll.js";
+import { rememberSnapped } from "./settle.js";
 import teardown from "./teardown.js";
 
 const createContext = (root: HTMLElement, track: HTMLElement): Context => {
@@ -72,6 +73,7 @@ const createContext = (root: HTMLElement, track: HTMLElement): Context => {
 
 		targetSlide: null,
 		targetPosition: 0,
+		snapped: null,
 		fromAutoplay: false,
 		scrolling: false,
 		touching: false,
@@ -92,7 +94,7 @@ const createContext = (root: HTMLElement, track: HTMLElement): Context => {
  */
 const start = (ctx: Context) => {
 	if (ctx.destroyed) return;
-	applyLayout(ctx, true, ctx.layout, undefined);
+	applyLayout(ctx, true);
 	update(ctx, true, ctx.layout.scroll);
 	applyInert(ctx);
 	checkAutoplayControl(ctx);
@@ -103,6 +105,7 @@ const start = (ctx: Context) => {
 	}
 
 	ctx.announced = ctx.state.index;
+	rememberSnapped(ctx);
 	if (ctx.config.autoplay !== null && !prefersReducedMotion())
 		startAutoplay(ctx);
 	ctx.started = true;

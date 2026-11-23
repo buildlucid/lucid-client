@@ -23,6 +23,12 @@ export const waitForSettle = (ctx: Context) => {
 	ctx.settleTimer = setTimeout(check, C.settleDelay);
 };
 
+/** Remembers the slide on the current page, so a resize can put it back */
+export const rememberSnapped = (ctx: Context) => {
+	const slide = ctx.layout.pages[ctx.state.index]?.slide;
+	ctx.snapped = ctx.slides[slide ?? -1] ?? null;
+};
+
 /** Whether a navigation in progress is still short of its page */
 const stillHeading = (ctx: Context) => {
 	const page = targetPage(ctx);
@@ -59,6 +65,7 @@ export const settle = (ctx: Context, force: boolean) => {
 	resumeSnap(ctx, recentred);
 
 	ctx.scrolling = false;
+	rememberSnapped(ctx);
 	writeProperties(ctx);
 	announce(ctx);
 	applyInert(ctx);

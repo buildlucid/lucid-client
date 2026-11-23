@@ -1,6 +1,12 @@
 import { type Context, warnOnce } from "./context.js";
 import { clamp, type Layout, measureTrack, sizeKey } from "./layout.js";
-import { applyRotation, clearRotation, loopFits } from "./loop.js";
+import {
+	applyRotation,
+	clearRotation,
+	loopFits,
+	measureRotated,
+	widestRotation,
+} from "./loop.js";
 import { renderGeneratedMarkers } from "./markers.js";
 import { update } from "./render.js";
 import {
@@ -63,20 +69,40 @@ export const measureLayout = (ctx: Context) => {
 /** Whether the track or a slide changed size between two layouts */
 const resized = (before: Layout, after: Layout) =>
 	before.client !== after.client ||
+	before.boxes.length !== after.boxes.length ||
 	before.boxes.some(
 		(box, i) => Math.abs(box.size - (after.boxes[i]?.size ?? 0)) > 0.5,
 	);
 
 /**
+ * Puts the slide the track last settled on back in place after a resize.
+ * Chromium and Firefox snap back to it themselves, but WebKit snaps to
+ * whichever slide is nearest when the resize clamps the scroll position.
+ */
+const restoreSnapped = (ctx: Context) => {
+	const slide = ctx.snapped ? ctx.slides.indexOf(ctx.snapped) : -1;
+	if (slide < 0 || ctx.drag?.dragging || ctx.touching) return;
+	suspendSnap(ctx);
+	if (ctx.looping) {
+		applyRotation(ctx, widestRotation(ctx.layout, slide));
+		measureRotated(ctx);
+	}
+	const { layout } = ctx;
+	const page = layout.pages[layout.slidePage[slide] ?? -1];
+	const to = clamp(page?.position ?? 0, 0, layout.max);
+	if (Math.abs(to - position(ctx)) > 1) jump(ctx, to);
+	resumeSnap(ctx, true);
+};
+
+/**
  * Writes what follows from a new layout: the generated markers, a scroll in
- * progress, the slide in view after a resize and, unless `silent`, the state
- * - `before` is the layout it replaced, and `shown` the slide that was in view
+ * progress or, after a resize, the slide that was in view, and unless
+ * `silent`, the state
  */
 export const applyLayout = (
 	ctx: Context,
 	silent: boolean,
-	before: Layout,
-	shown: HTMLElement | undefined,
+	wasResized = false,
 ) => {
 	renderGeneratedMarkers(ctx);
 	const { layout } = ctx;
@@ -89,23 +115,7 @@ export const applyLayout = (
 			ctx.targetPosition = to;
 			scrollTo(ctx, to);
 		}
-	} else if (
-		!silent &&
-		shown &&
-		!ctx.drag?.dragging &&
-		!ctx.touching &&
-		resized(before, layout)
-	) {
-		// Browsers snap a resized track again to the nearest position, which can be another
-		// slide, so it goes back to the slide that was in view.
-		const shownPage = layout.slidePage[ctx.slides.indexOf(shown)] ?? 0;
-		const to = clamp(layout.pages[shownPage]?.position ?? 0, 0, layout.max);
-		if (Math.abs(to - position(ctx)) > 1) {
-			suspendSnap(ctx);
-			jump(ctx, to);
-			resumeSnap(ctx, true);
-		}
-	}
+	} else if (wasResized) restoreSnapped(ctx);
 
 	if (!silent) update(ctx, true);
 };
@@ -118,21 +128,22 @@ export const remeasure = (ctx: Context, silent = false) => {
 	cancelAnimationFrame(ctx.measureFrame);
 	ctx.measureFrame = 0;
 	if (ctx.destroyed) return;
-
 	const before = ctx.layout;
-	const shown = ctx.slides[before.pages[ctx.state.index]?.slide ?? -1];
 	measureLayout(ctx);
-	applyLayout(ctx, silent, before, shown);
+	applyLayout(ctx, silent, resized(before, ctx.layout));
 };
 
 /**
- * Measures straight away when a resize is waiting for the next frame. A
- * browser snaps a resized track again before that frame, and the scroll it
- * fires would otherwise be read against the old layout, landing on another
- * slide.
+ * Measures straight away when the track changed size since it was measured.
+ * A browser snaps a resized track again, often before the `ResizeObserver`
+ * runs, and that scroll would otherwise be read against the old layout.
  */
-export const measurePending = (ctx: Context) => {
-	if (ctx.measureFrame) remeasure(ctx);
+export const measureIfResized = (ctx: Context) => {
+	const { layout, track } = ctx;
+	const client = layout.vertical ? track.clientHeight : track.clientWidth;
+	const size = layout.vertical ? track.scrollHeight : track.scrollWidth;
+	if (client !== layout.client || Math.max(0, size - client) !== layout.max)
+		remeasure(ctx, true);
 };
 
 /** A `ResizeObserver`, or one that does nothing in browsers without it */

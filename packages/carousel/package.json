@@ -36,6 +36,7 @@
 	"devDependencies": {
 		"@lucidclient/catalyst": "*",
 		"happy-dom": "^20.11.1",
+		"playwright": "1.65.1",
 		"vite-plus": "1.7.0",
 		"typescript": "^7.0.2"
 	},

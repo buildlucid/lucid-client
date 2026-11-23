@@ -214,12 +214,15 @@ const FLICK_SPEED = 0.2;
  */
 export const setUpDrag = (ctx: Context) => {
 	const { held, rec, root } = ctx;
+	/** The page the drag started on */
+	let from = 0;
 
 	ctx.drag ??= registerDrag(ctx.track, ctx.abort.signal, {
 		enabled: () => ctx.config.drag && ctx.state.scrollable,
 		vertical: () => ctx.layout.vertical,
 
 		start: () => {
+			from = ctx.state.index;
 			interrupt(ctx);
 			suspendSnap(ctx);
 			held.hold("scroll-behavior", "auto");
@@ -239,7 +242,7 @@ export const setUpDrag = (ctx: Context) => {
 			return anchor === undefined ? 0 : centre(ctx, anchor);
 		},
 
-		// Settles on the nearest page, or carries on to the next one after a quick flick.
+		// Settles on the page nearest where the drag would carry on to, or one on from where it started after a quick flick.
 		end: (physicalVelocity) => {
 			const velocity = ctx.layout.rtl ? -physicalVelocity : physicalVelocity;
 			rec.attr(root, A.dragging, null);
@@ -248,11 +251,12 @@ export const setUpDrag = (ctx: Context) => {
 			held.release("-webkit-user-select");
 			update(ctx);
 
-			const scroll = position(ctx);
-			const current = nearestPage(ctx.layout, scroll);
-			let target = nearestPage(ctx.layout, scroll + velocity * FLICK_TIME);
-			if (target === current && Math.abs(velocity) > FLICK_SPEED)
-				target = current + Math.sign(velocity);
+			let target = nearestPage(
+				ctx.layout,
+				position(ctx) + velocity * FLICK_TIME,
+			);
+			if (target === from && Math.abs(velocity) > FLICK_SPEED)
+				target = from + Math.sign(velocity);
 			go(ctx, target, "user", ctx.looping ? Math.sign(velocity) : 0);
 			if (ctx.targetSlide === null) resumeSnap(ctx, false);
 		},

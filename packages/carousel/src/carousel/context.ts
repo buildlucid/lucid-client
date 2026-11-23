@@ -98,6 +98,8 @@ export type Context = {
 	targetSlide: HTMLElement | null;
 	/** The scroll position the navigation asked for */
 	targetPosition: number;
+	/** The slide the track last settled on, which a resize puts back */
+	snapped: HTMLElement | null;
 	/** Whether the current move came from autoplay, which isn't announced */
 	fromAutoplay: boolean;
 	/** Whether the track is scrolling, from its first scroll event until it settles */

@@ -19,9 +19,31 @@ export default defineConfig({
 		conditions: ["browser"],
 	},
 	test: {
-		environment: "happy-dom",
-		include: ["tests/**/*.test.ts"],
-		setupFiles: ["./tests/setup.ts"],
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: "unit",
+					environment: "happy-dom",
+					include: ["tests/*.test.ts"],
+					setupFiles: ["./tests/setup.ts"],
+				},
+			},
+			// Runs the carousel in Chromium, Firefox and WebKit with Playwright, as happy-dom doesn't scroll or snap.
+			{
+				extends: true,
+				test: {
+					name: "browser",
+					environment: "node",
+					include: ["tests/browser/**/*.test.ts"],
+					testTimeout: 30_000,
+					hookTimeout: 60_000,
+					// Each test has its own browser context, so they can run side by side.
+					sequence: { concurrent: true },
+					maxConcurrency: 6,
+				},
+			},
+		],
 	},
 	run: {
 		tasks: {
