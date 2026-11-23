@@ -1,11 +1,13 @@
 import type { Accessor } from "solid-js";
 import { warn } from "../../runtime/log.js";
 import type { StoreState } from "../../types/index.js";
+import { RAW, snapshot } from "./create-state.js";
 
 /**
  * A read-only view over a store's state and computed values, so both are read
  * the same way: `state.open` and `state.buttonLabel`. Reads track like any
- * Solid store read. Writes go through `setState`.
+ * state read, and `snapshot(state)` returns the plain state values. Writes go
+ * through `setState`.
  */
 const createStateView = (
 	key: string,
@@ -30,8 +32,10 @@ const createStateView = (
 	return new Proxy<StoreState>(
 		{},
 		{
-			get: (_, property) =>
-				typeof property === "string" ? read(property) : undefined,
+			get: (_, property) => {
+				if (typeof property === "string") return read(property);
+				return property === RAW ? snapshot(raw) : undefined;
+			},
 			has: (_, property) => has(property),
 			ownKeys: () =>
 				Array.from(

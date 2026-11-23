@@ -1,9 +1,10 @@
-import type { Accessor, Owner, StoreSetter } from "solid-js";
+import type { Accessor, Owner } from "solid-js";
 import type {
 	AnyStoreDefinition,
 	CatalystStartOptions,
 	Directive,
 	Reaction,
+	StateSetter,
 	StoreActions,
 	StoreCleanup,
 	Persistence,
@@ -55,9 +56,9 @@ export type RuntimeStore = {
 	destroyed: boolean;
 	/** Read-only view over `raw` and the computed values. */
 	state: StoreState;
-	/** The Solid store holding the state values. */
+	/** The reactive state values, without the computed values. */
 	raw: StoreState;
-	setState: StoreSetter<StoreState>;
+	setState: StateSetter<StoreState>;
 	computed: Map<string, Accessor<unknown>>;
 	actions: StoreActions;
 	refs: StoreRefs;

@@ -1,4 +1,4 @@
-import { createEffect, snapshot } from "solid-js";
+import { createEffect } from "solid-js";
 import { debug } from "../../runtime/log.js";
 import {
 	createOwnedRoot,
@@ -7,6 +7,7 @@ import {
 } from "../../runtime/reactive.js";
 import type { PersistEntry, RuntimeStore } from "../../runtime/types.js";
 import type { StoreState } from "../../types/index.js";
+import { snapshot } from "../state/create-state.js";
 import {
 	acceptsStored,
 	readStored,
@@ -18,8 +19,8 @@ import {
 const UNSAVEABLE = Symbol("unsaveable");
 
 /**
- * Applies stored values to a new store's starting state, before the Solid store
- * exists, so bindings, `init` and effects all see them from the start. A
+ * Applies stored values to a new store's starting state, before the store's
+ * state exists, so bindings, `init` and effects all see them from the start. A
  * stored value replaces the definition's default and any `data-state--*`
  * attribute, because restoring what the user chose is the point.
  */

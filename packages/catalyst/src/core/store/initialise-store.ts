@@ -1,4 +1,4 @@
-import { type Accessor, createMemo, createStore, getOwner } from "solid-js";
+import { type Accessor, createMemo, getOwner } from "solid-js";
 import Catalyst from "../../runtime/catalyst.js";
 import { debug, error, warn } from "../../runtime/log.js";
 import { createOwnedRoot } from "../../runtime/reactive.js";
@@ -10,6 +10,7 @@ import type {
 } from "../../types/index.js";
 import { unwrapPersisted } from "../persist/persisted.js";
 import { createRefs } from "../refs/index.js";
+import createState from "../state/create-state.js";
 import {
 	createStateObserver,
 	createStateView,
@@ -151,7 +152,7 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 	const definition = Catalyst.storeDefinitions.get(key);
 
 	const store = createOwnedRoot((disposeRoot) => {
-		// State is complete before the Solid store exists, because writing to it
+		// State is complete before it becomes reactive, because writing to it
 		// while this root is being set up is not allowed.
 		const defaults = resolveDefaults(key, definition);
 		const initial = readStateAttributes(element, key, defaults.state);
@@ -161,7 +162,7 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 		if (__DEV__ && !persistence) {
 			warnPersistenceDisabled(element, key, defaults.persist);
 		}
-		const [raw, setState] = createStore<StoreState>(initial.state);
+		const [raw, setState] = createState(initial.state);
 		const computed = new Map<string, Accessor<unknown>>();
 		const refElements = new Map<string, Element | Element[]>();
 

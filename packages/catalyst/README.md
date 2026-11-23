@@ -128,8 +128,8 @@ a refreshed store starts from its defaults again. Use a function that returns
 the object for values that can't be copied, such as functions or class
 instances: `state: () => ({ map: new Map() })`.
 
-State is a Solid store. Read it directly, `state.open`, and write it through
-the `setState` draft, which can be changed in place:
+State is reactive. Read it directly, `state.open`, and write it through the
+`setState` draft, which can be changed in place:
 
 ```ts
 setState((state) => {
@@ -141,7 +141,12 @@ setState((state) => {
 
 Changing nested data updates exactly the bindings that read it, including
 loops. `state` is read-only, so a direct write such as `state.open = true` is a
-type error and is ignored with a warning at runtime.
+type error and is ignored with a warning at runtime, as is a nested write such
+as `state.links[0].title = "Start"` outside `setState`.
+
+Plain objects and arrays in state are reactive. Other values, such as functions,
+class instances, `Map`s and promises, are stored as they are, so changing their
+contents doesn't update anything: replace the value with `setState` instead.
 
 Give a type where the starting value is narrower than the values it will hold,
 for example `links: [] as Link[]` or `user: null as User | null`.
@@ -413,8 +418,8 @@ Catalyst.add({ stores: { cart } });
 
 ## Reactivity
 
-Catalyst is built on Solid 2 and re-exports `flush`, `untrack` and `snapshot`
-from `solid-js`. Two Solid 2 rules apply to stores:
+Catalyst is built on Solid 2's signals, and re-exports `flush` and `untrack`
+from `solid-js`. Store state follows the same two rules as Solid 2's signals:
 
 - State writes are batched until the next microtask. Reading state straight
   after writing it returns the previous value; call `flush()` first if an action
@@ -423,9 +428,9 @@ from `solid-js`. Two Solid 2 rules apply to stores:
   from actions, effect callbacks or `init`, not from a computed value or the
   tracked function of an effect.
 
-`snapshot(state.links)` returns the plain value behind a piece of state without
-tracking it, which is useful for logging or sending it elsewhere. Treat it as
-read-only, since it can be the store's own object.
+`snapshot(state.links)`, exported by Catalyst, returns the plain value behind a
+piece of state without tracking it, which is useful for logging or sending it
+elsewhere. Treat it as read-only, since it is the store's own object.
 
 ## Reaction attributes
 

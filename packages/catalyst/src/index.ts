@@ -6,7 +6,8 @@ import sync from "./runtime/sync.js";
 import type { CatalystApi } from "./types/index.js";
 
 export { default as defineStore } from "./core/define-store.js";
-export { flush, snapshot, untrack } from "solid-js";
+export { snapshot } from "./core/state/create-state.js";
+export { flush, untrack } from "solid-js";
 
 const Catalyst: CatalystApi = {
 	start,

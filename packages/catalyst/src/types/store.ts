@@ -1,7 +1,12 @@
-import type { StoreSetter } from "solid-js";
 import type { StateOf } from "./persistence.js";
 
 export type StoreState = Record<string, unknown>;
+
+/**
+ * Writes state through a draft, which can be changed in place:
+ * `setState((state) => { state.open = true; })`.
+ */
+export type StateSetter<S> = (update: (state: S) => void) => void;
 
 // Actions deliberately accept arbitrary arguments so event listeners can retain
 // their concrete event parameter types in userland stores.
@@ -62,7 +67,7 @@ export type ActionsContext<S, C> = {
 	/** The store's state and computed values. */
 	readonly state: Readonly<S & C>;
 	/** Writes state through a draft: `setState((state) => { state.open = true; })`. */
-	readonly setState: StoreSetter<S>;
+	readonly setState: StateSetter<S>;
 	readonly refs: StoreRefs;
 };
 
@@ -117,7 +122,7 @@ export type Store = {
 	readonly key: string;
 	readonly element: Element;
 	readonly state: Readonly<StoreState>;
-	readonly setState: StoreSetter<StoreState>;
+	readonly setState: StateSetter<StoreState>;
 	readonly actions: StoreActions;
 	readonly refs: StoreRefs;
 };

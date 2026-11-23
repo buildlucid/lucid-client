@@ -9,13 +9,13 @@
 - Loops now keep the markup of items that are still in the array, matching them by identity, and `$index` updates as items move.
 - Traps can now be stacked, and elements marked `data-trap-allow` stay interactive while a trap is active.
 - Added `defineStore`. State, `computed` values, actions, effects and `init` are top-level keys, and their types are inferred without explicit generics. State and computed values are read with `$name`, and actions are called with `@name`.
-- Store state is a Solid store. Actions read `state.key` and write with `setState((state) => { ... })`, and changing nested data, such as pushing to an array, updates the bindings, loops and `data-state--*` attributes that read it.
+- Store state is reactive, built on Solid 2's signals rather than its stores, which keeps Catalyst much smaller. Actions read `state.key` and write with `setState((state) => { ... })`, and changing nested data, such as pushing to an array, updates the bindings, loops and `data-state--*` attributes that read it.
 - Added `computed` values: read-only, memoised values derived from state, read in markup like state and available on `state` in store code.
 - Added the `effect(compute, callback)` helper for store effects, which types the callback's value from `compute`.
 - Stores are registered with `Catalyst.start({ stores: { scope: definition } })`. One definition can be registered under several scopes, and `Catalyst.add({ stores })` registers stores after `start`, rebuilding any that are already on the page.
 - `init` is a store hook rather than an action. It can write state, and the function it returns, including from an async `init`, runs when the store is destroyed.
 - Refs are part of the core. `refs.get<E>(name)` returns one element and `refs.all<E>(name)` returns every element registered under a name.
-- `flush`, `untrack` and `snapshot` are exported from `solid-js`.
+- `flush` and `untrack` are exported from `solid-js`, and `snapshot` returns the plain value behind a piece of state.
 - `start`, `sync` and `refresh` apply bindings before they return, and `start` waits for `DOMContentLoaded` when it runs before `<body>` exists.
 - Added the `model` reaction for two-way binding of form fields. Text, number, checkbox, radio and select fields are supported, checkboxes can be bound to an array, values keep the type of their state, state follows a native form reset, and `$item.field` inside a loop writes to the store the loop renders.
 - Added the `css` reaction. `data-css--{name}` sets the `--{name}` custom property from state, a computed value, an action or a loop value. Booleans are written as `true` and `false`, `null`, `undefined` and empty strings remove the property, and the element's earlier inline value comes back when the directive is disposed.
