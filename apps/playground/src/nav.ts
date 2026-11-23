@@ -1,3 +1,4 @@
+import carousel from "../../../packages/carousel/package.json";
 import catalyst from "../../../packages/catalyst/package.json";
 import cookieController from "../../../packages/cookie-controller/package.json";
 import speculate from "../../../packages/speculate/package.json";
@@ -46,6 +47,64 @@ const nav: NavGroup[] = [
 				href: "/speculate",
 				description:
 					"Every link action and trigger, how the target page loaded, and the Speculator cache.",
+			},
+		],
+	},
+	{
+		title: "Carousel",
+		package: carousel.name,
+		version: carousel.version,
+		description:
+			"A scroll snap carousel that JavaScript enhances, with markers, looping, mouse drag, autoplay and a Catalyst store.",
+		pages: [
+			{
+				title: "Basics",
+				href: "/carousel/basics",
+				description:
+					"One slide at a time, generated markers, announcements, the page without JavaScript, right to left and vertical.",
+				isNew: true,
+			},
+			{
+				title: "Layouts",
+				href: "/carousel/layouts",
+				description:
+					"Several slides in view, pages that move a whole view, centred slides of different widths and thumbnail links.",
+				isNew: true,
+			},
+			{
+				title: "Looping & drag",
+				href: "/carousel/looping",
+				description:
+					"Infinite looping without cloned slides, rewinding at the ends, and dragging with a mouse.",
+				isNew: true,
+			},
+			{
+				title: "Autoplay",
+				href: "/carousel/autoplay",
+				description:
+					"Autoplay with a rotation control, pausing on hover and focus, and inert slides out of view.",
+				isNew: true,
+			},
+			{
+				title: "Catalyst store",
+				href: "/carousel/catalyst",
+				description:
+					"carouselStore: controls and progress anywhere in a store, markers from a loop and slides from state.",
+				isNew: true,
+			},
+			{
+				title: "Events & API",
+				href: "/carousel/api",
+				description:
+					"carousel-change, subscribe, goTo, refresh for new markup, and destroying a carousel.",
+				isNew: true,
+			},
+			{
+				title: "Benchmarks",
+				href: "/carousel/benchmarks",
+				description:
+					"Work, memory and size compared with Embla, Swiper, Splide, Swiper's CSS mode, Blossom and Swiffy Slider.",
+				isNew: true,
 			},
 		],
 	},

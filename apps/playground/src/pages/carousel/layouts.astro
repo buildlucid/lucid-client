@@ -1,0 +1,160 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import { hues, nextIcon, prevIcon } from "../../components/carousel-icons";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/carousel.css";
+
+const ten = hues;
+const widths = [9, 14, 7, 12, 10, 16, 8, 11];
+const rootAttributes = ["aria-label", "id", "role", "aria-roledescription", "style"];
+---
+
+<Playground title="Layouts">
+	<Fragment slot="intro">
+		<p>
+			The library measures where the track can actually snap, so it doesn't
+			assume one slide fills the view. A <em>page</em> is one of those
+			positions: with three slides in view, the last three share the final
+			page, because the track can't scroll any further. Markers, the index and
+			the status all count pages.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="several"
+		title="Several in view"
+		description="Ten cards, three in view (two on narrow screens), each with `scroll-snap-align: start`. The track can only scroll far enough for card 8 to reach the start, so cards 8 to 10 share the last page."
+		expect={[
+			"There are 8 dots with three cards in view, and 9 with two.",
+			"On the last page, cards 8, 9 and 10 all have `data-carousel--active`, and every card in view has `data-carousel--visible`.",
+			"`Next` steps one card at a time.",
+		]}
+	>
+		<section data-carousel aria-label="Cards" id="layouts-several" class="space-y-3">
+			<div data-carousel--track class="carousel-track carousel-several">
+				{ten.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`}>Card {index + 1}</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous cards">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="carousel-dots" data-carousel--markers>
+					<template><button class="carousel-dot" aria-label="Show cards from page {n} of {count}"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next cards">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+		</section>
+		<div class="mt-4">
+			<AttributeReadout target="#layouts-several" exclude={rootAttributes} label="Root attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="by-view"
+		title="A whole view at a time"
+		description="Only every third card snaps: the others have `scroll-snap-align: none`, so a page is a view of three cards. Cards that don't snap belong to the page of the card before them. The template's `{n}` and `{count}` become the page number and the number of pages."
+		expect={[
+			"There are 4 dots: cards 1, 4 and 7 start a page, and the last page is as far as the track scrolls.",
+			"`Next` moves three cards, and swiping stops on the same positions.",
+		]}
+	>
+		<section data-carousel aria-label="Pages of cards" id="layouts-by-view" class="space-y-3">
+			<div data-carousel--track class="carousel-track by-view" style="--carousel-slide: calc((100% - 1.5rem) / 3)">
+				{ten.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`}>Card {index + 1}</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous page">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="flex gap-1.5" data-carousel--markers>
+					<template><button class="btn btn-sm aria-[current=true]:border-accent aria-[current=true]:text-accent">{"{n}"}/{"{count}"}</button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next page">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+		</section>
+	</Scenario>
+
+	<Scenario
+		id="centred"
+		title="Centred, different widths"
+		description="Slides of different widths with `scroll-snap-align: center`. The first and last slides can't reach the middle, so their pages are clamped to the ends, and slides that clamp to the same position share a page."
+		expect={[
+			"Each `Next` centres the next slide until the track reaches its end.",
+			"Slides near the ends share the first and last pages, so there are fewer dots than slides.",
+		]}
+	>
+		<section data-carousel aria-label="Centred slides" id="layouts-centred" class="space-y-3">
+			<div data-carousel--track class="carousel-track centred">
+				{widths.map((width, index) => (
+					<div class="carousel-panel" style={`--hue: ${hues[index]}; width: ${width}rem`}>{width}rem</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous slide">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="carousel-dots" data-carousel--markers>
+					<template><button class="carousel-dot"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next slide">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+		</section>
+	</Scenario>
+
+	<Scenario
+		id="thumbnails"
+		title="Thumbnails"
+		description={"Markers can be any elements you write: here, fragment links to each slide's `id`, outside the track. A marker with a number, such as `data-carousel--marker=\"2\"`, scrolls to that slide from 0 instead."}
+		expect={[
+			"Clicking a thumbnail scrolls the track to its slide without jumping the page or changing the URL.",
+			"The thumbnail for the slide in view has `aria-current=\"true\"`.",
+			"`Last` is a button with `data-carousel--marker=\"5\"`.",
+		]}
+	>
+		<section data-carousel aria-label="Gallery" id="layouts-thumbnails" class="space-y-3">
+			<div data-carousel--track class="carousel-track">
+				{hues.slice(0, 6).map((hue, index) => (
+					<div class="carousel-panel" id={`gallery-${index + 1}`} style={`--hue: ${hue}`}>
+						Photo {index + 1}
+					</div>
+				))}
+			</div>
+			<nav aria-label="Choose a photo" class="flex flex-wrap justify-center gap-2">
+				{hues.slice(0, 6).map((hue, index) => (
+					<a class="carousel-thumb" style={`--hue: ${hue}`} href={`#gallery-${index + 1}`} data-carousel--marker>
+						{index + 1}
+					</a>
+				))}
+				<button class="btn btn-sm" data-carousel--marker="5">Last</button>
+			</nav>
+		</section>
+	</Scenario>
+
+	<style is:global>
+		.carousel-track.by-view > * {
+			scroll-snap-align: none;
+		}
+		.carousel-track.by-view > :nth-child(3n + 1) {
+			scroll-snap-align: start;
+		}
+		.carousel-track.centred > * {
+			flex: 0 0 auto;
+			scroll-snap-align: center;
+		}
+	</style>
+
+	<script>
+		import "../../scripts/carousel/layouts";
+	</script>
+</Playground>

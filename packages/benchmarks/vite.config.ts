@@ -33,6 +33,11 @@ export default defineConfig({
 				dependsOn: ["@lucidclient/catalyst#build"],
 				cache: false,
 			},
+			"bench-carousel": {
+				command: "node src/run.ts carousel",
+				dependsOn: ["@lucidclient/carousel#build"],
+				cache: false,
+			},
 		},
 	},
 });

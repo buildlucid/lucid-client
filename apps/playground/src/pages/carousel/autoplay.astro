@@ -1,0 +1,138 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import {
+	hues,
+	nextIcon,
+	pauseIcon,
+	playIcon,
+	prevIcon,
+} from "../../components/carousel-icons";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/carousel.css";
+
+const five = hues.slice(0, 5);
+---
+
+<Playground title="Autoplay">
+	<Fragment slot="intro">
+		<p>
+			<code>data-carousel--autoplay="3000"</code> moves on every 3 seconds,
+			wrapping at the end. It follows the carousel pattern in the WAI-ARIA
+			Authoring Practices: it holds while the pointer is over the carousel, and
+			stops for good when focus moves into it, until the visitor starts it
+			again. It also holds while the carousel is scrolled out of view or the
+			tab is hidden, doesn't start for visitors who prefer reduced motion, and
+			doesn't announce the slides it moves to.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="rotation"
+		title="Autoplay with a rotation control"
+		description={"The toggle comes first, as the pattern asks, and has `data-carousel--action=\"toggle\"`. It is icon-only, so the library gives it an `aria-label` that follows autoplay. CSS swaps the icons with `data-carousel--playing`. Every autoplaying carousel needs a toggle or pause control, and the library warns without one."}
+		expect={[
+			"The slides move every 3 seconds, and from the last back to the first.",
+			"Hovering over the carousel holds it, and leaving starts the 3 seconds again. `data-carousel--playing` stays on while it holds.",
+			"Tabbing to the toggle, or on to the dots or arrows, stops it, as the pattern asks. Pressing the toggle starts it again.",
+			"Clicking the toggle with a mouse stops and starts it, and clicking the dots or arrows stops it.",
+			"The toggle's `aria-label` reads `Stop automatic slide show` while it plays and `Start automatic slide show` while it is stopped.",
+			"Scrolling the carousel out of view holds it. With reduced motion turned on, it starts stopped.",
+		]}
+	>
+		<section data-carousel data-carousel--autoplay="3000" aria-label="Highlights" id="autoplay-rotation" class="space-y-3">
+			<div class="flex items-center gap-3">
+				<button class="carousel-arrow" data-carousel--action="toggle">
+					<span class="when-playing"><Fragment set:html={pauseIcon} /></span>
+					<span class="when-stopped"><Fragment set:html={playIcon} /></span>
+				</button>
+				<p class="text-[13px] text-muted">Highlights</p>
+			</div>
+			<div data-carousel--track class="carousel-track">
+				{five.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`}>Highlight {index + 1}</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous highlight">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="carousel-dots" data-carousel--markers>
+					<template><button class="carousel-dot"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next highlight">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+			<p data-carousel--status class="readout min-h-9"></p>
+		</section>
+		<div class="mt-4">
+			<AttributeReadout
+				target="#autoplay-rotation [data-carousel--action='toggle']"
+				exclude={["aria-controls", "type"]}
+				label="Toggle attributes"
+			/>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="text-controls"
+		title="Play and pause buttons with text"
+		description="Separate `play` and `pause` actions with visible text. Buttons with their own text keep it: the library only labels icon-only controls, so the accessible name always matches what is shown. This carousel loops, so autoplay never rewinds."
+		expect={[
+			"`Pause` stops autoplay and `Play` starts it again, even after keyboard focus stopped it.",
+			"Neither button gets an `aria-label`.",
+		]}
+	>
+		<section data-carousel data-carousel--autoplay="2500" data-carousel--loop aria-label="Quotes" id="autoplay-text" class="space-y-3">
+			<div class="flex gap-2">
+				<button class="btn btn-sm" data-carousel--action="play">Play</button>
+				<button class="btn btn-sm" data-carousel--action="pause">Pause</button>
+				<span class="badge when-playing">Playing</span>
+			</div>
+			<div data-carousel--track class="carousel-track">
+				{five.map((hue, index) => (
+					<blockquote class="carousel-panel" style={`--hue: ${hue}`}>“Quote {index + 1}”</blockquote>
+				))}
+			</div>
+		</section>
+	</Scenario>
+
+	<Scenario
+		id="inert"
+		title="Inert slides out of view"
+		description="`data-carousel--inert` makes slides that are out of view `inert` once the track stops, so the tab order and a screen reader's browse mode only reach the slide on screen. Use it when one slide fills the view; carousels with several in view are better left browsable, as a list."
+		expect={[
+			"Tab moves from the arrows to the links in the slide in view, then on past the carousel.",
+			"After moving, the links in the new slide are reachable and the old slide's aren't.",
+			"A slide holding focus is never made inert.",
+		]}
+	>
+		<section data-carousel data-carousel--inert aria-label="Stories" id="autoplay-inert" class="space-y-3">
+			<div class="flex justify-end gap-2">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous story">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next story">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+			<div data-carousel--track class="carousel-track">
+				{five.map((_, index) => (
+					<article class="carousel-card">
+						<h3 class="text-sm font-semibold text-fg">Story {index + 1}</h3>
+						<p>Tab through the links to see which slides are reachable.</p>
+						<div class="flex gap-2">
+							<a href={`#story-${index + 1}`} class="btn btn-sm">Read story {index + 1}</a>
+							<a href={`#share-${index + 1}`} class="btn btn-sm">Share</a>
+						</div>
+					</article>
+				))}
+			</div>
+		</section>
+	</Scenario>
+
+	<script>
+		import "../../scripts/carousel/autoplay";
+	</script>
+</Playground>

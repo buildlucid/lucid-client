@@ -5,12 +5,18 @@
 	"description": "Compares the speed of Lucid Client libraries with other libraries in a real browser.",
 	"type": "module",
 	"devDependencies": {
+		"@blossom-carousel/core": "1.1.10",
+		"@lucidclient/carousel": "*",
 		"@lucidclient/catalyst": "*",
+		"@splidejs/splide": "4.1.4",
 		"@types/alpinejs": "3.17.0",
 		"@types/node": "^26.6.6",
 		"alpinejs": "3.17.5",
+		"embla-carousel": "8.6.0",
 		"petite-vue": "0.4.1",
 		"playwright": "1.65.1",
+		"swiffy-slider": "2.1.2",
+		"swiper": "14.4.0",
 		"typescript": "^7.0.2",
 		"vite-plus": "1.7.0"
 	},

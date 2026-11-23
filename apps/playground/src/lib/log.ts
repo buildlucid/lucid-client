@@ -24,6 +24,7 @@ const MAX_DATA_LENGTH = 1600;
 const LIBRARY_PREFIXES: Array<[prefix: string, source: string]> = [
 	["[Catalyst]", "catalyst"],
 	["[Cookie Controller]", "cookie-controller"],
+	["[Carousel]", "carousel"],
 ];
 
 const original = {

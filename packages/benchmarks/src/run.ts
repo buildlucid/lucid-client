@@ -13,7 +13,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { launch, open } from "./browser.ts";
+import { keepCpuBusy, launch, open } from "./browser.ts";
 import { build, root } from "./build.ts";
 import {
 	countReplacedElements,
@@ -26,7 +26,7 @@ import {
 	gitCommit,
 	packageVersion,
 } from "./environment.ts";
-import { perform, time } from "./measure.ts";
+import { perform, time, work } from "./measure.ts";
 import { serve } from "./server.ts";
 import { measureSize } from "./size.ts";
 import { geometricMean, median, summarise } from "./stats.ts";
@@ -85,6 +85,7 @@ build(dist);
 
 const server = await serve(dist);
 const browser = await launch();
+const releaseCpu = keepCpuBusy();
 
 const pageUrl = (library: Library, page: string) =>
 	`${server.origin}/${suite.id}/pages/${library.id}/${page}.html`;
@@ -97,7 +98,7 @@ const prepare = async (library: Library, scenario: Scenario) => {
 		throttle,
 	);
 	try {
-		for (let round = 0; round < WARMUPS; round++) {
+		for (let round = 0; round < (scenario.warmups ?? WARMUPS); round++) {
 			for (const step of scenario.warmup) await perform(session.page, step);
 		}
 		for (const step of scenario.setup) await perform(session.page, step);
@@ -109,6 +110,9 @@ const prepare = async (library: Library, scenario: Scenario) => {
 };
 
 /** Runs every scenario once per library and checks the DOM matches the first library's. */
+/** Problems a scenario that isn't `strict` found, by `{scenario}/{library}`, for the results. */
+const notes = new Map<string, string>();
+
 const check = async () => {
 	const problems: string[] = [];
 	for (const scenario of suite.scenarios) {
@@ -136,10 +140,18 @@ const check = async () => {
 					for (const step of scenario.check ?? []) {
 						await perform(session.page, step);
 					}
-					const html = await snapshot(session.page, suite.root);
-					expected ??= html;
-					const diff = difference(expected, html);
-					if (diff) problems.push(`${label}:\n${diff}`);
+					if (suite.verify) {
+						const problem = await suite.verify(session.page, scenario);
+						if (problem && scenario.strict === false) {
+							notes.set(`${scenario.id}/${library.id}`, problem);
+							console.log(`Note for ${label}: ${problem}`);
+						} else if (problem) problems.push(`${label}: ${problem}`);
+					} else {
+						const html = await snapshot(session.page, suite.root);
+						expected ??= html;
+						const diff = difference(expected, html);
+						if (diff) problems.push(`${label}:\n${diff}`);
+					}
 					if (session.messages.length) {
 						problems.push(`${label} logged:\n${session.messages.join("\n")}`);
 					}
@@ -168,7 +180,10 @@ const measure = async () => {
 				const session = await prepare(library, scenario);
 				try {
 					const key = `${scenario.id}/${library.id}`;
-					const ms = await time(session.page, scenario.timed);
+					const ms =
+						scenario.metric === "work"
+							? await work(session, scenario.timed, scenario.settleMs ?? 1000)
+							: await time(session.page, scenario.timed);
 					times.set(key, [...(times.get(key) ?? []), ms]);
 				} finally {
 					await session.close();
@@ -206,40 +221,62 @@ try {
 	const problems = await check();
 	if (problems.length) {
 		console.error(
-			`\nOutput doesn't match ${selected[0]?.name}'s:\n\n${problems.join("\n\n")}`,
+			suite.verify
+				? `\nThe output check failed:\n\n${problems.join("\n\n")}`
+				: `\nOutput doesn't match ${selected[0]?.name}'s:\n\n${problems.join("\n\n")}`,
 		);
 		process.exitCode = 1;
 	} else {
-		console.log("Every library renders the same DOM.\n");
+		console.log(
+			suite.verify
+				? "Every library passes the output check.\n"
+				: "Every library renders the same DOM.\n",
+		);
 	}
 
 	if (!problems.length && !args.check) {
 		const times = await measure();
 
 		const scenarios = suite.scenarios.map((scenario) => {
-			const measured = selected.map((library) => ({
-				library: library.id,
-				...summarise(times.get(`${scenario.id}/${library.id}`) ?? []),
-			}));
-			const fastest = Math.min(...measured.map((item) => item.medianMs));
+			const measured = selected.map((library) => {
+				const note = notes.get(`${scenario.id}/${library.id}`);
+				return {
+					library: library.id,
+					...summarise(times.get(`${scenario.id}/${library.id}`) ?? []),
+					...(note ? { note } : {}),
+				};
+			});
+			// A library that fails the check, such as one that ends on another slide,
+			// did less than the scenario asks. It's listed after the others, which are
+			// compared with the fastest library that passes.
+			const passing = measured.filter((item) => !item.note);
+			const fastest = Math.min(
+				...(passing.length ? passing : measured).map((item) => item.medianMs),
+			);
 			return {
 				id: scenario.id,
 				name: scenario.name,
 				description: scenario.description,
 				features: scenario.features,
+				metric: scenario.metric ?? "time",
 				results: measured
 					.map((item) => ({ ...item, relative: item.medianMs / fastest }))
-					.sort((a, b) => a.medianMs - b.medianMs),
+					.sort(
+						(a, b) =>
+							Number(Boolean(a.note)) - Number(Boolean(b.note)) ||
+							a.medianMs - b.medianMs,
+					),
 			};
 		});
 
+		// Each library's overall result covers the scenarios it passes.
 		const summary = selected
 			.map((library) => ({
 				library: library.id,
 				geometricMean: geometricMean(
 					scenarios.flatMap((scenario) =>
 						scenario.results
-							.filter((result) => result.library === library.id)
+							.filter((result) => result.library === library.id && !result.note)
 							.map((result) => result.relative),
 					),
 				),
@@ -322,6 +359,7 @@ try {
 		}
 	}
 } finally {
+	await releaseCpu();
 	await browser.close();
 	await server.close();
 }

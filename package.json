@@ -5,6 +5,7 @@
 		"build": "vp run -r build",
 		"dev": "vp run -r --parallel dev",
 		"bench": "vp run @lucidclient/benchmarks#bench",
+		"bench:carousel": "vp run @lucidclient/benchmarks#bench-carousel",
 		"format": "vp fmt --check",
 		"format:fix": "vp fmt",
 		"lint": "vp lint",

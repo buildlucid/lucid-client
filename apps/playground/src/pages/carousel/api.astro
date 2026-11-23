@@ -1,0 +1,118 @@
+---
+import { hues, nextIcon, prevIcon } from "../../components/carousel-icons";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/carousel.css";
+
+const five = hues.slice(0, 5);
+---
+
+<Playground title="Events & API">
+	<Fragment slot="intro">
+		<p>
+			Each carousel dispatches a bubbling <code>carousel-change</code> event
+			when its page changes, and <code>carousel.get(element)</code> returns its
+			API: <code>state</code>, <code>next()</code>, <code>prev()</code>,
+			<code>goTo(index)</code>, <code>play()</code>, <code>pause()</code>,
+			<code>toggle()</code>, <code>subscribe(listener)</code>,
+			<code>refresh()</code> and <code>destroy()</code>. Every change on this
+			page is logged.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="api"
+		title="Calling the API"
+		description="The buttons below call the carousel's methods from JavaScript, and the readout is written by `subscribe`, which runs after every state change."
+		expect={[
+			"`Go to` scrolls to the page typed in, counting from 0, and clamps numbers past either end.",
+			"`play()` starts autoplay, even on a carousel without `data-carousel--autoplay`, and `pause()` stops it.",
+			"The readout updates as you swipe, as well as after the method calls.",
+		]}
+	>
+		<section data-carousel aria-label="API" id="api-main" class="space-y-3">
+			<div data-carousel--track class="carousel-track">
+				{five.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`}>Slide {index + 1}</div>
+				))}
+			</div>
+			<div class="carousel-dots" data-carousel--markers>
+				<template><button class="carousel-dot"></button></template>
+			</div>
+		</section>
+		<pg-controls class="mt-4 flex flex-wrap items-center gap-2">
+			<button type="button" class="btn btn-sm" data-call="prev">prev()</button>
+			<button type="button" class="btn btn-sm" data-call="next">next()</button>
+			<label class="flex items-center gap-2 text-xs text-subtle">
+				<input type="number" class="input w-20 py-1" value="3" data-goto-input />
+			</label>
+			<button type="button" class="btn btn-sm" data-call="goTo">goTo()</button>
+			<button type="button" class="btn btn-sm" data-call="play">play()</button>
+			<button type="button" class="btn btn-sm" data-call="pause">pause()</button>
+		</pg-controls>
+		<pg-readout class="mt-4 block">
+			<pre class="readout" data-state-readout></pre>
+		</pg-readout>
+	</Scenario>
+
+	<Scenario
+		id="dynamic"
+		title="Carousels added later"
+		description="`Add a carousel` inserts new markup and calls `refresh()`, which enhances it. `Remove it` takes it off the page and calls `refresh()` again, which destroys it. Controls work as soon as they are added, because clicks are handled on the document."
+		expect={[
+			"The new carousel has its markers and working buttons straight after `Add a carousel`.",
+			"After `Remove it`, `carousel.get()` returns `undefined` for it, as the log shows.",
+		]}
+	>
+		<div class="space-y-3" data-dynamic-host></div>
+		<pg-controls class="mt-4 flex flex-wrap gap-2">
+			<button type="button" class="btn btn-sm" data-call="add">Add a carousel</button>
+			<button type="button" class="btn btn-sm btn-danger" data-call="remove">Remove it</button>
+		</pg-controls>
+		<template data-dynamic-template>
+			<section data-carousel aria-label="Added later" id="api-added" class="space-y-3">
+				<div data-carousel--track class="carousel-track">
+					{five.map((hue, index) => (
+						<div class="carousel-panel" style={`--hue: ${hue}`}>Added {index + 1}</div>
+					))}
+				</div>
+				<div class="flex items-center justify-between gap-3">
+					<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous slide">
+						<Fragment set:html={prevIcon} />
+					</button>
+					<div class="carousel-dots" data-carousel--markers>
+						<template><button class="carousel-dot"></button></template>
+					</div>
+					<button class="carousel-arrow" data-carousel--action="next" aria-label="Next slide">
+						<Fragment set:html={nextIcon} />
+					</button>
+				</div>
+			</section>
+		</template>
+	</Scenario>
+
+	<Scenario
+		id="outside"
+		title="Controls outside the carousel"
+		description="Controls and markers can live anywhere on the page when their `aria-controls` names the carousel's track or root. These buttons sit after the scenario's carousel, outside its element."
+		expect={[
+			"Both buttons move the carousel above them, and `Next` is `aria-disabled` on the last slide.",
+		]}
+	>
+		<section data-carousel aria-label="Remote" class="space-y-3">
+			<div data-carousel--track class="carousel-track" id="remote-track">
+				{five.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`}>Slide {index + 1}</div>
+				))}
+			</div>
+		</section>
+		<div class="mt-3 flex justify-center gap-2">
+			<button class="btn btn-sm" data-carousel--action="prev" aria-controls="remote-track">Previous</button>
+			<button class="btn btn-sm" data-carousel--action="next" aria-controls="remote-track">Next</button>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/carousel/api";
+	</script>
+</Playground>

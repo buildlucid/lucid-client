@@ -11,6 +11,7 @@
 	"dependencies": {
 		"@astrojs/check": "^0.9.12",
 		"@fontsource-variable/inter": "^5.3.0",
+		"@lucidclient/carousel": "*",
 		"@lucidclient/catalyst": "*",
 		"@lucidclient/cookie-controller": "*",
 		"@lucidclient/speculate": "*",

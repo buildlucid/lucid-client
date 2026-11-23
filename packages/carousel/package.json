@@ -1,0 +1,70 @@
+{
+	"name": "@lucidclient/carousel",
+	"version": "0.1.0",
+	"private": false,
+	"description": "A bring your own markup and styles carousel built on CSS scroll snapping, with JavaScript only for controls, markers, looping, mouse drag, autoplay and accessibility.",
+	"type": "module",
+	"types": "./dist/index.d.ts",
+	"main": "dist/index.cjs",
+	"module": "dist/index.js",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		},
+		"./catalyst": {
+			"types": "./dist/catalyst.d.ts",
+			"import": "./dist/catalyst.js",
+			"require": "./dist/catalyst.cjs"
+		}
+	},
+	"scripts": {
+		"dev": "vp pack --watch"
+	},
+	"peerDependencies": {
+		"@lucidclient/catalyst": "^0.6.0"
+	},
+	"peerDependenciesMeta": {
+		"@lucidclient/catalyst": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@lucidclient/catalyst": "*",
+		"happy-dom": "^20.11.1",
+		"vite-plus": "1.7.0",
+		"typescript": "^7.0.2"
+	},
+	"author": "Proto Digital",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ProtoDigitalUK/lucid_client",
+		"directory": "packages/carousel"
+	},
+	"keywords": [
+		"carousel",
+		"slider",
+		"scroll-snap",
+		"progressive-enhancement",
+		"accessibility",
+		"javascript",
+		"typescript",
+		"frontend",
+		"minimal",
+		"lightweight",
+		"lucid-client",
+		"lucid"
+	],
+	"homepage": "https://lucidjs.build/carousel",
+	"engines": {
+		"node": ">=24 <27"
+	},
+	"volta": {
+		"node": "26.13.1"
+	}
+}

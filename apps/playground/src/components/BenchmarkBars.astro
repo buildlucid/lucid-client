@@ -1,5 +1,5 @@
 ---
-import { barWidth, libraryFor } from "../lib/benchmarks";
+import { type BenchmarkLibrary, barWidth, libraryFor } from "../lib/benchmarks";
 
 type Row = {
 	library: string;
@@ -9,6 +9,8 @@ type Row = {
 	extra?: string;
 	/** Shown on hover. */
 	hint?: string;
+	/** Shown under the library's name, such as a problem the output check found. */
+	note?: string;
 };
 
 interface Props {
@@ -16,9 +18,13 @@ interface Props {
 	headers: { value: string; extra?: string };
 	/** Fastest first. */
 	rows: Row[];
+	/** The run's libraries. Defaults to the Catalyst run's. */
+	libraries?: BenchmarkLibrary[];
+	/** The library the run is about, which is highlighted. Defaults to Catalyst. */
+	highlight?: string;
 }
 
-const { headers, rows } = Astro.props;
+const { headers, rows, libraries, highlight = "catalyst" } = Astro.props;
 ---
 
 <table class="w-full text-[13px]">
@@ -38,21 +44,24 @@ const { headers, rows } = Astro.props;
 	<tbody>
 		{
 			rows.map((row) => {
-				const library = libraryFor(row.library);
-				const isCatalyst = library.id === "catalyst";
+				const library = libraryFor(row.library, libraries);
+				const isHighlighted = library.id === highlight;
 				return (
-					<tr class:list={["border-t border-line", isCatalyst ? "text-fg" : "text-muted"]}>
+					<tr class:list={["border-t border-line", isHighlighted ? "text-fg" : "text-muted"]}>
 						<td class="py-2.5 pr-4 pl-5 whitespace-nowrap sm:pl-6">
-							<span class:list={[isCatalyst && "font-medium"]}>{library.name}</span>
+							<span class:list={[isHighlighted && "font-medium"]}>{library.name}</span>
 							{library.version && (
 								<span class="ml-1 font-mono text-[11px] text-subtle">{library.version}</span>
+							)}
+							{row.note && (
+								<span class="mt-0.5 block text-[11px] whitespace-normal text-amber-300/90">{row.note}</span>
 							)}
 						</td>
 						<td class="py-2.5 pr-4">
 							<div class="flex items-center gap-3" title={row.hint}>
 								<div class="h-2 min-w-12 flex-1" aria-hidden="true">
 									<div
-										class:list={["h-2 rounded-r", isCatalyst ? "bg-accent" : "bg-line-strong"]}
+										class:list={["h-2 rounded-r", isHighlighted ? "bg-accent" : "bg-line-strong"]}
 										style={`width: ${barWidth(row.relative)}`}
 									/>
 								</div>

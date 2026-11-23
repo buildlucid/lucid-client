@@ -1,0 +1,162 @@
+---
+import { hues, nextIcon, prevIcon } from "../../components/carousel-icons";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/carousel.css";
+
+const five = hues.slice(0, 5);
+const eight = hues.slice(0, 8);
+---
+
+<Playground title="Looping & drag">
+	<Fragment slot="intro">
+		<p>
+			<code>data-carousel--loop</code> loops without cloning slides. Once the
+			track stops, the library reorders the slides with CSS
+			<code>order</code> so the current one has slides on both sides, then
+			scrolls so nothing moves on screen. The DOM keeps its order, so screen
+			readers and the tab order follow the slides as written, and there are no
+			duplicate ids, links or form fields. Looping needs three or more slides
+			in a flex or grid track.
+		</p>
+		<p>
+			<code>data-carousel--drag</code> lets a mouse drag the track. Touch and
+			pens already scroll natively, so they are left alone.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="loop"
+		title="Infinite loop"
+		description={"Five slides with `data-carousel--loop`. The readout below shows the order the slides are laid out in, from each slide's `style=\"order\"`, next to their DOM order."}
+		expect={[
+			"`Previous` on slide 1 goes to slide 5, and `Next` on slide 5 goes to slide 1, both scrolling one slide.",
+			"Neither button is ever disabled, and the root never has `data-carousel--at-start` or `data-carousel--at-end`.",
+			"After each move, the laid out order changes so the current slide is in the middle. The DOM order never changes.",
+			"The dots take the shortest way round: from slide 1, the dot for slide 5 scrolls back one slide.",
+		]}
+	>
+		<section data-carousel data-carousel--loop aria-label="Looping slides" id="looping-loop" class="space-y-3">
+			<div data-carousel--track class="carousel-track">
+				{five.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`} data-name={index + 1}>Slide {index + 1}</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous slide">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="carousel-dots" data-carousel--markers>
+					<template><button class="carousel-dot"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next slide">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+		</section>
+		<pg-readout class="mt-4 block">
+			<pre class="readout" data-order-readout="#looping-loop"></pre>
+		</pg-readout>
+	</Scenario>
+
+	<Scenario
+		id="loop-drag"
+		title="Several in view, looping, with drag"
+		description="Eight cards, three in view, with `data-carousel--loop` and `data-carousel--drag`. While a drag nears either end of the track, the slides are reordered under the pointer, so it can drag round and round."
+		expect={[
+			"Dragging with a mouse moves the track with the pointer, shows a `grabbing` cursor and turns snapping off until it settles.",
+			"Letting go settles on the nearest card, or carries on to the next one after a quick flick.",
+			"Dragging further than all eight cards keeps going without hitting an end.",
+			"Touch swipes scroll natively and loop once they stop.",
+		]}
+	>
+		<section data-carousel data-carousel--loop data-carousel--drag aria-label="Looping cards" id="looping-drag" class="space-y-3">
+			<div data-carousel--track class="carousel-track carousel-several">
+				{eight.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`} data-name={index + 1}>Card {index + 1}</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous card">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="carousel-dots" data-carousel--markers>
+					<template><button class="carousel-dot"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next card">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+		</section>
+		<pg-readout class="mt-4 block">
+			<pre class="readout" data-order-readout="#looping-drag"></pre>
+		</pg-readout>
+	</Scenario>
+
+	<Scenario
+		id="rewind"
+		title="Rewind"
+		description="`data-carousel--rewind` jumps back to the start from the end, and to the end from the start, scrolling across every slide. Use it where reordering slides isn't wanted."
+		expect={[
+			"`Next` on the last slide scrolls back to the first, and `Previous` on the first scrolls to the last.",
+			"The buttons are never disabled, but the slides keep their order.",
+		]}
+	>
+		<section data-carousel data-carousel--rewind aria-label="Rewinding slides" id="looping-rewind" class="space-y-3">
+			<div data-carousel--track class="carousel-track">
+				{five.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`}>Slide {index + 1}</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous slide">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="carousel-dots" data-carousel--markers>
+					<template><button class="carousel-dot"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next slide">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+		</section>
+	</Scenario>
+
+	<Scenario
+		id="drag"
+		title="Dragging over links and buttons"
+		description="A press only becomes a drag once the pointer moves 5px, so the links and buttons inside these cards still work. The click that ends a drag is swallowed, so letting go over a link doesn't follow it."
+		expect={[
+			"Clicking `Open` or `Save` logs it.",
+			"Dragging from on top of a link or button and letting go there doesn't log a click.",
+			"Text inside the card can't be selected by dragging, and links and images aren't dragged out of the page.",
+		]}
+	>
+		<section data-carousel data-carousel--drag aria-label="Draggable cards" id="looping-links" class="space-y-3">
+			<div data-carousel--track class="carousel-track carousel-several">
+				{eight.map((_, index) => (
+					<article class="carousel-card">
+						<h3 class="text-sm font-semibold text-fg">Article {index + 1}</h3>
+						<p>Drag me, or use the links.</p>
+						<div class="mt-auto flex gap-2">
+							<a href={`#article-${index + 1}`} class="btn btn-sm" data-log-click={`Opened article ${index + 1}`}>Open</a>
+							<button type="button" class="btn btn-sm" data-log-click={`Saved article ${index + 1}`}>Save</button>
+						</div>
+					</article>
+				))}
+			</div>
+			<div class="flex justify-end gap-2">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous articles">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next articles">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+		</section>
+	</Scenario>
+
+	<script>
+		import "../../scripts/carousel/looping";
+	</script>
+</Playground>

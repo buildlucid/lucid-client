@@ -1,0 +1,297 @@
+---
+import BenchmarkBars from "../../components/BenchmarkBars.astro";
+import Playground from "../../layouts/Playground.astro";
+import {
+	carouselBenchmarks as benchmarks,
+	formatDate,
+	formatKb,
+	formatMb,
+	formatMs,
+	formatRelative,
+	libraryFor,
+} from "../../lib/benchmarks";
+
+const { environment, settings, libraries } = benchmarks;
+const highlight = "carousel";
+const name = (id: string) => libraryFor(id, libraries).name;
+const byKind = (kind: string) =>
+	libraries
+		.filter((library) => library.id !== highlight && library.kind === kind)
+		.map((library) => library.name);
+const list = (names: string[]) =>
+	names.length > 1
+		? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
+		: (names[0] ?? "");
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+const sectionClass =
+	"scroll-mt-20 overflow-hidden rounded-xl border border-line bg-panel lg:scroll-mt-8";
+const headerClass = "px-5 pt-5 pb-3 sm:px-6";
+const tableHeadClass = "py-2 pr-4 font-medium text-right whitespace-nowrap";
+const cellClass = "py-2.5 pr-4 text-right whitespace-nowrap tabular-nums";
+---
+
+<Playground title="Benchmarks" log={false}>
+	<Fragment slot="intro">
+		<p>
+			How much work Lucid Carousel does in a browser, compared with popular
+			carousels that move their slides with transforms, {list(byKind("Transforms"))},
+			and with ones that scroll them with CSS scroll snapping as it does,
+			{list(byKind("CSS scroll snap"))}.
+		</p>
+		<p>
+			Each scenario measures the JavaScript, style and layout work from a
+			click or call until the carousel has settled, across every frame,
+			scroll event and observer that follows. Longer bars mean less work, and
+			the library that does least is listed first. The last run was on
+			{formatDate(benchmarks.date)}, in {environment.browser} on
+			{environment.cpu}. Read <a href="#how-it-works">how the benchmark works</a>
+			before you compare libraries.
+		</p>
+	</Fragment>
+
+	<section id="libraries" data-scenario="Libraries" class={sectionClass}>
+		<header class={headerClass}>
+			<h2 class="text-[15px] font-semibold tracking-tight">Libraries</h2>
+			<p class="mt-1.5 text-[13px] leading-6 text-muted">
+				Transform carousels move a strip of slides with CSS transforms and run
+				their own animation and dragging. Scroll snap carousels let the browser
+				scroll and snap, and add controls on top.
+			</p>
+		</header>
+		<table class="w-full text-[13px]">
+			<thead>
+				<tr class="text-left text-xs text-subtle">
+					<th class="w-full py-2 pr-4 pl-5 font-medium sm:pl-6">Library</th>
+					<th class={tableHeadClass}>Version</th>
+					<th class:list={[tableHeadClass, "pr-5 text-left sm:pr-6"]}>How it moves slides</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					libraries.map((library) => (
+						<tr class:list={["border-t border-line", library.id === highlight ? "text-fg" : "text-muted"]}>
+							<td class="py-2.5 pr-4 pl-5 sm:pl-6">
+								{library.homepage ? <a href={library.homepage}>{library.name}</a> : library.name}
+							</td>
+							<td class={cellClass}>{library.version ?? "—"}</td>
+							<td class="py-2.5 pr-5 whitespace-nowrap sm:pr-6">{library.kind}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+
+	<section id="overall" data-scenario="Overall" class={sectionClass}>
+		<header class={headerClass}>
+			<h2 class="text-[15px] font-semibold tracking-tight">Overall</h2>
+			<p class="mt-1.5 text-[13px] leading-6 text-muted">
+				How many times more work each library does than the one that does
+				least, averaged over every scenario below with a geometric mean, so no
+				single scenario outweighs the rest. A scenario a library gets wrong,
+				such as ending on another slide, is left out of its average.
+			</p>
+		</header>
+		<BenchmarkBars
+			libraries={libraries}
+			highlight={highlight}
+			headers={{ value: "Times the least work" }}
+			rows={benchmarks.summary.map((item) => ({
+				library: item.library,
+				relative: item.geometricMean,
+				value: formatRelative(item.geometricMean),
+			}))}
+		/>
+	</section>
+
+	{
+		benchmarks.scenarios.map((scenario) => (
+			<section id={scenario.id} data-scenario={scenario.name} class={sectionClass}>
+				<header class={headerClass}>
+					<h2 class="text-[15px] font-semibold tracking-tight">{scenario.name}</h2>
+					<p class="mt-1.5 text-[13px] leading-6 text-muted">{scenario.description}</p>
+					<p class="mt-2 flex flex-wrap gap-1.5">
+						{scenario.features.map((feature) => (
+							<span class="badge">{feature}</span>
+						))}
+					</p>
+				</header>
+				<BenchmarkBars
+					libraries={libraries}
+					highlight={highlight}
+					headers={{ value: "Median work", extra: "Compared with least" }}
+					rows={scenario.results.map((result) => ({
+						library: result.library,
+						relative: result.relative,
+						value: formatMs(result.medianMs),
+						extra: formatRelative(result.relative),
+						hint: `p95 ${formatMs(result.p95Ms)}, least ${formatMs(result.minMs)}, ${result.samples} samples`,
+						...(result.note ? { note: sentence(result.note) } : {}),
+					}))}
+				/>
+			</section>
+		))
+	}
+
+	<section id="memory" data-scenario="Memory" class={sectionClass}>
+		<header class={headerClass}>
+			<h2 class="text-[15px] font-semibold tracking-tight">Memory</h2>
+			<p class="mt-1.5 text-[13px] leading-6 text-muted">
+				{benchmarks.memory.description} Less is better.
+			</p>
+		</header>
+		<table class="w-full text-[13px]">
+			<thead>
+				<tr class="text-left text-xs text-subtle">
+					<th class="w-full py-2 pr-4 pl-5 font-medium sm:pl-6">Library</th>
+					<th class={tableHeadClass}>Loaded</th>
+					<th class:list={[tableHeadClass, "pr-5 sm:pr-6"]}>20 carousels</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					benchmarks.memory.results.map((result) => (
+						<tr class="border-t border-line text-muted">
+							<td class="py-2.5 pr-4 pl-5 sm:pl-6">{name(result.library)}</td>
+							<td class={cellClass}>{formatMb(result.readyMb)}</td>
+							<td class:list={[cellClass, "pr-5 sm:pr-6"]}>{formatMb(result.afterMb)}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+
+	<section id="size" data-scenario="Size" class={sectionClass}>
+		<header class={headerClass}>
+			<h2 class="text-[15px] font-semibold tracking-tight">Size</h2>
+			<p class="mt-1.5 text-[13px] leading-6 text-muted">
+				{benchmarks.size.description} Sizes are compressed with gzip. Lucid
+				Carousel's and Embla's CSS is what their documentation tells you to add,
+				as neither ships a stylesheet. Smaller is better.
+			</p>
+		</header>
+		<table class="w-full text-[13px]">
+			<thead>
+				<tr class="text-left text-xs text-subtle">
+					<th class="w-full py-2 pr-4 pl-5 font-medium sm:pl-6">Library</th>
+					<th class={tableHeadClass}>JavaScript</th>
+					<th class={tableHeadClass}>CSS</th>
+					<th class:list={[tableHeadClass, "pr-5 sm:pr-6"]}>Total</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					[...benchmarks.size.results]
+						.sort((a, b) => a.gzipBytes + a.css.gzipBytes - (b.gzipBytes + b.css.gzipBytes))
+						.map((result) => (
+							<tr class:list={["border-t border-line", result.library === highlight ? "text-fg" : "text-muted"]}>
+								<td class="py-2.5 pr-4 pl-5 sm:pl-6">{name(result.library)}</td>
+								<td class={cellClass}>{formatKb(result.gzipBytes)}</td>
+								<td class={cellClass}>{formatKb(result.css.gzipBytes)}</td>
+								<td class:list={[cellClass, "pr-5 sm:pr-6"]}>{formatKb(result.gzipBytes + result.css.gzipBytes)}</td>
+							</tr>
+						))
+				}
+			</tbody>
+		</table>
+	</section>
+
+	<section id="how-it-works" data-scenario="How it works" class={sectionClass}>
+		<div class="space-y-4 px-5 py-5 text-[13px] leading-6 text-muted sm:px-6">
+			<h2 class="text-[15px] font-semibold tracking-tight text-fg">How the benchmark works</h2>
+			<ul class="list-disc space-y-2 pl-5">
+				<li>
+					<strong class="text-fg">The same carousels.</strong> Every library renders
+					the same slides at the full width of the page, one at a time, with
+					previous and next buttons, a dot for each slide, and no looping or
+					autoplay. Swiper and Splide both move at 300ms, Embla uses its own
+					default, and the scroll snap carousels use the browser's smooth
+					scrolling.
+				</li>
+				<li>
+					<strong class="text-fg">Checked, not compared.</strong> Carousels render
+					different markup, so instead of comparing DOM, the benchmark checks each
+					library shows the right slide after every scenario. A library that ends
+					up on the wrong slide after a resize is still measured, and the result
+					says so, but it's listed after the others and left out of its overall
+					result, as it did less than the scenario asks.
+				</li>
+				<li>
+					<strong class="text-fg">Idiomatic pages.</strong> Each library's pages
+					are written the way its documentation recommends, with the modules or
+					markup it suggests. Swiper uses its Navigation, Pagination and A11y
+					modules. Embla and Blossom don't render dots, so their pages add them as
+					their documentation shows, and Blossom's dots scroll natively because it
+					has no "go to" method.
+				</li>
+				<li>
+					<strong class="text-fg">What is measured.</strong> Each sample opens a
+					fresh page, warms up where the scenario says to, lets the page go quiet
+					and collects garbage, then performs one step and adds up the
+					JavaScript, style and layout work the browser reports over the next
+					second, by when every carousel has settled. One CPU core is kept busy
+					throughout, so the CPU runs at full speed: otherwise work spread over
+					the frames of a smooth scroll is measured at a slower speed than work
+					done in one go. Painting
+					isn't counted: how much of it happens on the main thread depends on the
+					GPU, and headless Chromium has none, which would count work against
+					scroll snap carousels that a real browser does on its compositor.
+				</li>
+				<li>
+					<strong class="text-fg">Samples.</strong> Each result is the median of
+					{settings.samples} samples. Libraries take turns in a different order
+					each round, so a change in the machine's speed can't favour one.
+					{settings.throttle > 1 ? ` The CPU was slowed down ${settings.throttle} times.` : ""}
+				</li>
+				<li>
+					<strong class="text-fg">What the numbers don't show.</strong> Work done
+					on the compositor, such as scrolling and transform animations, isn't
+					counted, and neither is how smooth a carousel feels to swipe. Scroll snap
+					carousels swipe with the browser's own scrolling; transform carousels
+					handle touch themselves.
+				</li>
+			</ul>
+			<p>
+				Numbers depend on the machine and the browser. Compare libraries within
+				one run, not with numbers from another computer.
+			</p>
+		</div>
+	</section>
+
+	<section id="run-it-yourself" data-scenario="Run it yourself" class={sectionClass}>
+		<div class="space-y-4 px-5 py-5 text-[13px] leading-6 text-muted sm:px-6">
+			<h2 class="text-[15px] font-semibold tracking-tight text-fg">Run it yourself</h2>
+			<p>
+				From the root of the repository, install Playwright's Chromium once with
+				<code>npx playwright install --no-shell chromium</code>, then run
+				<code>npm run bench:carousel</code>. It builds Lucid Carousel and the
+				pages, checks every library shows the right slides, runs the benchmark
+				and writes <code>packages/benchmarks/results/carousel.json</code>, which
+				this page reads. The pages for every library are in
+				<code>packages/benchmarks/src/carousel/pages</code>.
+			</p>
+		</div>
+		<table class="w-full text-[13px]">
+			<tbody>
+				{
+					[
+						["Date", formatDate(benchmarks.date)],
+						["Commit", benchmarks.commit ?? "Unknown"],
+						["Browser", environment.browser],
+						["CPU", `${environment.cpu}, ${environment.cores} cores`],
+						["Memory", `${environment.memoryGb} GB`],
+						["Operating system", environment.os],
+						["Node", environment.node],
+					].map(([label, value]) => (
+						<tr class="border-t border-line">
+							<th class="py-2.5 pr-4 pl-5 text-left font-medium whitespace-nowrap text-subtle sm:pl-6">{label}</th>
+							<td class="w-full py-2.5 pr-5 text-muted sm:pr-6">{value}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+</Playground>

@@ -1,16 +1,27 @@
+import carousel from "../../../../packages/benchmarks/results/carousel.json";
 import results from "../../../../packages/benchmarks/results/catalyst.json";
 
 /** The latest Catalyst benchmark run, written by `npm run bench`. */
 export const benchmarks = results;
 
-export type BenchmarkLibrary = (typeof results.libraries)[number];
+/** The latest carousel benchmark run, written by `npm run bench:carousel`. */
+export const carouselBenchmarks = carousel;
 
-const libraries = new Map(
-	results.libraries.map((library) => [library.id, library]),
-);
+export type BenchmarkLibrary = {
+	id: string;
+	name: string;
+	version: string | null;
+	homepage: string | null;
+	/** How the library works, such as "CSS scroll snap". */
+	kind?: string;
+};
 
-export const libraryFor = (id: string): BenchmarkLibrary => {
-	const library = libraries.get(id);
+/** A library from a run's results. Defaults to the Catalyst run. */
+export const libraryFor = (
+	id: string,
+	libraries: BenchmarkLibrary[] = results.libraries,
+): BenchmarkLibrary => {
+	const library = libraries.find((item) => item.id === id);
 	if (!library)
 		throw new Error(`The benchmark results have no library "${id}"`);
 	return library;
@@ -39,5 +50,10 @@ export const formatDate = (date: string) =>
 		new Date(date),
 	);
 
-/** A bar's width, so the fastest library fills it and longer bars are faster. */
-export const barWidth = (relative: number) => `${(100 / relative).toFixed(1)}%`;
+/**
+ * A bar's width, so the fastest library fills it and longer bars are faster.
+ * A library that failed a scenario's check can be faster than the fastest that
+ * passed, and fills it too.
+ */
+export const barWidth = (relative: number) =>
+	`${Math.min(100, 100 / relative).toFixed(1)}%`;

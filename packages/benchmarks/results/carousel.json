@@ -1,0 +1,611 @@
+{
+	"suite": "carousel",
+	"name": "Carousel",
+	"date": "2026-11-23",
+	"commit": "edbb2a8",
+	"environment": {
+		"browser": "Chromium 159.0.8154.6",
+		"node": "26.13.1",
+		"os": "Darwin 25.3.0 (arm64)",
+		"cpu": "Apple M4 Pro",
+		"cores": 12,
+		"memoryGb": 24
+	},
+	"settings": {
+		"samples": 15,
+		"warmups": 5,
+		"throttle": 1
+	},
+	"libraries": [
+		{
+			"id": "carousel",
+			"name": "Lucid Carousel",
+			"package": "@lucidclient/carousel",
+			"homepage": "https://github.com/ProtoDigitalUK/lucid_client",
+			"kind": "CSS scroll snap",
+			"version": "0.1.0"
+		},
+		{
+			"id": "embla",
+			"name": "Embla Carousel",
+			"package": "embla-carousel",
+			"homepage": "https://www.embla-carousel.com/",
+			"kind": "Transforms",
+			"version": "8.6.0"
+		},
+		{
+			"id": "swiper",
+			"name": "Swiper",
+			"package": "swiper",
+			"homepage": "https://swiperjs.com/",
+			"kind": "Transforms",
+			"version": "14.4.0"
+		},
+		{
+			"id": "splide",
+			"name": "Splide",
+			"package": "@splidejs/splide",
+			"homepage": "https://splidejs.com/",
+			"kind": "Transforms",
+			"version": "4.1.4"
+		},
+		{
+			"id": "swiper-css",
+			"name": "Swiper (CSS mode)",
+			"package": "swiper",
+			"homepage": "https://swiperjs.com/swiper-api#param-cssMode",
+			"kind": "CSS scroll snap",
+			"version": "14.4.0"
+		},
+		{
+			"id": "blossom",
+			"name": "Blossom Carousel",
+			"package": "@blossom-carousel/core",
+			"homepage": "https://www.blossom-carousel.com/",
+			"kind": "CSS scroll snap",
+			"version": "1.1.10"
+		},
+		{
+			"id": "swiffy",
+			"name": "Swiffy Slider",
+			"package": "swiffy-slider",
+			"homepage": "https://www.swiffyslider.com/",
+			"kind": "CSS scroll snap",
+			"version": "2.1.2"
+		}
+	],
+	"summary": [
+		{
+			"library": "swiffy",
+			"geometricMean": 1.1192496653220052
+		},
+		{
+			"library": "blossom",
+			"geometricMean": 2.805068886026162
+		},
+		{
+			"library": "carousel",
+			"geometricMean": 3.9882690216521497
+		},
+		{
+			"library": "swiper",
+			"geometricMean": 4.539025475364023
+		},
+		{
+			"library": "embla",
+			"geometricMean": 4.587293664416993
+		},
+		{
+			"library": "splide",
+			"geometricMean": 5.671789839332138
+		},
+		{
+			"library": "swiper-css",
+			"geometricMean": 6.484190410722638
+		}
+	],
+	"scenarios": [
+		{
+			"id": "start-up",
+			"name": "Start-up",
+			"description": "Starts 20 carousels of 10 slides on a page that has rendered their markup. Each has previous and next buttons and a dot for each slide.",
+			"features": [
+				"Setup",
+				"Measuring",
+				"Markers",
+				"Accessibility"
+			],
+			"metric": "work",
+			"results": [
+				{
+					"library": "swiffy",
+					"medianMs": 0.4529999999999994,
+					"meanMs": 0.4540666666666666,
+					"p95Ms": 0.4894000000000006,
+					"minMs": 0.42300000000000004,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "blossom",
+					"medianMs": 3.157000000000001,
+					"meanMs": 3.1576000000000004,
+					"p95Ms": 3.2180000000000004,
+					"minMs": 3.0789999999999997,
+					"samples": 15,
+					"relative": 6.969094922737318
+				},
+				{
+					"library": "embla",
+					"medianMs": 4.037999999999999,
+					"meanMs": 4.051866666666667,
+					"p95Ms": 4.1861000000000015,
+					"minMs": 3.9110000000000005,
+					"samples": 15,
+					"relative": 8.913907284768221
+				},
+				{
+					"library": "carousel",
+					"medianMs": 4.145000000000001,
+					"meanMs": 4.142199999999999,
+					"p95Ms": 4.2797,
+					"minMs": 4.005000000000001,
+					"samples": 15,
+					"relative": 9.150110375275954
+				},
+				{
+					"library": "swiper",
+					"medianMs": 9.039,
+					"meanMs": 8.985600000000002,
+					"p95Ms": 9.352599999999999,
+					"minMs": 8.418,
+					"samples": 15,
+					"relative": 19.953642384105986
+				},
+				{
+					"library": "swiper-css",
+					"medianMs": 9.822,
+					"meanMs": 9.804866666666666,
+					"p95Ms": 10.1838,
+					"minMs": 9.431000000000001,
+					"samples": 15,
+					"relative": 21.68211920529804
+				},
+				{
+					"library": "splide",
+					"medianMs": 11.842999999999998,
+					"meanMs": 11.944133333333331,
+					"p95Ms": 12.502399999999998,
+					"minMs": 11.526999999999997,
+					"samples": 15,
+					"relative": 26.143487858719677
+				}
+			]
+		},
+		{
+			"id": "large",
+			"name": "Large carousel",
+			"description": "Starts one carousel of 300 slides, with previous and next buttons.",
+			"features": [
+				"Setup",
+				"Measuring"
+			],
+			"metric": "work",
+			"results": [
+				{
+					"library": "swiffy",
+					"medianMs": 0.3260000000000005,
+					"meanMs": 0.33573333333333377,
+					"p95Ms": 0.38320000000000015,
+					"minMs": 0.3000000000000016,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "blossom",
+					"medianMs": 2.162,
+					"meanMs": 2.1532666666666667,
+					"p95Ms": 2.2049999999999996,
+					"minMs": 2.0629999999999997,
+					"samples": 15,
+					"relative": 6.631901840490787
+				},
+				{
+					"library": "embla",
+					"medianMs": 2.6949999999999994,
+					"meanMs": 2.694266666666667,
+					"p95Ms": 2.7706,
+					"minMs": 2.5970000000000004,
+					"samples": 15,
+					"relative": 8.266871165644156
+				},
+				{
+					"library": "carousel",
+					"medianMs": 2.953000000000001,
+					"meanMs": 2.944133333333333,
+					"p95Ms": 3.010299999999999,
+					"minMs": 2.8659999999999997,
+					"samples": 15,
+					"relative": 9.058282208588947
+				},
+				{
+					"library": "swiper",
+					"medianMs": 4.42,
+					"meanMs": 4.433866666666668,
+					"p95Ms": 4.535199999999999,
+					"minMs": 4.346000000000001,
+					"samples": 15,
+					"relative": 13.558282208588935
+				},
+				{
+					"library": "swiper-css",
+					"medianMs": 5.304000000000002,
+					"meanMs": 5.3082,
+					"p95Ms": 5.4235,
+					"minMs": 5.191,
+					"samples": 15,
+					"relative": 16.26993865030673
+				},
+				{
+					"library": "splide",
+					"medianMs": 7.989999999999999,
+					"meanMs": 7.969,
+					"p95Ms": 8.1128,
+					"minMs": 7.807,
+					"samples": 15,
+					"relative": 24.50920245398769
+				}
+			]
+		},
+		{
+			"id": "next-slide",
+			"name": "Next slide",
+			"description": "Clicks Next, and measures the work while the carousel moves to its second slide and settles.",
+			"features": [
+				"Navigation",
+				"Animation"
+			],
+			"metric": "work",
+			"results": [
+				{
+					"library": "blossom",
+					"medianMs": 0.20199999999999996,
+					"meanMs": 0.2064,
+					"p95Ms": 0.24129999999999896,
+					"minMs": 0.16600000000000126,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "swiffy",
+					"medianMs": 0.3169999999999993,
+					"meanMs": 0.3424000000000001,
+					"p95Ms": 0.4437999999999991,
+					"minMs": 0.2940000000000005,
+					"samples": 15,
+					"relative": 1.569306930693066
+				},
+				{
+					"library": "swiper",
+					"medianMs": 0.44899999999999984,
+					"meanMs": 0.456133333333333,
+					"p95Ms": 0.5186999999999999,
+					"minMs": 0.41900000000000226,
+					"samples": 15,
+					"relative": 2.2227722772277225
+				},
+				{
+					"library": "swiper-css",
+					"medianMs": 0.5960000000000019,
+					"meanMs": 0.6002666666666664,
+					"p95Ms": 0.6504999999999987,
+					"minMs": 0.5259999999999998,
+					"samples": 15,
+					"relative": 2.95049504950496
+				},
+				{
+					"library": "carousel",
+					"medianMs": 0.6069999999999993,
+					"meanMs": 0.6266666666666673,
+					"p95Ms": 0.779600000000001,
+					"minMs": 0.5350000000000019,
+					"samples": 15,
+					"relative": 3.0049504950495023
+				},
+				{
+					"library": "splide",
+					"medianMs": 0.684000000000001,
+					"meanMs": 0.6913999999999996,
+					"p95Ms": 0.7705999999999994,
+					"minMs": 0.597999999999999,
+					"samples": 15,
+					"relative": 3.3861386138613923
+				},
+				{
+					"library": "embla",
+					"medianMs": 0.809000000000001,
+					"meanMs": 0.8114000000000001,
+					"p95Ms": 0.9154000000000003,
+					"minMs": 0.6259999999999977,
+					"samples": 15,
+					"relative": 4.004950495049511
+				}
+			]
+		},
+		{
+			"id": "go-to-slide",
+			"name": "Go to a slide",
+			"description": "Clicks the 8th dot, moving seven slides at once, and measures the work until the carousel settles.",
+			"features": [
+				"Markers",
+				"Navigation",
+				"Animation"
+			],
+			"metric": "work",
+			"results": [
+				{
+					"library": "swiffy",
+					"medianMs": 0.2679999999999998,
+					"meanMs": 0.2788666666666663,
+					"p95Ms": 0.3104999999999999,
+					"minMs": 0.242,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "blossom",
+					"medianMs": 0.359,
+					"meanMs": 0.3719333333333333,
+					"p95Ms": 0.45889999999999936,
+					"minMs": 0.31400000000000006,
+					"samples": 15,
+					"relative": 1.339552238805971
+				},
+				{
+					"library": "swiper",
+					"medianMs": 0.5170000000000012,
+					"meanMs": 0.5445999999999999,
+					"p95Ms": 0.6550999999999999,
+					"minMs": 0.48900000000000077,
+					"samples": 15,
+					"relative": 1.9291044776119464
+				},
+				{
+					"library": "carousel",
+					"medianMs": 0.7189999999999994,
+					"meanMs": 0.7303333333333336,
+					"p95Ms": 0.8559000000000002,
+					"minMs": 0.6550000000000029,
+					"samples": 15,
+					"relative": 2.682835820895522
+				},
+				{
+					"library": "splide",
+					"medianMs": 0.7249999999999996,
+					"meanMs": 0.747533333333333,
+					"p95Ms": 0.8418999999999993,
+					"minMs": 0.6660000000000004,
+					"samples": 15,
+					"relative": 2.7052238805970155
+				},
+				{
+					"library": "embla",
+					"medianMs": 0.8599999999999994,
+					"meanMs": 0.8862666666666665,
+					"p95Ms": 1.0910000000000002,
+					"minMs": 0.7560000000000002,
+					"samples": 15,
+					"relative": 3.208955223880597
+				},
+				{
+					"library": "swiper-css",
+					"medianMs": 1.7199999999999989,
+					"meanMs": 1.741666666666667,
+					"p95Ms": 1.9926999999999997,
+					"minMs": 1.5680000000000014,
+					"samples": 15,
+					"relative": 6.417910447761194
+				}
+			]
+		},
+		{
+			"id": "resize",
+			"name": "Resize",
+			"description": "Narrows the window from 1,280 to 900 pixels while the carousel shows its 4th slide, and measures the work to lay it out again on the same slide.",
+			"features": [
+				"Measuring",
+				"Resize"
+			],
+			"metric": "work",
+			"results": [
+				{
+					"library": "splide",
+					"medianMs": 0.34499999999999886,
+					"meanMs": 0.3727999999999995,
+					"p95Ms": 0.47679999999999684,
+					"minMs": 0.32599999999999785,
+					"samples": 15,
+					"relative": 1
+				},
+				{
+					"library": "carousel",
+					"medianMs": 0.5210000000000008,
+					"meanMs": 0.5506666666666667,
+					"p95Ms": 0.6825999999999995,
+					"minMs": 0.4239999999999977,
+					"samples": 15,
+					"relative": 1.510144927536239
+				},
+				{
+					"library": "swiper",
+					"medianMs": 0.5730000000000004,
+					"meanMs": 0.5675333333333336,
+					"p95Ms": 0.6329999999999993,
+					"minMs": 0.43400000000000283,
+					"samples": 15,
+					"relative": 1.660869565217398
+				},
+				{
+					"library": "swiper-css",
+					"medianMs": 0.5919999999999987,
+					"meanMs": 0.5786666666666669,
+					"p95Ms": 0.6224000000000011,
+					"minMs": 0.5030000000000001,
+					"samples": 15,
+					"relative": 1.7159420289855092
+				},
+				{
+					"library": "embla",
+					"medianMs": 0.7399999999999984,
+					"meanMs": 0.7437999999999996,
+					"p95Ms": 0.8135999999999988,
+					"minMs": 0.6510000000000007,
+					"samples": 15,
+					"relative": 2.1449275362318865
+				},
+				{
+					"library": "blossom",
+					"medianMs": 0.33999999999999986,
+					"meanMs": 0.3391333333333336,
+					"p95Ms": 0.4162000000000002,
+					"minMs": 0.2679999999999998,
+					"samples": 15,
+					"note": "carousel 1 ends on slide 5, not slide 4",
+					"relative": 0.9855072463768144
+				},
+				{
+					"library": "swiffy",
+					"medianMs": 0.41800000000000015,
+					"meanMs": 0.42253333333333365,
+					"p95Ms": 0.45410000000000045,
+					"minMs": 0.3880000000000008,
+					"samples": 15,
+					"note": "carousel 1 ends on slide 5, not slide 4",
+					"relative": 1.2115942028985551
+				}
+			]
+		}
+	],
+	"memory": {
+		"description": "The JavaScript heap of the start-up page when it has loaded, and once its 20 carousels have started, after collecting garbage.",
+		"results": [
+			{
+				"library": "swiffy",
+				"readyMb": 0.6694374084472656,
+				"afterMb": 0.9723014831542969
+			},
+			{
+				"library": "blossom",
+				"readyMb": 0.6747398376464844,
+				"afterMb": 1.0999794006347656
+			},
+			{
+				"library": "carousel",
+				"readyMb": 0.6808509826660156,
+				"afterMb": 1.441162109375
+			},
+			{
+				"library": "embla",
+				"readyMb": 0.6789741516113281,
+				"afterMb": 1.4845008850097656
+			},
+			{
+				"library": "swiper",
+				"readyMb": 0.7089614868164062,
+				"afterMb": 1.7037315368652344
+			},
+			{
+				"library": "swiper-css",
+				"readyMb": 0.7104263305664062,
+				"afterMb": 1.7071418762207031
+			},
+			{
+				"library": "splide",
+				"readyMb": 0.7065696716308594,
+				"afterMb": 2.3356704711914062
+			}
+		]
+	},
+	"size": {
+		"description": "What the page with one carousel loads: the library, the page's own code, and the CSS the library needs, minified by Vite.",
+		"results": [
+			{
+				"library": "swiffy",
+				"minBytes": 5037,
+				"gzipBytes": 1888,
+				"brotliBytes": 1667,
+				"css": {
+					"minBytes": 15686,
+					"gzipBytes": 2856,
+					"brotliBytes": 2516
+				}
+			},
+			{
+				"library": "blossom",
+				"minBytes": 15112,
+				"gzipBytes": 5319,
+				"brotliBytes": 4774,
+				"css": {
+					"minBytes": 1078,
+					"gzipBytes": 432,
+					"brotliBytes": 343
+				}
+			},
+			{
+				"library": "embla",
+				"minBytes": 20432,
+				"gzipBytes": 8108,
+				"brotliBytes": 7358,
+				"css": {
+					"minBytes": 105,
+					"gzipBytes": 108,
+					"brotliBytes": 74
+				}
+			},
+			{
+				"library": "carousel",
+				"minBytes": 29953,
+				"gzipBytes": 11071,
+				"brotliBytes": 10085,
+				"css": {
+					"minBytes": 474,
+					"gzipBytes": 279,
+					"brotliBytes": 221
+				}
+			},
+			{
+				"library": "splide",
+				"minBytes": 32619,
+				"gzipBytes": 13825,
+				"brotliBytes": 12531,
+				"css": {
+					"minBytes": 1794,
+					"gzipBytes": 678,
+					"brotliBytes": 535
+				}
+			},
+			{
+				"library": "swiper",
+				"minBytes": 87929,
+				"gzipBytes": 26450,
+				"brotliBytes": 23403,
+				"css": {
+					"minBytes": 9792,
+					"gzipBytes": 1824,
+					"brotliBytes": 1564
+				}
+			},
+			{
+				"library": "swiper-css",
+				"minBytes": 88195,
+				"gzipBytes": 26578,
+				"brotliBytes": 23518,
+				"css": {
+					"minBytes": 9792,
+					"gzipBytes": 1824,
+					"brotliBytes": 1564
+				}
+			}
+		]
+	}
+}

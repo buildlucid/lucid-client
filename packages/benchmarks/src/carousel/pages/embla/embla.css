@@ -1,0 +1,14 @@
+/* The CSS from Embla's getting started guide, which the library needs but doesn't ship. */
+
+.embla__viewport {
+	overflow: hidden;
+}
+
+.embla__container {
+	display: flex;
+}
+
+.embla__slide {
+	flex: 0 0 100%;
+	min-width: 0;
+}

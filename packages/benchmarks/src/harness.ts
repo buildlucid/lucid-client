@@ -1,5 +1,5 @@
 /** Functions a page exposes for `call` steps, such as starting the library. */
-export type Harness = Record<string, () => void>;
+export type Harness = Record<string, (...args: never[]) => void>;
 
 declare global {
 	interface Window {

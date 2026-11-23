@@ -1,0 +1,130 @@
+---
+import { hues, nextIcon, prevIcon } from "../../components/carousel-icons";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/carousel.css";
+
+const six = hues.slice(0, 6);
+---
+
+<Playground title="Catalyst store">
+	<Fragment slot="intro">
+		<p>
+			<code>@lucidclient/carousel/catalyst</code> exports
+			<code>carouselStore</code>, which follows the carousel registered as its
+			<code>#carousel</code> ref. Markup anywhere in the store can read
+			<code>$index</code>, <code>$indexOne</code>, <code>$count</code>,
+			<code>$atStart</code>, <code>$atEnd</code>, <code>$scrollable</code> and
+			<code>$playing</code>, loop over <code>$pages</code>, and call
+			<code>@next</code>, <code>@prev</code>, <code>@goTo</code>,
+			<code>@play</code>, <code>@pause</code> and <code>@toggle</code>. It is a
+			separate import, so pages without Catalyst don't load it.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="controls"
+		title="Controls and progress from the store"
+		description="The buttons, the page count and the progress bar sit outside the `data-carousel` element, in the store's scope, and bind to the store with ordinary Catalyst directives."
+		expect={[
+			"`Previous` is `disabled` on the first page and `Next` on the last, from `$atStart` and `$atEnd`.",
+			"The count reads `1 / 6` and follows swipes as well as the buttons.",
+			"The progress bar fills as you move, from `data-css--page` and `data-css--count`.",
+		]}
+	>
+		<div data-store="storeControls" class="space-y-3">
+			<section data-carousel data-ref="#carousel" aria-label="Destinations">
+				<div data-carousel--track class="carousel-track">
+					{six.map((hue, index) => (
+						<div class="carousel-panel" style={`--hue: ${hue}`}>Destination {index + 1}</div>
+					))}
+				</div>
+			</section>
+			<div class="carousel-progress" data-css--page="$indexOne" data-css--count="$count">
+				<span style="--progress: calc(var(--page) / var(--count))"></span>
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="btn btn-sm" data-events--click="@prev" data-bind--disabled="$atStart">Previous</button>
+				<p class="font-mono text-xs text-muted">
+					<span data-dom--text="$indexOne"></span> / <span data-dom--text="$count"></span>
+				</p>
+				<button class="btn btn-sm" data-events--click="@next" data-bind--disabled="$atEnd">Next</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="loop-markers"
+		title="Markers from a loop"
+		description={"`data-loop=\"$pages\"` renders one button per page. `@goTo` reads the page from the loop item, and `@isCurrent` returns whether the item is the current page."}
+		expect={[
+			"There is one numbered button per page, and the current one has `aria-current=\"true\"`.",
+			"Clicking a number scrolls to that page.",
+		]}
+	>
+		<div data-store="storeMarkers" class="space-y-3">
+			<section data-carousel data-carousel--loop data-ref="#carousel" aria-label="Recipes">
+				<div data-carousel--track class="carousel-track">
+					{six.map((hue, index) => (
+						<div class="carousel-panel" style={`--hue: ${hue}`}>Recipe {index + 1}</div>
+					))}
+				</div>
+			</section>
+			<ol class="flex justify-center gap-1.5" data-loop="$pages">
+				<template>
+					<li>
+						<button
+							class="btn btn-sm aria-[current=true]:border-accent aria-[current=true]:text-accent"
+							data-events--click="@goTo"
+							data-bind--aria-current="@isCurrent"
+							data-dom--text="$indexOne"
+						></button>
+					</li>
+				</template>
+			</ol>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="slides-from-state"
+		title="Slides from state"
+		description={"The slides are rendered by `data-loop=\"photos:$items\"` from a separate store. The carousel watches its track, so slides added or removed after it starts are measured, labelled and given markers straight away."}
+		expect={[
+			"`Add a slide` adds one to the end, and a dot with it.",
+			"`Remove the current slide` removes the slide in view, and the carousel stays where it was.",
+			"Each slide's `aria-label` follows the new count, such as `3 of 5`.",
+		]}
+	>
+		<div data-store="photos" class="space-y-3">
+			<div data-store="storeSlides" class="space-y-3">
+				<section data-carousel data-ref="#carousel" aria-label="Photos" id="catalyst-slides" class="space-y-3">
+					<div data-carousel--track class="carousel-track carousel-several" data-loop="photos:$items">
+						<template>
+							<div class="carousel-panel" data-css--hue="$item.hue" data-dom--text="$item.label"></div>
+						</template>
+					</div>
+					<div class="flex items-center justify-between gap-3">
+						<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous photo">
+							<Fragment set:html={prevIcon} />
+						</button>
+						<div class="carousel-dots" data-carousel--markers>
+							<template><button class="carousel-dot"></button></template>
+						</div>
+						<button class="carousel-arrow" data-carousel--action="next" aria-label="Next photo">
+							<Fragment set:html={nextIcon} />
+						</button>
+					</div>
+				</section>
+				<div class="flex flex-wrap gap-2">
+					<button class="btn btn-sm" data-events--click="photos:@add">Add a slide</button>
+					<button class="btn btn-sm btn-danger" data-events--click="photos:@remove" data-bind--disabled="photos:$empty">Remove the current slide</button>
+					<span class="badge"><span data-dom--text="$count"></span> pages</span>
+				</div>
+			</div>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/carousel/catalyst";
+	</script>
+</Playground>

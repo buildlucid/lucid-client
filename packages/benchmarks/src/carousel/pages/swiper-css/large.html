@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Large carousel · Swiper (CSS mode)</title>
+		<style>
+			body {
+				margin: 0;
+				font:
+					14px/1.4 system-ui,
+					sans-serif;
+			}
+			#app {
+				padding: 16px;
+			}
+			[data-bench-carousel] + [data-bench-carousel] {
+				margin-top: 24px;
+			}
+			[data-bench-slide] {
+				box-sizing: border-box;
+				height: 160px;
+				line-height: 160px;
+				text-align: center;
+				background: #eef0f7;
+				border: 1px solid #c9cde0;
+			}
+		</style>
+	</head>
+	<body>
+		<main id="app"></main>
+		<script type="module" src="./large.ts"></script>
+	</body>
+</html>

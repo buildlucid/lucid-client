@@ -3,13 +3,28 @@ import { join } from "node:path";
 import { brotliCompressSync, constants, gzipSync } from "node:zlib";
 import { build } from "./build.ts";
 
-type ManifestChunk = { file: string; imports?: string[] };
+type ManifestChunk = { file: string; imports?: string[]; css?: string[] };
 
-export type Size = { minBytes: number; gzipBytes: number; brotliBytes: number };
+export type Size = {
+	minBytes: number;
+	gzipBytes: number;
+	brotliBytes: number;
+	/** The CSS the page's code imports, such as a library's stylesheet. Not the page's own `<style>`. */
+	css: { minBytes: number; gzipBytes: number; brotliBytes: number };
+};
+
+const weigh = (code: Buffer) => ({
+	minBytes: code.length,
+	gzipBytes: gzipSync(code, { level: 9 }).length,
+	brotliBytes: brotliCompressSync(code, {
+		params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
+	}).length,
+});
 
 /**
  * Weighs the JavaScript a page loads: its entry and every chunk it imports,
- * minified by Vite, then compressed at the highest levels. The page is built
+ * minified by Vite, then compressed at the highest levels. The CSS those
+ * chunks import is weighed separately. The page is built
  * on its own into `outDir`, as a site with only that page would build it.
  */
 export const measureSize = async (
@@ -21,22 +36,19 @@ export const measureSize = async (
 		await readFile(join(outDir, ".vite/manifest.json"), "utf8"),
 	);
 	const files = new Set<string>();
+	const styles = new Set<string>();
 	const visit = (key: string) => {
 		const chunk = manifest[key];
 		if (!chunk) throw new Error(`The build has no chunk for ${key}`);
 		if (chunk.file.endsWith(".js")) files.add(chunk.file);
+		for (const file of chunk.css ?? []) styles.add(file);
 		for (const imported of chunk.imports ?? []) visit(imported);
 	};
 	visit(page);
 
-	const code = Buffer.concat(
-		await Promise.all([...files].map((file) => readFile(join(outDir, file)))),
-	);
-	return {
-		minBytes: code.length,
-		gzipBytes: gzipSync(code, { level: 9 }).length,
-		brotliBytes: brotliCompressSync(code, {
-			params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
-		}).length,
-	};
+	const read = async (paths: Set<string>) =>
+		Buffer.concat(
+			await Promise.all([...paths].map((file) => readFile(join(outDir, file)))),
+		);
+	return { ...weigh(await read(files)), css: weigh(await read(styles)) };
 };

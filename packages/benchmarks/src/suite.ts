@@ -1,11 +1,16 @@
+import type { Page } from "playwright";
+
 /**
- * One thing a sample does in the page: click an element, call a function the
- * page exposes with `defineHarness`, or type a value into a field.
+ * One thing a sample does: click an element, call a function the page exposes
+ * with `defineHarness`, type a value into a field, wait, or resize the
+ * browser window.
  */
 export type Step =
 	| { click: string }
-	| { call: string }
-	| { input: string; value: string };
+	| { call: string; args?: unknown[] }
+	| { input: string; value: string }
+	| { wait: number }
+	| { resize: { width: number; height: number } };
 
 export type Scenario = {
 	id: string;
@@ -17,10 +22,23 @@ export type Scenario = {
 	page: string;
 	/** Steps run several times before timing, so the timed step runs warm. */
 	warmup: Step[];
+	/** How many times the warm-up steps run. Defaults to the runner's 5. */
+	warmups?: number;
 	/** Steps run once after warming up, to put the page in its starting state. */
 	setup: Step[];
 	/** The step that is timed. */
 	timed: Step;
+	/**
+	 * What is measured:
+	 * - `time`, the default: from the step until the library's work and the
+	 *   browser's style and layout are done, in one task.
+	 * - `work`: all the scripting, style and layout work from the step until
+	 *   `settleMs` has passed, for work spread over many frames, such as an
+	 *   animation, scroll events or observers.
+	 */
+	metric?: "time" | "work";
+	/** How long `work` keeps measuring after the step. */
+	settleMs?: number;
 	/**
 	 * Steps the output check runs after the timed step, to confirm the page
 	 * works as well as renders, such as clicking a button it set up.
@@ -32,6 +50,14 @@ export type Scenario = {
 	 * confirms it.
 	 */
 	keepsElements?: boolean;
+	/** What a suite's own `verify` expects after the check, such as the slide in view. */
+	expected?: unknown;
+	/**
+	 * Whether a failed `verify` stops the run, which it does by default. When
+	 * the scenario also shows what libraries get wrong, such as which slide a
+	 * resize ends on, `false` records the problem in the results instead.
+	 */
+	strict?: boolean;
 };
 
 export type Library = {
@@ -40,6 +66,8 @@ export type Library = {
 	/** The npm package, for the version and link. `null` for hand-written code. */
 	package: string | null;
 	homepage: string | null;
+	/** How the library works, for the results page, such as "CSS scroll snap". */
+	kind?: string;
 };
 
 /**
@@ -54,8 +82,15 @@ export type Suite = {
 	scenarios: Scenario[];
 	/** The element every library must render the same DOM inside. */
 	root: string;
+	/**
+	 * Checks a library's output after a scenario's check steps, instead of
+	 * comparing its DOM with the first library's. For libraries that render
+	 * different DOM for the same result, such as carousels. Returns a problem,
+	 * or `null`.
+	 */
+	verify?: (page: Page, scenario: Scenario) => Promise<string | null>;
 	/** Heap size is measured when the page loads, and again after `steps`. */
 	memory: { page: string; description: string; steps: Step[] };
-	/** The page whose JavaScript is weighed for each library. */
+	/** The page whose JavaScript and CSS are weighed for each library. */
 	size: { page: string; description: string };
 };

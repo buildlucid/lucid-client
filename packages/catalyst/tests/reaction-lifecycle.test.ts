@@ -171,6 +171,24 @@ describe("reaction lifecycle", () => {
 		);
 	});
 
+	it("refuses the carousel attribute", () => {
+		document.body.innerHTML = `<div data-store="reserved"></div>`;
+		const setup = vi.fn();
+		const carousel: Reaction = {
+			name: "carousel",
+			attribute: "carousel",
+			setup,
+		};
+
+		Catalyst.start({ reactions: [carousel] });
+
+		expect(catalystWarnings()).toContainEqual(
+			expect.stringContaining(
+				'The "carousel" attribute is reserved for another Lucid Client package.',
+			),
+		);
+	});
+
 	it("warns when a different reaction reuses a registered name", () => {
 		document.body.innerHTML = `<div data-store="names"></div>`;
 		const impostor: Reaction = {

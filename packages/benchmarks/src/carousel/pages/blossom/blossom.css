@@ -1,0 +1,11 @@
+/* What a page using Blossom adds to its stylesheet: snapping, and full-width slides. */
+
+.blossom-scroller {
+	position: relative;
+	scroll-snap-type: x mandatory;
+}
+
+.blossom-slide {
+	width: 100%;
+	scroll-snap-align: start;
+}

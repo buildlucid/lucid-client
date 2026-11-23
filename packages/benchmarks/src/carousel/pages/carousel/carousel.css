@@ -1,0 +1,35 @@
+/* The CSS from the Lucid Carousel README, which the library needs but doesn't ship. */
+
+.carousel-track {
+	display: flex;
+	/* The track is a list, as in the README. */
+	margin: 0;
+	padding: 0;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	scroll-snap-type: x mandatory;
+}
+
+.carousel-track > * {
+	flex: 0 0 100%;
+	scroll-snap-align: start;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.carousel-track {
+		scroll-behavior: smooth;
+	}
+}
+
+[data-carousel]:not([data-carousel--ready])
+	:is([data-carousel--action], [data-carousel--markers]) {
+	visibility: hidden;
+}
+
+[data-carousel--ready] .carousel-track {
+	scrollbar-width: none;
+}
+
+[aria-disabled="true"] {
+	opacity: 0.4;
+}

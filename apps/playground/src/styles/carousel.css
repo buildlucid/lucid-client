@@ -1,0 +1,194 @@
+/*
+ * The carousel pages' styles. The first block is the README's snippet: the
+ * library brings no CSS, so snapping, slide sizes and hiding the controls
+ * until JavaScript runs all live here.
+ */
+
+.carousel-track {
+	display: flex;
+	gap: var(--carousel-gap, 0.75rem);
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	scroll-snap-type: x mandatory;
+}
+
+.carousel-track > * {
+	flex: 0 0 var(--carousel-slide, 100%);
+	min-width: 0;
+	scroll-snap-align: start;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.carousel-track {
+		scroll-behavior: smooth;
+	}
+}
+
+/* Controls only work with JavaScript, so they wait for it. They keep their space, so nothing moves when they appear. */
+[data-carousel]:not([data-carousel--ready])
+	:is([data-carousel--action], [data-carousel--markers]) {
+	visibility: hidden;
+}
+
+/* Without JavaScript the scrollbar is how a mouse scrolls, so it is only hidden once the controls show. */
+[data-carousel--ready] .carousel-track {
+	scrollbar-width: none;
+}
+[data-carousel--ready] .carousel-track::-webkit-scrollbar {
+	display: none;
+}
+
+[data-carousel--drag][data-carousel--scrollable] .carousel-track {
+	cursor: grab;
+}
+[data-carousel--dragging] .carousel-track {
+	cursor: grabbing;
+}
+
+/* --------------------------------------------------------
+ * Playground looks */
+
+.carousel-vertical {
+	flex-direction: column;
+	height: 15rem;
+	overflow: hidden auto;
+	overscroll-behavior-y: contain;
+	scroll-snap-type: y mandatory;
+}
+
+.carousel-several {
+	--carousel-slide: calc((100% - 2 * var(--carousel-gap, 0.75rem)) / 3);
+}
+@media (width < 40rem) {
+	.carousel-several {
+		--carousel-slide: calc((100% - var(--carousel-gap, 0.75rem)) / 2);
+	}
+}
+
+.carousel-panel {
+	display: grid;
+	place-items: center;
+	height: 12rem;
+	border-radius: 0.625rem;
+	border: 1px solid oklch(0.6 0.12 var(--hue, 277) / 0.35);
+	background:
+		radial-gradient(
+			circle at 30% 20%,
+			oklch(0.55 0.14 var(--hue, 277) / 0.45),
+			transparent 60%
+		),
+		oklch(0.28 0.05 var(--hue, 277) / 0.6);
+	color: var(--color-fg);
+	font-size: 0.875rem;
+	font-weight: 600;
+	user-select: none;
+}
+.carousel-panel[data-carousel--active] {
+	border-color: oklch(0.75 0.13 var(--hue, 277) / 0.8);
+}
+.carousel-panel-tall {
+	height: 15rem;
+}
+
+.carousel-arrow {
+	display: inline-grid;
+	place-items: center;
+	width: 2rem;
+	height: 2rem;
+	border-radius: 999px;
+	border: 1px solid var(--color-line);
+	background: var(--color-raised);
+	color: var(--color-fg);
+	cursor: pointer;
+	transition:
+		background-color 150ms,
+		opacity 150ms;
+}
+.carousel-arrow:hover {
+	background: var(--color-line);
+}
+.carousel-arrow[aria-disabled="true"] {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
+[dir="rtl"] .carousel-arrow svg {
+	scale: -1 1;
+}
+
+.carousel-dots {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.375rem;
+}
+.carousel-dot {
+	width: 0.625rem;
+	height: 0.625rem;
+	border-radius: 999px;
+	background: var(--color-line-strong);
+	cursor: pointer;
+	transition:
+		background-color 150ms,
+		width 200ms;
+}
+.carousel-dot[aria-current="true"] {
+	width: 1.5rem;
+	background: var(--color-accent);
+}
+
+.carousel-thumb {
+	display: grid;
+	place-items: center;
+	width: 3rem;
+	height: 2.25rem;
+	border-radius: 0.375rem;
+	border: 1px solid var(--color-line);
+	background: oklch(0.3 0.05 var(--hue, 277) / 0.6);
+	font-size: 0.75rem;
+	color: var(--color-muted);
+	text-decoration: none;
+}
+.carousel-thumb[aria-current="true"] {
+	border-color: var(--color-accent);
+	color: var(--color-fg);
+}
+
+/* Icons follow autoplay: the pause icon shows while it plays. */
+[data-carousel] .when-playing {
+	display: none;
+}
+[data-carousel][data-carousel--playing] .when-playing {
+	display: inline;
+}
+[data-carousel][data-carousel--playing] .when-stopped {
+	display: none;
+}
+
+.carousel-progress {
+	height: 0.25rem;
+	border-radius: 999px;
+	background: var(--color-line);
+	overflow: hidden;
+}
+.carousel-progress > span {
+	display: block;
+	height: 100%;
+	width: calc(var(--progress, 0) * 100%);
+	background: var(--color-accent);
+	transition: width 250ms;
+}
+
+.carousel-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 1rem;
+	border-radius: 0.625rem;
+	border: 1px solid var(--color-line);
+	background: var(--color-raised);
+	font-size: 0.8125rem;
+	color: var(--color-muted);
+}
+.carousel-card[inert] {
+	opacity: 0.5;
+}

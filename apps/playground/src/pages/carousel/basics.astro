@@ -1,0 +1,175 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import {
+	downIcon,
+	hues,
+	nextIcon,
+	prevIcon,
+	upIcon,
+} from "../../components/carousel-icons";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/carousel.css";
+
+const five = hues.slice(0, 5);
+const exclude = ["aria-label", "id", "role", "aria-roledescription", "style", "dir"];
+---
+
+<Playground title="Basics">
+	<Fragment slot="intro">
+		<p>
+			A carousel is a <code>data-carousel</code> element around a
+			<code>data-carousel--track</code> that scrolls. Snapping comes from CSS
+			<code>scroll-snap-type</code> and <code>scroll-snap-align</code>, so the
+			track swipes, scrolls with a trackpad and keyboard, and stops on each
+			slide without any JavaScript. The library adds the controls, markers,
+			announcements and the accessibility attributes the markup leaves out.
+		</p>
+		<p>
+			It brings no styles: this page's CSS is the snippet from the README, plus
+			the playground's looks. Every page change is logged.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="single"
+		title="One slide at a time"
+		description="Previous and next buttons with `data-carousel--action`, dots cloned from the `<template>` in `data-carousel--markers`, and a `data-carousel--status` element that announces the page. The readout shows the state the library writes to the root."
+		expect={[
+			"`Previous` is `aria-disabled` on the first slide and `Next` on the last. Both stay focusable.",
+			"Swiping, scrolling with a trackpad, the buttons and the dots all move the same state, and the current dot has `aria-current`.",
+			"The status reads `Slide 2 of 5` after you move, and stays empty on load.",
+			"Each slide gets `role=\"group\"`, `aria-roledescription=\"slide\"` and an `aria-label` such as `2 of 5`.",
+		]}
+	>
+		<section data-carousel aria-label="Featured" id="basics-single" class="space-y-3">
+			<div data-carousel--track class="carousel-track">
+				{five.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`}>Slide {index + 1}</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous slide">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="carousel-dots" data-carousel--markers>
+					<template><button class="carousel-dot"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next slide">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+			<p data-carousel--status class="readout min-h-9"></p>
+		</section>
+		<div class="mt-4">
+			<AttributeReadout target="#basics-single" exclude={exclude} label="Root attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="no-js"
+		title="Without JavaScript"
+		description="The thumbnails are plain fragment links marked `data-carousel--marker`, so they work before the library runs. `Destroy` puts the markup back as it was rendered, and `Enhance again` calls `refresh()`, which picks the carousel up again."
+		expect={[
+			"After `Destroy`, the buttons hide, the track shows its scrollbar and still snaps, and the links jump to their slides.",
+			"Every attribute the library added is removed, as the readout shows.",
+			"`Enhance again` brings the buttons back and marks the current link with `aria-current`.",
+		]}
+	>
+		<section data-carousel aria-label="Photos" id="basics-nojs" class="space-y-3">
+			<div data-carousel--track class="carousel-track">
+				{five.map((hue, index) => (
+					<div class="carousel-panel" id={`photo-${index + 1}`} style={`--hue: ${hue}`}>
+						Photo {index + 1}
+					</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous photo">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<nav aria-label="Choose a photo" class="flex gap-2">
+					{five.map((hue, index) => (
+						<a class="carousel-thumb" style={`--hue: ${hue}`} href={`#photo-${index + 1}`} data-carousel--marker>
+							{index + 1}
+						</a>
+					))}
+				</nav>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next photo">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+		</section>
+		<pg-controls class="mt-4 flex flex-wrap gap-2">
+			<button type="button" class="btn btn-danger" data-call="destroy">Destroy</button>
+			<button type="button" class="btn" data-call="enhance">Enhance again</button>
+		</pg-controls>
+		<div class="mt-4">
+			<AttributeReadout target="#basics-nojs" exclude={["id", "aria-label", "style"]} label="Root attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="rtl"
+		title="Right to left"
+		description={"The same carousel inside `dir=\"rtl\"`. Right to left tracks scroll to negative `scrollLeft` values, which the library measures from the start edge, so the first slide is on the right."}
+		expect={[
+			"The first slide is on the right, and `Next` moves left.",
+			"The dots, the disabled ends and the index behave as they do left to right.",
+		]}
+	>
+		<div dir="rtl">
+			<section data-carousel aria-label="Right to left" id="basics-rtl" class="space-y-3">
+				<div data-carousel--track class="carousel-track">
+					{five.map((hue, index) => (
+						<div class="carousel-panel" style={`--hue: ${hue}`}>Slide {index + 1}</div>
+					))}
+				</div>
+				<div class="flex items-center justify-between gap-3">
+					<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous slide">
+						<Fragment set:html={prevIcon} />
+					</button>
+					<div class="carousel-dots" data-carousel--markers>
+						<template><button class="carousel-dot"></button></template>
+					</div>
+					<button class="carousel-arrow" data-carousel--action="next" aria-label="Next slide">
+						<Fragment set:html={nextIcon} />
+					</button>
+				</div>
+			</section>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="vertical"
+		title="Vertical"
+		description="A track with `scroll-snap-type: y mandatory` scrolls vertically, and the library reads the axis from it. `overscroll-behavior-y: contain` keeps the page from scrolling once the track reaches an end."
+		expect={[
+			"Scrolling inside the track moves one slide at a time, and the buttons move up and down.",
+			"Scrolling past either end doesn't scroll the page.",
+		]}
+	>
+		<section data-carousel aria-label="Vertical" id="basics-vertical" class="flex items-center gap-4">
+			<div data-carousel--track class="carousel-track carousel-vertical flex-1">
+				{five.map((hue, index) => (
+					<div class="carousel-panel carousel-panel-tall" style={`--hue: ${hue}`}>Slide {index + 1}</div>
+				))}
+			</div>
+			<div class="flex flex-col items-center gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev" aria-label="Previous slide">
+					<Fragment set:html={upIcon} />
+				</button>
+				<div class="carousel-dots flex-col" data-carousel--markers>
+					<template><button class="carousel-dot"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next" aria-label="Next slide">
+					<Fragment set:html={downIcon} />
+				</button>
+			</div>
+		</section>
+	</Scenario>
+
+	<script>
+		import "../../scripts/carousel/basics";
+	</script>
+</Playground>

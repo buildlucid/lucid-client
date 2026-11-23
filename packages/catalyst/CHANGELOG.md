@@ -35,7 +35,7 @@
 - Added `data-ignore`, which keeps Catalyst out of an element and everything inside it. Its name is set by the `ignore` attribute option.
 - Catalyst ships a development build, which bundlers pick through the `development` export condition, and a smaller production build without warnings or `debug` messages.
 - Catalyst is faster throughout: syncing walks each subtree once, loops set up new items in one pass and remove items without disposing them twice, events and refs need no reactive root, and bindings skip DOM writes that wouldn't change anything.
-- Reactions can't use the `cookie` or `speculate` attributes, which Cookie Controller and Speculate own.
+- Reactions can't use the `carousel`, `cookie` or `speculate` attributes, which Carousel, Cookie Controller and Speculate own.
 - In the development build, Catalyst now warns when a different store is registered for a scope that already has one, when state is written directly instead of through `setState`, when `sync` runs before `start`, when a `data-dom` specifier is unknown, and when a lowercased state attribute cannot match camelCase state. In debug mode it also warns when markup uses a first-party reaction that isn't registered.
 
 ### Breaking Changes:
