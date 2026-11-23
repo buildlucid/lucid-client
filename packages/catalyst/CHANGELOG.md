@@ -6,7 +6,7 @@
 
 - Added nearest-store inference for `$state`, `@action` and `#identifier` references, while keeping explicit `scope:$state`, `scope:@action` and `scope:#identifier` references for crossing store boundaries.
 - Rebuilt dynamic synchronization so reactions are idempotent and are disposed with their elements.
-- Loops now keep the markup of items that are still in the array, matching them by identity, and `$index` updates as items move.
+- Loops now keep the markup of items that are still in the array, matching them by identity, and `$index` updates as items move. Reordering moves only the items that change place, and whitespace around the template's element that includes a line break isn't rendered.
 - Traps can now be stacked, and elements marked `data-trap-allow` stay interactive while a trap is active.
 - Added `defineStore`. State, `computed` values, actions, effects and `init` are top-level keys, and their types are inferred without explicit generics. State and computed values are read with `$name`, and actions are called with `@name`.
 - Store state is reactive, built on Solid 2's signals rather than its stores, which keeps Catalyst much smaller. Actions read `state.key` and write with `setState((state) => { ... })`, and changing nested data, such as pushing to an array, updates the bindings, loops and `data-state--*` attributes that read it.

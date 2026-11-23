@@ -8,7 +8,7 @@ import { readItems } from "../utils/read-value.js";
 type LoopEntry = {
 	item: unknown;
 	root: Element;
-	/** Every top-level node of the cloned template, moved as one unit. */
+	/** The item's top-level nodes, moved as one unit. */
 	nodes: ChildNode[];
 	/** Mirrors the reactive index, so updates never read the signal. */
 	position: number;
@@ -46,6 +46,23 @@ const findStableEntries = (previous: number[]) => {
 	return stable;
 };
 
+/** Whitespace that includes a line break, such as a template's indentation. */
+const isFormattingWhitespace = (node: Node) =>
+	node.nodeType === Node.TEXT_NODE &&
+	/^\s*$/.test(node.textContent ?? "") &&
+	/[\n\r]/.test(node.textContent ?? "");
+
+/**
+ * The template's top-level nodes each item renders. Whitespace around the
+ * element that includes a line break is the template's indentation, so it
+ * isn't rendered, as in Vue templates. Whitespace on one line, such as a space
+ * between inline items, is kept.
+ */
+const getItemNodes = (template: HTMLTemplateElement) =>
+	Array.from(template.content.childNodes).filter(
+		(node) => !isFormattingWhitespace(node),
+	);
+
 const getTemplate = (target: Element) =>
 	Array.from(target.children).find(
 		(element): element is HTMLTemplateElement =>
@@ -79,6 +96,7 @@ const loopReaction: Reaction = {
 			return;
 		}
 
+		const itemNodes = getItemNodes(template);
 		let entries: LoopEntry[] = [];
 		let hasRendered = false;
 		// Items of `$item.links` belong to the same store as the outer loop's.
@@ -93,8 +111,14 @@ const loopReaction: Reaction = {
 			index: number,
 			parent: LoopContext | undefined,
 		): LoopEntry | null => {
-			const fragment = template.content.cloneNode(true) as DocumentFragment;
-			const root = fragment.firstElementChild;
+			// Imported rather than cloned, so the nodes belong to the page's
+			// document and needn't be adopted when they are inserted.
+			const nodes = itemNodes.map(
+				(node) => document.importNode(node, true) as ChildNode,
+			);
+			const root = nodes.find(
+				(node): node is Element => node.nodeType === Node.ELEMENT_NODE,
+			);
 			if (!root) return null;
 
 			const [getIndex, setIndex] = createSignal(index);
@@ -102,7 +126,7 @@ const loopReaction: Reaction = {
 			return {
 				item,
 				root,
-				nodes: Array.from(fragment.childNodes),
+				nodes,
 				position: index,
 				setIndex: (next) => setIndex(next),
 			};

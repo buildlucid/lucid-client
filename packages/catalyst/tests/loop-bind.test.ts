@@ -391,6 +391,30 @@ describe("loop updates", () => {
 		]);
 	});
 
+	it("leaves out the template's indentation but keeps spaces on one line", () => {
+		document.body.innerHTML = `
+			<div data-store="tags">
+				<ul data-loop="$items">
+					<template>
+						<li data-dom--text="$item"></li>
+					</template>
+				</ul>
+				<p data-loop="$items"><template> <span data-dom--text="$item"></span> </template></p>
+			</div>
+		`;
+		const tags = defineStore({ state: { items: ["a", "b"] } });
+		Catalyst.start({ stores: { tags }, reactions: [loop, dom] });
+
+		const list = document.querySelector("ul") as HTMLUListElement;
+		const paragraph = document.querySelector("p") as HTMLParagraphElement;
+		expect(Array.from(list.childNodes, (node) => node.nodeName)).toEqual([
+			"TEMPLATE",
+			"LI",
+			"LI",
+		]);
+		expect(paragraph.textContent).toBe(" a  b ");
+	});
+
 	it("moves only the items that change place", async () => {
 		document.body.innerHTML = `
 			<ul data-store="list" data-loop="$items">

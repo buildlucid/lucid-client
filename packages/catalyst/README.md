@@ -625,6 +625,11 @@ item.
 </nav>
 ```
 
+Whitespace around the template's element that includes a line break, such as
+its indentation, isn't rendered, so items sit next to each other. Whitespace on
+one line is kept: `<template> <span>…</span> </template>` renders a space either
+side of each item.
+
 Each rendered template receives `$item`, `$index`, and `$indexOne`. Nested loops
 can access their enclosing context through `$parent.item`, `$parent.index`, and
 `$parent.indexOne`. Parent traversal can be repeated for deeper nesting, for
