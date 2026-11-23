@@ -9,12 +9,28 @@ export type LoopContext = {
 	parent?: LoopContext;
 };
 
+/**
+ * The loop item an action was called from, passed to actions inside a loop:
+ * after the `Event` for events, and as the only argument when an action
+ * provides a value. Reading `index` in a tracked value keeps it up to date as
+ * the item moves.
+ */
+export type LoopItem<T = unknown> = {
+	readonly item: T;
+	readonly index: number;
+	readonly indexOne: number;
+	/** The enclosing loop's item, for nested loops. */
+	readonly parent: LoopItem | undefined;
+};
+
 export type StoreMemberReference = {
 	raw: string;
 	scope: string | null;
 	type: StoreMemberReferenceType;
 	key: string;
 	path: string[];
+	/** For an action inside a loop, the loop item its element belongs to. */
+	loop?: LoopContext;
 };
 
 export type LoopMemberReference = {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { defineStore } from "../src/index.js";
 import { events, bind, dom, loop } from "../src/reactions.js";
 import Runtime from "../src/runtime/catalyst.js";
+import type { LoopItem } from "../src/types/index.js";
 import { getStore, setStoreState, settle } from "./utils.js";
 
 describe("bindings rendered by loops", () => {
@@ -251,6 +252,102 @@ describe("bindings rendered by loops", () => {
 		expect(link?.textContent).toBe("Link");
 		expect(link?.getAttribute("data-group")).toBe("Group");
 		expect(link?.getAttribute("data-section")).toBe("Section");
+	});
+});
+
+describe("actions inside loops", () => {
+	type Row = { title: string; qty: number };
+
+	it("receive the loop item after the event", async () => {
+		document.body.innerHTML = `
+			<div data-store="rows">
+				<ul data-loop="$rows">
+					<template>
+						<li>
+							<ul data-loop="$item.tags">
+								<template>
+									<li><button data-events--click="@pick"></button></li>
+								</template>
+							</ul>
+							<button class="remove" data-events--click="rows:@remove"></button>
+						</li>
+					</template>
+				</ul>
+			</div>
+		`;
+		const picks: string[] = [];
+		const rows = defineStore({
+			state: {
+				rows: [
+					{ title: "a", tags: ["x"] },
+					{ title: "b", tags: ["y", "z"] },
+				],
+			},
+			actions: ({ setState }) => ({
+				pick: (event: Event, loop: LoopItem<string>) => {
+					const parent = loop.parent as LoopItem<{ title: string }>;
+					picks.push(
+						`${event.type}:${parent.item.title}${parent.index}/${loop.item}${loop.indexOne}`,
+					);
+				},
+				remove: (_event: Event, loop: LoopItem) =>
+					setState((state) => {
+						state.rows.splice(loop.index, 1);
+					}),
+			}),
+		});
+		Catalyst.start({ stores: { rows }, reactions: [events, loop] });
+
+		const pickButtons = () =>
+			Array.from(
+				document.querySelectorAll<HTMLButtonElement>(
+					"[data-events--click='@pick']",
+				),
+			);
+		for (const button of pickButtons()) button.click();
+		expect(picks).toEqual(["click:a0/x1", "click:b1/y1", "click:b1/z2"]);
+
+		document.querySelector<HTMLButtonElement>(".remove")?.click();
+		await settle();
+		picks.length = 0;
+		for (const button of pickButtons()) button.click();
+		// The remaining row moved to index 0, and its actions see the new index.
+		expect(picks).toEqual(["click:b0/y1", "click:b0/z2"]);
+	});
+
+	it("receive the loop item when they provide a value", async () => {
+		document.body.innerHTML = `
+			<div data-store="lines">
+				<ul data-loop="$lines">
+					<template><li data-dom--text="@describe"></li></template>
+				</ul>
+			</div>
+		`;
+		const lines = defineStore({
+			state: {
+				lines: [
+					{ title: "a", qty: 1 },
+					{ title: "b", qty: 2 },
+				] as Row[],
+			},
+			actions: () => ({
+				describe: ({ item, indexOne }: LoopItem<Row>) =>
+					`${indexOne}. ${item.title} × ${item.qty}`,
+			}),
+		});
+		Catalyst.start({ stores: { lines }, reactions: [dom, loop] });
+		const texts = () =>
+			Array.from(document.querySelectorAll("li"), (li) => li.textContent);
+		expect(texts()).toEqual(["1. a × 1", "2. b × 2"]);
+
+		getStore("lines")?.setState((state) => {
+			const lines = state.lines as Row[];
+			const second = lines[1];
+			if (second) second.qty = 5;
+			lines.reverse();
+		});
+		await settle();
+		expect(texts()).toEqual(["1. b × 5", "2. a × 1"]);
 	});
 });
 

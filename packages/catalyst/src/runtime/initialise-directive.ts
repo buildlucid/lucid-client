@@ -49,6 +49,9 @@ const referencesMatch = (
 	if (left.type === "loop" && right.type === "loop") {
 		return left.context === right.context;
 	}
+	if (left.type !== "loop" && right.type !== "loop") {
+		return left.loop === right.loop;
+	}
 	return true;
 };
 

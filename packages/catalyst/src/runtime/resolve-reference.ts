@@ -2,6 +2,7 @@ import { evaluatePathValue } from "../helpers.js";
 import type { LoopMemberReference, MemberReference } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import { warn } from "./log.js";
+import { toLoopItem } from "./loop-context.js";
 
 const resolveLoopValue = (reference: LoopMemberReference) => {
 	const context = reference.context;
@@ -57,7 +58,9 @@ const resolveReference = (reference: MemberReference, args: unknown[] = []) => {
 			);
 			return undefined;
 		}
-		return action(...args);
+		return reference.loop
+			? action(...args, toLoopItem(reference.loop))
+			: action(...args);
 	}
 
 	return reference.key;

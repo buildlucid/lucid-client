@@ -66,18 +66,23 @@ const resolveDirectiveReference = (
 	reference: MemberReference | null,
 	element: Element,
 ): MemberReference | null => {
-	if (!reference || reference.type === "loop" || reference.scope) {
-		return reference;
-	}
+	if (!reference || reference.type === "loop") return reference;
 
 	const loopContext = getLoopContext(element);
+	// Actions inside a loop receive the item their element was rendered for.
+	const withLoop: StoreMemberReference =
+		loopContext && reference.type === "action"
+			? { ...reference, loop: loopContext }
+			: reference;
+	if (withLoop.scope) return withLoop;
+
 	if (loopContext) {
-		const loopReference = resolveLoopReference(reference, loopContext);
+		const loopReference = resolveLoopReference(withLoop, loopContext);
 		if (loopReference) return loopReference;
 	}
 
 	const scope = getNearestStoreScope(element);
-	return scope ? { ...reference, scope } : reference;
+	return scope ? { ...withLoop, scope } : withLoop;
 };
 
 export default resolveDirectiveReference;
