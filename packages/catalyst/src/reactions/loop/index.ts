@@ -1,6 +1,7 @@
 import { createSignal } from "solid-js";
 import { getLoopContext, setLoopContext } from "../../runtime/loop-context.js";
 import { markReleased } from "../../runtime/released.js";
+import { syncTargets } from "../../runtime/sync.js";
 import type { LoopContext, Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
 import { readItems } from "../utils/read-value.js";
@@ -264,7 +265,8 @@ const loopReaction: Reaction = {
 
 			placeEntries(next, previous);
 			entries = next;
-			for (const entry of created) context.sync(entry.root);
+			// New items are set up in one pass, which shares its lookups.
+			syncTargets(created.map((entry) => entry.root));
 		};
 
 		createResolvedEffect(directive, context, render, {
