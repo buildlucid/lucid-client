@@ -3,6 +3,7 @@ import {
 	flush,
 	getOwner,
 	runWithOwner,
+	untrack,
 	type Owner,
 } from "solid-js";
 
@@ -47,27 +48,32 @@ export const createOwnedRoot = <T>(fn: (dispose: () => void) => T): T => {
  */
 export const runUnowned = <T>(fn: () => T): T => runWithOwner(null, fn);
 
+const logError = (error: unknown) => console.error(error);
+
 /**
  * Runs an effect callback. Solid 2 halts the whole reactive system when an
  * effect callback throws or returns anything other than a cleanup function, so
- * every Catalyst effect callback is isolated here.
+ * every Catalyst effect callback is isolated here. Callbacks run untracked:
+ * reading state in them is intended, so Solid's dev warning about untracked
+ * reads doesn't apply. Errors from the callback and its cleanup go to `onError`.
  */
 export const runEffectCallback = (
 	fn: () => unknown,
+	onError: (error: unknown) => void = logError,
 ): (() => void) | undefined => {
 	effectCallbackDepth += 1;
 	try {
-		const cleanup = fn();
+		const cleanup = untrack(fn);
 		if (typeof cleanup !== "function") return undefined;
 		return () => {
 			try {
-				cleanup();
+				untrack(cleanup as () => unknown);
 			} catch (error) {
-				console.error(error);
+				onError(error);
 			}
 		};
 	} catch (error) {
-		console.error(error);
+		onError(error);
 		return undefined;
 	} finally {
 		effectCallbackDepth -= 1;

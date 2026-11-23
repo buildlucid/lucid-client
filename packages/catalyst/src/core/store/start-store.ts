@@ -71,16 +71,16 @@ const runStoreEffect = (
 	storeEffect: StoreEffect,
 ) => {
 	let isInitial = true;
+	const fail = (cause: unknown) =>
+		error(`The effect "${name}" on store "${store.key}" threw.`, cause);
 	createEffect(() => storeEffect.compute(), {
 		effect: (value: unknown, previous?: unknown) =>
 			runEffectCallback(() => {
 				const context = { isInitial, previous };
 				isInitial = false;
 				return storeEffect.effect(value, context);
-			}),
-		error: (cause: unknown) => {
-			error(`The effect "${name}" on store "${store.key}" threw.`, cause);
-		},
+			}, fail),
+		error: fail,
 	});
 };
 

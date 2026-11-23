@@ -3,6 +3,7 @@ import Catalyst, { defineStore } from "../src/index.js";
 import {
 	allowConsoleErrors,
 	catalystWarnings,
+	consoleCapture,
 	setStoreState,
 	settle,
 } from "./utils.js";
@@ -114,6 +115,69 @@ describe("store effects", () => {
 		document.querySelector("#host")?.remove();
 		await settle();
 		expect(cleanups).toEqual([0, 1, 2]);
+	});
+
+	it("names the effect when its callback or cleanup throws", async () => {
+		allowConsoleErrors();
+		document.body.innerHTML = `<div data-store="failing"></div>`;
+		const failing = defineStore({
+			state: { count: 0 },
+			effects: ({ state, effect }) => ({
+				inCallback: effect(
+					() => state.count,
+					(count) => {
+						if (count === 1) throw new Error("callback failure");
+					},
+				),
+				inCleanup: effect(
+					() => state.count,
+					() => () => {
+						throw new Error("cleanup failure");
+					},
+				),
+			}),
+		});
+
+		Catalyst.start({ stores: { failing } });
+		setStoreState("failing", "count", 1);
+		await settle();
+
+		const messages = consoleCapture.errors.map((args) => String(args[0]));
+		expect(messages).toContain(
+			'[Catalyst] The effect "inCallback" on store "failing" threw.',
+		);
+		expect(messages).toContain(
+			'[Catalyst] The effect "inCleanup" on store "failing" threw.',
+		);
+		expect(
+			consoleCapture.errors.map((args) => (args[1] as Error)?.message),
+		).toEqual(expect.arrayContaining(["callback failure", "cleanup failure"]));
+	});
+
+	it("lets effect callbacks read state without Solid diagnostics", async () => {
+		document.body.innerHTML = `<div data-store="reads"></div>`;
+		const seen: string[] = [];
+		const reads = defineStore({
+			state: { trigger: 0, label: "first" },
+			effects: ({ state, effect }) => ({
+				logLabel: effect(
+					() => state.trigger,
+					() => {
+						seen.push(state.label);
+					},
+				),
+			}),
+		});
+
+		Catalyst.start({ stores: { reads } });
+		setStoreState("reads", "label", "second");
+		setStoreState("reads", "trigger", 1);
+		await settle();
+		// Reading `label` in the callback doesn't subscribe the effect to it.
+		setStoreState("reads", "label", "third");
+		await settle();
+
+		expect(seen).toEqual(["first", "second"]);
 	});
 
 	it("warns about effects not created with the effect helper", () => {
