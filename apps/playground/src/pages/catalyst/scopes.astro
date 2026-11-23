@@ -1,0 +1,157 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Scopes & nesting">
+	<Fragment slot="intro">
+		<p>
+			A reference without a scope uses the nearest <code>data-store</code>
+			ancestor. Prefix it with a scope to cross a store boundary:
+			<code>profile:$name</code>, <code>profile:@rename</code> or
+			<code>profile:#badge</code>. Every scope name must be unique on the page.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="nested"
+		title="Nested stores use the nearest scope"
+		description="Three nested stores each have `name` state and a `rename` action. Inner levels also read the outer store with `outer:$name` and call it with `outer:@rename`."
+		expect={[
+			"Each level's `$name` shows its own store's name.",
+			"Each `Rename` button renames only its own level, even though every store has a `rename` action.",
+			"`Rename outer` inside the innermost level renames the outer store, and every `outer:$name` follows.",
+			"The outer store element's `data-name` attribute, bound with `data-bind--data-name`, follows its name.",
+		]}
+	>
+		<div data-store="outer" data-bind--data-name="$name" class="space-y-3 rounded-lg border border-line p-4">
+			<div class="flex items-center gap-3">
+				<p class="text-sm font-semibold" data-dom--text="$name"></p>
+				<button class="btn btn-sm ml-auto" data-events--click="@rename">Rename</button>
+			</div>
+			<div data-store="inner" class="space-y-3 rounded-lg border border-line bg-raised/40 p-4">
+				<div class="flex items-center gap-3">
+					<p class="text-sm font-semibold" data-dom--text="$name"></p>
+					<p class="text-xs text-subtle">inside <span data-dom--text="outer:$name"></span></p>
+					<button class="btn btn-sm ml-auto" data-events--click="@rename">Rename</button>
+				</div>
+				<div data-store="innermost" class="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-raised p-4">
+					<p class="text-sm font-semibold" data-dom--text="$name"></p>
+					<p class="text-xs text-subtle">
+						inside <span data-dom--text="inner:$name"></span>, inside
+						<span data-dom--text="outer:$name"></span>
+					</p>
+					<div class="ml-auto flex gap-2">
+						<button class="btn btn-sm" data-events--click="@rename">Rename</button>
+						<button class="btn btn-sm" data-events--click="outer:@rename">Rename outer</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="outside"
+		title="References from outside a store"
+		description="The `profile` store's element only holds its name. The line below sits outside every store, and the toolbar is another store; both read, call and register refs on `profile` with explicit scopes."
+		expect={[
+			"The outside line and the toolbar show the profile's greeting and visits.",
+			"`Rename` and `Visit` outside the profile element change the profile's state.",
+			"`Flash badge` runs a profile action that reaches the `#badge` ref registered from outside with `profile:#badge`, and toggles its highlight.",
+			"The toolbar still reads its own `$title` while reading `profile:$name`.",
+		]}
+	>
+		<div class="space-y-3">
+			<div data-store="profile" class="rounded-md bg-raised px-3 py-2 text-sm">
+				Profile store: <span class="font-medium" data-dom--text="$name"></span>
+			</div>
+			<p class="flex flex-wrap items-center gap-3 text-sm text-muted">
+				<span data-dom--text="profile:$greeting"></span>
+				<span class="font-mono text-xs">visits <span data-dom--text="profile:$visits"></span></span>
+				<span class="badge data-highlighted:border-accent/50 data-highlighted:text-accent" data-ref="profile:#badge">badge</span>
+				<button class="btn btn-sm ml-auto" data-events--click="profile:@rename">Rename</button>
+				<button class="btn btn-sm" data-events--click="profile:@visit">Visit</button>
+				<button class="btn btn-sm" data-events--click="profile:@flashBadge">Flash badge</button>
+			</p>
+			<div data-store="toolbar" class="flex items-center gap-3 rounded-md border border-line px-3 py-2 text-sm">
+				<span class="font-medium" data-dom--text="$title"></span>
+				<span class="text-muted">signed in as <span data-dom--text="profile:$name"></span></span>
+				<button class="btn btn-sm ml-auto" data-events--click="profile:@rename">Rename from the toolbar</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="unresolved"
+		title="References that can't be resolved"
+		description="Four references that point at nothing: an unscoped one outside any store, an unknown scope, unknown state on a real store, and an unknown action."
+		expect={[
+			"On load the log warns that Catalyst can't infer a store for `$name`.",
+			"The log warns that there is no state `nickname` on the `profile` store.",
+			"The log warns that there is no store with the scope `profiel`.",
+			"All four lines stay empty and the rest of the page keeps working.",
+			"Clicking `Call a missing action` warns that `missing` can't be found on `profile`.",
+		]}
+	>
+		<ul class="space-y-2 text-sm">
+			<li class="flex gap-3"><code>$name</code> <span class="text-muted" data-dom--text="$name"></span></li>
+			<li class="flex gap-3"><code>profiel:$name</code> <span class="text-muted" data-dom--text="profiel:$name"></span></li>
+			<li class="flex gap-3"><code>profile:$nickname</code> <span class="text-muted" data-dom--text="profile:$nickname"></span></li>
+			<li><button class="btn btn-sm" data-events--click="profile:@missing">Call a missing action</button></li>
+		</ul>
+	</Scenario>
+
+	<Scenario
+		id="duplicates"
+		title="Duplicate scopes"
+		description={'Two elements use `data-store="duplicate"`. The second is skipped, and its directives must not read the store of the first.'}
+		gap={'The directives inside the skipped element are still initialised, just without a scope. They replace its server text `not bound` with nothing, and log a `Cannot infer a store` warning for each reference, which never mentions the duplicate.'}
+		expect={[
+			"The first element shows `first element`, and its `Report` logs that label.",
+			"The second element never shows `first element`, and its `Report` does nothing.",
+			"The log warns that the `duplicate` scope is already used by another element.",
+			"Ideally the second element keeps its server text and logs nothing else; today its text is cleared and two more warnings follow.",
+		]}
+	>
+		<div class="grid gap-3 sm:grid-cols-2">
+			<div data-store="duplicate" data-state--label="first element" class="flex items-center gap-3 rounded-md bg-raised px-3 py-2">
+				<span class="text-sm" data-dom--text="$label">not bound</span>
+				<button class="btn btn-sm ml-auto" data-events--click="@report">Report</button>
+			</div>
+			<div data-store="duplicate" data-state--label="second element" class="flex items-center gap-3 rounded-md bg-raised px-3 py-2">
+				<span class="text-sm" data-dom--text="$label">not bound</span>
+				<button class="btn btn-sm ml-auto" data-events--click="@report">Report</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="late-store"
+		title="A store that appears later"
+		description="The line and button below reference `late:` before any `late` element exists. The plain JavaScript buttons insert the store's markup and call `Catalyst.sync`, or remove it."
+		gap={'A directive that references a store that does not exist yet is initialised anyway. It clears its server text, `Waiting for the late store…`, and warns `Cannot find a store with the scope "late"` on load, even though a store appearing later is supported.'}
+		expect={[
+			"Before the store exists, `Ping` does nothing but warn that there is no `late` store.",
+			"`Add the store` logs the store's creation, and the outside line switches to its message.",
+			"`Ping` then increments the late store's pings.",
+			"`Remove the store` logs its destruction, and the outside line keeps the last message it showed.",
+			"Adding it again creates a new store, the outside line binds to it, and its pings start from 0.",
+		]}
+	>
+		<div class="space-y-3">
+			<div class="flex flex-wrap items-center gap-3 text-sm">
+				<span class="text-muted" data-dom--text="late:$message">Waiting for the late store…</span>
+				<button class="btn btn-sm ml-auto" data-events--click="late:@ping">Ping</button>
+			</div>
+			<div data-scopes-late-slot class="min-h-10"></div>
+			<div class="flex gap-2">
+				<button class="btn" data-scopes-add-late>Add the store</button>
+				<button class="btn btn-ghost" data-scopes-remove-late>Remove the store</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/scopes";
+	</script>
+</Playground>

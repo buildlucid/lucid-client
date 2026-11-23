@@ -1,0 +1,307 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+
+// Overlays are shown by a `data-open` attribute bound to the same state as the
+// trap, placed before `data-trap`. See the "Shown with data-bind--hidden"
+// scenario for why.
+const overlayBase =
+	"fixed inset-0 grid place-items-center p-4 data-[open=false]:hidden";
+const overlay = `${overlayBase} z-50 bg-black/65 backdrop-blur-[2px]`;
+const nestedOverlay = `${overlayBase} z-[60] bg-black/40`;
+const panel =
+	"w-full max-w-md rounded-xl border border-line-strong/60 bg-panel p-6 shadow-2xl shadow-black/50";
+const status = "readout mt-4 block text-[11px]";
+---
+
+<Playground title="Focus traps">
+	<Fragment slot="intro">
+		<p>
+			While <code>data-trap</code> is truthy, everything outside the element is
+			made inert, page scrolling is locked and focus moves inside. Closing it
+			returns focus to where it was. Each dialog shows a live status line, and
+			the activity log records focus, scrolling and the inert count after every
+			change.
+		</p>
+		<p>
+			A trap makes the sidebar and this log inert too, so close a dialog before
+			using them.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="modal"
+		title="A modal dialog"
+		description={'The overlay is shown by `data-bind--data-open="$open"` and trapped by `data-trap="$open"`. It closes on `Escape` through a `document.keydown` listener, and when the backdrop itself is clicked.'}
+		expect={[
+			"Opening moves focus to the Name field, the first focusable element in the trap.",
+			"`Tab` and `Shift+Tab` stay inside the dialog, and the page behind can't be scrolled.",
+			"The content beside the button gets `inert` while the dialog is open and loses it afterwards.",
+			"`Escape`, `Cancel`, `Done` and a click on the backdrop all close it, and focus returns to `Open dialog`.",
+		]}
+	>
+		<div data-store="basicModal" data-state--name="basic modal" class="space-y-4">
+			<button class="btn btn-primary" data-events--click="@open">Open dialog</button>
+			<div id="trap-modal-outside" class="rounded-md border border-dashed border-line px-3 py-2 text-sm text-muted">
+				Content outside the trap
+			</div>
+			<div
+				class={overlay}
+				data-bind--data-open="$open"
+				data-trap="$open"
+				data-events--click="@closeOnBackdrop"
+				data-events--document.keydown="@closeOnEscape"
+				data-open="false"
+			>
+				<div role="dialog" aria-modal="true" aria-labelledby="trap-modal-title" class={panel}>
+					<h3 id="trap-modal-title" class="text-base font-semibold">Basic dialog</h3>
+					<p class="mt-1.5 text-sm text-muted">Focus can't leave this dialog until it closes.</p>
+					<label class="mt-4 block space-y-1.5">
+						<span class="label">Name</span>
+						<input class="input" type="text" placeholder="Name" />
+					</label>
+					<pg-trap-status class={status}></pg-trap-status>
+					<div class="mt-5 flex justify-end gap-2">
+						<button class="btn btn-ghost" data-events--click="@close">Cancel</button>
+						<button class="btn btn-primary" data-events--click="@close">Done</button>
+					</div>
+				</div>
+			</div>
+			<AttributeReadout target="#trap-modal-outside" label="Outside content attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="initial-focus"
+		title="Where focus starts"
+		description={'The first dialog has an `[autofocus]` field after its close button. The second has nothing focusable, so the trap focuses itself and adds `tabindex="-1"` while it is open.'}
+		expect={[
+			"The autofocus dialog focuses the Search field, not the Close button before it.",
+			"The empty dialog focuses the overlay itself; the readout shows `tabindex=\"-1\"` added while open and removed after.",
+			"Both close with `Escape` or a click on the backdrop, and focus returns to the button that opened them.",
+		]}
+	>
+		<div class="flex flex-wrap gap-3">
+			<div data-store="autofocusModal" data-state--name="autofocus dialog">
+				<button class="btn" data-events--click="@open">Open with autofocus</button>
+				<div
+					class={overlay}
+					data-bind--data-open="$open"
+					data-trap="$open"
+					data-events--click="@closeOnBackdrop"
+					data-events--document.keydown="@closeOnEscape"
+					data-open="false"
+				>
+					<div role="dialog" aria-modal="true" aria-label="Autofocus dialog" class={panel}>
+						<div class="flex items-center justify-between">
+							<h3 class="text-base font-semibold">Autofocus</h3>
+							<button class="btn btn-ghost btn-sm" data-events--click="@close">Close</button>
+						</div>
+						<label class="mt-4 block space-y-1.5">
+							<span class="label">Search</span>
+							<input class="input" type="search" placeholder="Search" autofocus />
+						</label>
+						<pg-trap-status class={status}></pg-trap-status>
+					</div>
+				</div>
+			</div>
+
+			<div data-store="emptyModal" data-state--name="empty dialog">
+				<button class="btn" data-events--click="@open">Open with nothing focusable</button>
+				<div
+					id="trap-empty-overlay"
+					class={overlay}
+					data-bind--data-open="$open"
+					data-trap="$open"
+					data-events--click="@closeOnBackdrop"
+					data-events--document.keydown="@closeOnEscape"
+					data-open="false"
+				>
+					<div role="dialog" aria-modal="true" aria-label="Empty dialog" class={panel}>
+						<h3 class="text-base font-semibold">Nothing to focus</h3>
+						<p class="mt-1.5 text-sm text-muted">
+							Press <kbd class="kbd">Esc</kbd> or click outside to close.
+						</p>
+						<pg-trap-status class={status}></pg-trap-status>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="mt-4">
+			<AttributeReadout
+				target="#trap-empty-overlay"
+				exclude={["data-bind--data-open", "data-trap", "data-events--click", "data-events--document.keydown"]}
+				label="Empty dialog overlay"
+			/>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="stacked"
+		title="Stacked traps"
+		description="The outer dialog opens a second dialog on top. Opening the inner trap makes the outer one inert, and closing it hands the trap back. One `document.keydown` action closes whichever is innermost."
+		expect={[
+			"Opening the nested dialog focuses its button, and the outer overlay gets `inert`.",
+			"Closing the nested dialog removes `inert` from the outer overlay and returns focus to `Open nested dialog`.",
+			"`Escape` closes the nested dialog first, then the outer one.",
+			"Closing the outer dialog returns focus to `Open stacked dialogs`.",
+		]}
+	>
+		<div data-store="stacked" data-events--document.keydown="@closeOnEscape" class="space-y-4">
+			<button class="btn btn-primary" data-events--click="@openOuter">Open stacked dialogs</button>
+			<div
+				id="trap-outer-overlay"
+				class={overlay}
+				data-bind--data-open="$outer"
+				data-trap="$outer"
+				data-open="false"
+			>
+				<div role="dialog" aria-modal="true" aria-label="Outer dialog" class={panel}>
+					<h3 class="text-base font-semibold">Outer dialog</h3>
+					<p class="mt-1.5 text-sm text-muted">This one stays open underneath.</p>
+					<pg-trap-status class={status}></pg-trap-status>
+					<div class="mt-5 flex justify-end gap-2">
+						<button class="btn btn-ghost" data-events--click="@closeOuter">Close</button>
+						<button class="btn btn-primary" data-events--click="@openInner">Open nested dialog</button>
+					</div>
+				</div>
+			</div>
+			<div
+				class={nestedOverlay}
+				data-bind--data-open="$inner"
+				data-trap="$inner"
+				data-open="false"
+			>
+				<div role="dialog" aria-modal="true" aria-label="Nested dialog" class={`${panel} max-w-sm`}>
+					<h3 class="text-base font-semibold">Nested dialog</h3>
+					<p class="mt-1.5 text-sm text-muted">Only this dialog is interactive now.</p>
+					<pg-trap-status class={status}></pg-trap-status>
+					<div class="mt-5 flex justify-end gap-2">
+						<button class="btn btn-primary" data-events--click="@closeInner">Close nested</button>
+					</div>
+				</div>
+			</div>
+			<AttributeReadout target="#trap-outer-overlay" exclude={["data-bind--data-open", "data-trap"]} label="Outer overlay" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="drawer"
+		title="A drawer with data-trap--both and data-trap-allow"
+		description={'The menu uses `data-trap--both`, so it is inert while closed. Its toggle sits outside the menu with `data-trap-allow`, so it can still close it. The search field uses `data-dom--focus="$open"`.'}
+		expect={[
+			"On load the drawer has `inert`, so its links can't be reached with `Tab`.",
+			"Opening removes `inert`, slides the drawer in and focuses the search field.",
+			"While open, the toggle button still works; everything else outside the drawer is inert.",
+			"Closing with the toggle or `Escape` makes the drawer inert again and focus returns to the toggle.",
+		]}
+	>
+		<div data-store="drawer" data-events--document.keydown="@closeOnEscape" class="space-y-4">
+			<button
+				class="btn btn-primary"
+				data-trap-allow
+				data-events--click="@toggle"
+				data-bind--aria-expanded="$open"
+				aria-controls="trap-drawer"
+				data-dom--text="$buttonLabel"
+			>
+				Open menu
+			</button>
+			<nav
+				id="trap-drawer"
+				aria-label="Example menu"
+				data-bind--data-open="$open"
+				data-trap--both="$open"
+				data-open="false"
+				class="fixed inset-y-0 right-0 z-50 flex w-80 max-w-[85vw] translate-x-full flex-col gap-4 border-l border-line-strong/60 bg-panel p-6 shadow-2xl shadow-black/60 transition-transform duration-200 data-[open=true]:translate-x-0"
+			>
+				<p class="text-sm font-semibold">Example menu</p>
+				<input class="input" type="search" placeholder="Search the menu" data-dom--focus="$open" />
+				<ul class="space-y-1 text-sm">
+					<li><a href="#drawer">First link</a></li>
+					<li><a href="#drawer">Second link</a></li>
+					<li><a href="#drawer">Third link</a></li>
+				</ul>
+				<pg-trap-status class={status}></pg-trap-status>
+			</nav>
+			<AttributeReadout target="#trap-drawer" exclude={["data-trap--both", "data-bind--data-open", "aria-label"]} label="Drawer attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="already-inert"
+		title="Elements that were already inert"
+		description="The panel below is `inert` in the markup. Opening and closing a trap must leave it inert, because the trap only restores what it changed."
+		expect={[
+			"The panel has `inert` before, during and after the dialog.",
+			"The log shows the inert count returning to what it was before the dialog opened.",
+		]}
+	>
+		<div data-store="inertModal" data-state--name="inert check dialog" class="space-y-4">
+			<div class="flex flex-wrap items-center gap-3">
+				<button class="btn btn-primary" data-events--click="@open">Open dialog</button>
+				<div id="trap-pre-inert" inert class="flex items-center gap-3 rounded-md border border-dashed border-line px-3 py-2 opacity-60">
+					<span class="text-sm text-muted">Inert in the markup</span>
+					<button class="btn btn-sm">Can't be clicked</button>
+				</div>
+			</div>
+			<div
+				class={overlay}
+				data-bind--data-open="$open"
+				data-trap="$open"
+				data-events--click="@closeOnBackdrop"
+				data-events--document.keydown="@closeOnEscape"
+				data-open="false"
+			>
+				<div role="dialog" aria-modal="true" aria-label="Inert check dialog" class={panel}>
+					<h3 class="text-base font-semibold">Close me again</h3>
+					<pg-trap-status class={status}></pg-trap-status>
+					<div class="mt-5 flex justify-end">
+						<button class="btn btn-primary" data-events--click="@close">Close</button>
+					</div>
+				</div>
+			</div>
+			<AttributeReadout target="#trap-pre-inert" label="Panel attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="hidden-binding"
+		title="A dialog shown with data-bind--hidden"
+		description={'The usual way to show a dialog: `data-bind--hidden="$closed"`, where `closed` is a computed value. Everything else matches the first scenario.'}
+		gap={'The trap moves focus as soon as its value turns true, before other bindings in the same update have run. Here the element still has `hidden` when the trap calls `focus()`, so focus lands on `<body>`. It only works when the binding that shows the element reads the same state and comes before `data-trap` in the markup, as in the scenarios above; swapping their order breaks those too.'}
+		expect={[
+			"Opening should move focus to the Name field (today it ends up on `<body>`, as the status line shows).",
+			"Closing returns focus to `Open dialog`.",
+		]}
+	>
+		<div data-store="hiddenModal" data-state--name="hidden-binding dialog">
+			<button class="btn btn-primary" data-events--click="@open">Open dialog</button>
+			<div
+				class="fixed inset-0 z-50 grid place-items-center bg-black/65 p-4 backdrop-blur-[2px]"
+				data-bind--hidden="$closed"
+				data-trap="$open"
+				data-events--click="@closeOnBackdrop"
+				data-events--document.keydown="@closeOnEscape"
+				hidden
+			>
+				<div role="dialog" aria-modal="true" aria-label="Hidden-binding dialog" class={panel}>
+					<h3 class="text-base font-semibold">Shown with data-bind--hidden</h3>
+					<label class="mt-4 block space-y-1.5">
+						<span class="label">Name</span>
+						<input class="input" type="text" placeholder="Name" />
+					</label>
+					<pg-trap-status class={status}></pg-trap-status>
+					<div class="mt-5 flex justify-end">
+						<button class="btn btn-primary" data-events--click="@close">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/traps";
+	</script>
+</Playground>

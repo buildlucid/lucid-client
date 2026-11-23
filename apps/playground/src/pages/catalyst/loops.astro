@@ -1,0 +1,265 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Loops">
+	<Fragment slot="intro">
+		<p>
+			<code>data-loop</code> resolves an array and renders its direct
+			<code>&lt;template&gt;</code> child once per item. Rendered markup reads
+			<code>$item</code>, <code>$index</code> and <code>$indexOne</code>, and
+			nested loops reach outwards with <code>$parent</code>. Items are matched
+			by identity, so unchanged items keep their markup.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="rendering"
+		title="Rendering an array from state"
+		description="`links` renders one row per item. Rows read their item, both indexes, and `$label`, which isn't a loop key so it resolves to the store."
+		expect={[
+			"Three rows render numbered 1–3, with their zero-based index and the text `from the store`.",
+			"`Push` adds a row at the end and `Pop` removes the last one; the total follows.",
+			"`Rename first` changes only the first row's text in place.",
+		]}
+	>
+		<div data-store="basic" class="space-y-4">
+			<ol data-loop="$links" class="divide-y divide-line rounded-md border border-line">
+				<template>
+					<li class="flex items-center gap-3 px-3 py-2 text-sm">
+						<span class="w-5 font-mono text-xs text-subtle" data-dom--text="$indexOne"></span>
+						<a data-bind--href="$item.url" data-dom--text="$item.title"></a>
+						<span class="ml-auto text-xs text-subtle">
+							index <span class="font-mono" data-dom--text="$index"></span> ·
+							<span data-dom--text="$label"></span>
+						</span>
+					</li>
+				</template>
+			</ol>
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn" data-events--click="@push">Push</button>
+				<button class="btn" data-events--click="@pop">Pop</button>
+				<button class="btn" data-events--click="@renameFirst">Rename first</button>
+				<span class="ml-auto text-sm text-muted">total <span class="font-mono text-fg" data-dom--text="$total"></span></span>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="action-loop"
+		title="Looping over an action"
+		description={'`data-loop="@visibleNumbers"` renders what the action returns. The action reads `numbers` and `onlyEven`, so it re-runs when either changes.'}
+		expect={[
+			"Six numbers render on load.",
+			"`Only even` hides the odd numbers and the button changes to `Show all`.",
+			"`Add number` appends the next number, and it only shows if it passes the filter.",
+		]}
+	>
+		<div data-store="filtered" class="space-y-4">
+			<ul data-loop="@visibleNumbers" class="flex min-h-9 flex-wrap gap-2">
+				<template>
+					<li class="badge font-mono text-sm" data-dom--text="$item"></li>
+				</template>
+			</ul>
+			<div class="flex gap-2">
+				<button class="btn" data-events--click="@toggleFilter" data-dom--text="$filterLabel">Only even</button>
+				<button class="btn" data-events--click="@addNumber">Add number</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="identity"
+		title="Unchanged items keep their markup"
+		description={'Type something into a few rows, then reorder them. Each row shows the render number it got when it was created, from `data-dom--text="@renderStamp"`.'}
+		expect={[
+			"`Shuffle`, `Reverse` and `Remove middle` keep the text you typed with its person, and render numbers don't change.",
+			"`Prepend` adds one row with a new render number; the others keep theirs and their index updates.",
+			"`Replace with copies` renders every row again with new numbers and empty inputs, and logs the replacement.",
+			"`Clear` sets the array to `null` and removes every row; `Restore` renders five fresh rows.",
+		]}
+	>
+		<div data-store="identity" class="space-y-4">
+			<ul data-loop="$rows" class="space-y-2">
+				<template>
+					<li class="flex items-center gap-3 rounded-md bg-raised px-3 py-2">
+						<span class="w-5 font-mono text-xs text-subtle" data-dom--text="$indexOne"></span>
+						<span class="w-20 text-sm font-medium" data-dom--text="$item.name"></span>
+						<input class="input py-1.5" type="text" placeholder="Type a note" aria-label="Note" />
+						<span class="badge shrink-0 font-mono" title="Render number" data-dom--text="@renderStamp"></span>
+					</li>
+				</template>
+			</ul>
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn" data-events--click="@shuffle">Shuffle</button>
+				<button class="btn" data-events--click="@reverse">Reverse</button>
+				<button class="btn" data-events--click="@removeMiddle">Remove middle</button>
+				<button class="btn" data-events--click="@prepend">Prepend</button>
+				<button class="btn" data-events--click="@replaceWithCopies">Replace with copies</button>
+				<button class="btn btn-ghost" data-events--click="@clear">Clear</button>
+				<button class="btn btn-ghost" data-events--click="@restore">Restore</button>
+				<span class="ml-auto text-sm text-muted">rows <span class="font-mono text-fg" data-dom--text="$count"></span></span>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="nested"
+		title="Nested loops and $parent"
+		description="Three levels: groups, sections and links. Each link reads its section with `$parent.item.title` and its group with `$parent.parent.item.title`."
+		expect={[
+			"Every link shows its own position, its section's position and its group's title.",
+			"`Add link` appends to Catalyst › Core only, and the other rows keep their markup.",
+			"`Add group` renders a new group with its own nested section and link.",
+		]}
+	>
+		<div data-store="nested" class="space-y-4">
+			<ul data-loop="$groups" class="space-y-3">
+				<template>
+					<li class="rounded-md border border-line px-3 py-2.5">
+						<p class="text-sm font-semibold">
+							<span class="font-mono text-subtle" data-dom--text="$indexOne"></span>.
+							<span data-dom--text="$item.title"></span>
+						</p>
+						<ul data-loop="$item.sections" class="mt-2 space-y-2 pl-4">
+							<template>
+								<li>
+									<p class="text-[13px] text-muted">
+										<span class="font-mono" data-dom--text="$parent.indexOne"></span>.<span class="font-mono" data-dom--text="$indexOne"></span>
+										<span data-dom--text="$item.title"></span>
+									</p>
+									<ul data-loop="$item.links" class="mt-1 space-y-1 border-l border-line pl-3">
+										<template>
+											<li class="text-xs text-subtle">
+												<span class="text-fg" data-dom--text="$item"></span>
+												— section <span data-dom--text="$parent.item.title"></span>,
+												group <span data-dom--text="$parent.parent.item.title"></span>
+											</li>
+										</template>
+									</ul>
+								</li>
+							</template>
+						</ul>
+					</li>
+				</template>
+			</ul>
+			<div class="flex gap-2">
+				<button class="btn" data-events--click="@addLink">Add link</button>
+				<button class="btn" data-events--click="@addGroup">Add group</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="item-actions"
+		title="Actions inside loop items"
+		description={'Each row calls `@vote` and `@remove`. The action reads which row was used from a `data-index` attribute that the row binds with `data-bind--data-index="$index"`.'}
+		gap="Actions called from a loop item receive only the `Event`, not `$item` or `$index`. Every per-item action has to bind the index to an attribute and read it back from `event.currentTarget`."
+		expect={[
+			"`Vote` increments only that row's votes; the log shows the index it read and that it only received the Event.",
+			"`Remove` removes that row, and the remaining rows' `data-index` values update so later clicks hit the right row.",
+		]}
+	>
+		<div data-store="tasks">
+			<ul data-loop="$tasks" class="divide-y divide-line rounded-md border border-line">
+				<template>
+					<li class="flex items-center gap-3 px-3 py-2 text-sm">
+						<span class="flex-1" data-dom--text="$item.title"></span>
+						<span class="font-mono text-xs text-subtle"><span data-dom--text="$item.votes"></span> votes</span>
+						<button class="btn btn-sm" data-bind--data-index="$index" data-events--click="@vote">Vote</button>
+						<button class="btn btn-sm btn-ghost" data-bind--data-index="$index" data-events--click="@remove">Remove</button>
+					</li>
+				</template>
+			</ul>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="primitives"
+		title="Primitive items and duplicates"
+		description="Strings are matched by value, and duplicate values each get their own row."
+		expect={[
+			"Four tags render, including two `beta` tags.",
+			"`Add beta` adds a third `beta`; `Remove first beta` removes one; the count stays right.",
+			"`Sort` reorders the tags and every index updates.",
+		]}
+	>
+		<div data-store="tags" class="space-y-4">
+			<ul data-loop="$tags" class="flex min-h-9 flex-wrap gap-2">
+				<template>
+					<li class="badge text-sm">
+						<span class="font-mono text-subtle" data-dom--text="$index"></span>
+						<span class="text-fg" data-dom--text="$item"></span>
+					</li>
+				</template>
+			</ul>
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn" data-events--click="@addBeta">Add beta</button>
+				<button class="btn" data-events--click="@removeFirstBeta">Remove first beta</button>
+				<button class="btn" data-events--click="@sort">Sort</button>
+				<span class="ml-auto text-sm text-muted">count <span class="font-mono text-fg" data-dom--text="$tags.length"></span></span>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="placeholders"
+		title="Server-rendered markup and late data"
+		description="The first list ships two server-rendered rows inside the loop element, which the first render replaces. The second list starts as `null` and shows a separate loading message until its data arrives."
+		expect={[
+			"The first list shows the two `Client item` rows, never the `Server item` rows, and nothing is logged about them.",
+			"The second list shows `Loading…` for about a second, then three results, and logs that they arrived.",
+			"`Reload` shows the loading message again and clears the list until the results return.",
+		]}
+	>
+		<div class="grid gap-4 sm:grid-cols-2">
+			<div data-store="server">
+				<p class="mb-2 text-xs text-subtle">Server-rendered placeholders</p>
+				<ul data-loop="$items" class="space-y-1.5 text-sm">
+					<template>
+						<li class="rounded-md bg-raised px-3 py-1.5" data-dom--text="$item"></li>
+					</template>
+					<li class="rounded-md bg-raised px-3 py-1.5" data-dom--text="$missingState">Server item one</li>
+					<li class="rounded-md bg-raised px-3 py-1.5">Server item two</li>
+				</ul>
+			</div>
+			<div data-store="late">
+				<div class="mb-2 flex items-center justify-between">
+					<p class="text-xs text-subtle">Data that arrives later</p>
+					<button class="btn btn-sm btn-ghost" data-events--click="@load">Reload</button>
+				</div>
+				<p class="rounded-md border border-dashed border-line px-3 py-1.5 text-sm text-subtle" data-bind--hidden="$ready">Loading…</p>
+				<ul data-loop="$results" class="space-y-1.5 text-sm">
+					<template>
+						<li class="rounded-md bg-raised px-3 py-1.5" data-dom--text="$item"></li>
+					</template>
+				</ul>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="misconfigured"
+		title="Misconfigured loops"
+		description="One loop resolves to a string and one has a template with two root elements."
+		expect={[
+			"The log shows a warning that `data-loop` must resolve to an array.",
+			"The log shows a warning that loop templates must contain exactly one element child.",
+			"Nothing renders in either list, and the rest of the page keeps working.",
+		]}
+	>
+		<div data-store="misconfigured" class="grid gap-4 text-sm sm:grid-cols-2">
+			<ul data-loop="$notAnArray" class="min-h-9 rounded-md border border-dashed border-line px-3 py-2 text-subtle">
+				<template><li data-dom--text="$item"></li></template>
+			</ul>
+			<ul data-loop="$items" class="min-h-9 rounded-md border border-dashed border-line px-3 py-2 text-subtle">
+				<template><li data-dom--text="$item"></li><li>Second root</li></template>
+			</ul>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/loops";
+	</script>
+</Playground>

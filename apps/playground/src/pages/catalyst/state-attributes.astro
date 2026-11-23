@@ -1,0 +1,261 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+
+const inferredRows = [
+	["boolean", "false"],
+	["number", "1"],
+	["string", "hello world"],
+	["object", '{"hello":"world","world":"hello"}'],
+	["array", '[false,"world"]'],
+	["leadingZero", "007"],
+	["empty", ""],
+	["longId", "12345678901234567890"],
+	["exponent", "1e3"],
+	["nullValue", "null"],
+	["brokenJson", "{not json"],
+] as const;
+
+const typedRows = [
+	["visits", '"3"'],
+	["code", '"42"'],
+	["enabled", '"true"'],
+	["tags", "'[\"one\",\"two\"]'"],
+	["notInMarkup", "no attribute"],
+] as const;
+---
+
+<Playground title="State attributes">
+	<Fragment slot="intro">
+		<p>
+			<code>data-state--*</code> attributes on a store element declare state in
+			markup. They set the starting value, are parsed without losing data, and
+			stay in sync with state in both directions.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="inferred-types"
+		title="Types inferred without a definition"
+		description="`inferred` declares no state, so every attribute is parsed from its text. Only values that convert back to the same text become numbers, and only valid JSON becomes an object or array."
+		expect={[
+			"`false`, `1`, the JSON object and the JSON array get their own types.",
+			"`007`, `\"\"`, the 20-digit id, `1e3` and `{not json` stay strings, exactly as written.",
+			"`null` becomes `null`.",
+		]}
+	>
+		<div
+			data-store="inferred"
+			data-state--boolean="false"
+			data-state--number="1"
+			data-state--string="hello world"
+			data-state--object='{"hello":"world","world":"hello"}'
+			data-state--array='[false,"world"]'
+			data-state--leading-zero="007"
+			data-state--empty=""
+			data-state--long-id="12345678901234567890"
+			data-state--exponent="1e3"
+			data-state--null-value="null"
+			data-state--broken-json="{not json"
+		>
+			<table class="w-full text-left text-[13px]">
+				<thead class="text-[11px] tracking-wide text-subtle uppercase">
+					<tr>
+						<th class="pb-2 font-medium">Key</th>
+						<th class="pb-2 font-medium">Attribute</th>
+						<th class="pb-2 font-medium">Parsed</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-line/70 font-mono text-xs">
+					{
+						inferredRows.map(([key, value]) => (
+							<tr>
+								<td class="py-1.5 pr-3 text-fg">{key}</td>
+								<td class="py-1.5 pr-3 text-subtle">{value === "" ? '""' : value}</td>
+								<td class="py-1.5 text-accent" data-dom--text={`$types.${key}`} />
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="typed-defaults"
+		title="The definition's default decides the type"
+		description={"`typed` declares `visits: 0`, `code: \"\"`, `enabled: false` and `tags: []`. Attributes set the starting values, parsed to each default's type. `notInMarkup` has no attribute."}
+		expect={[
+			"`visits` is the number `3` and `enabled` is the boolean `true`.",
+			"`code` stays the string `\"42\"` because its default is a string.",
+			"`notInMarkup` keeps its default and no `data-state--not-in-markup` attribute is added to the element.",
+		]}
+	>
+		<div
+			id="typed-store"
+			data-store="typed"
+			data-state--visits="3"
+			data-state--code="42"
+			data-state--enabled="true"
+			data-state--tags='["one","two"]'
+			class="grid gap-4 sm:grid-cols-2"
+		>
+			<dl class="space-y-1.5 font-mono text-xs">
+				{
+					typedRows.map(([key, attribute]) => (
+						<div class="flex flex-wrap gap-x-2">
+							<dt class="text-fg">{key}</dt>
+							<dd class="text-subtle">{attribute}</dd>
+							<dd class="w-full text-accent" data-dom--text={`$types.${key}`} />
+						</div>
+					))
+				}
+			</dl>
+			<AttributeReadout target="#typed-store" exclude={["id"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="naming"
+		title="Kebab-case attributes, camelCase keys"
+		description="`data-state--user-name` is the `userName` state. HTML lowercases attribute names, so `data-state--displayName` arrives as `data-state--displayname` and can't match `displayName`."
+		expect={[
+			"`$userName` renders `ada`.",
+			"`$displayName` renders its default, `fallback display name`.",
+			"On load, the log shows a Catalyst warning suggesting `data-state--display-name`.",
+		]}
+	>
+		<div
+			data-store="naming"
+			data-state--user-name="ada"
+			data-state--displayName="Ada Lovelace"
+			class="space-y-1.5 text-sm"
+		>
+			<p>userName: <span class="font-mono text-accent" data-dom--text="$userName"></span></p>
+			<p>displayName: <span class="font-mono text-accent" data-dom--text="$displayName"></span></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="state-to-attribute"
+		title="State writes update the attributes"
+		description="Each action writes state through `setState`. Nested writes, such as pushing to an array or changing one field of an object, update the attribute too."
+		expect={[
+			"Each button changes exactly the matching `data-state--*` attribute in the readout.",
+			"`Push tag` and `Rename profile` rewrite the JSON in `data-state--tags` and `data-state--profile`.",
+		]}
+	>
+		<div
+			id="writes-store"
+			data-store="writes"
+			data-state--count="0"
+			data-state--active="false"
+			data-state--tags='["alpha"]'
+			data-state--profile='{"name":"Ada","role":"admin"}'
+			class="space-y-4"
+		>
+			<div class="flex flex-wrap gap-2">
+				<button class="btn" data-events--click="@increment">Increment count</button>
+				<button class="btn" data-events--click="@toggleActive">Toggle active</button>
+				<button class="btn" data-events--click="@pushTag">Push tag</button>
+				<button class="btn" data-events--click="@renameProfile">Rename profile</button>
+			</div>
+			<AttributeReadout target="#writes-store" exclude={["id"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="attribute-to-state"
+		title="Attribute writes update state"
+		description="The buttons are plain JavaScript that call `setAttribute` and `removeAttribute` on the store element. Once a value has a type it keeps it, where the new text allows."
+		expect={[
+			"Setting `count` to `10` makes it the number `10`.",
+			"Setting `label` to `42` keeps it the string `\"42\"`.",
+			"Setting `flag` to `true` makes it the boolean `true`.",
+			"Removing `data-state--label` sets `label` to `null` and the attribute is not added back.",
+			"Setting `count` to `abc` turns it into the string `\"abc\"`, because the text can't be a number.",
+		]}
+	>
+		<div
+			id="reverse-store"
+			data-store="reverse"
+			data-state--count="0"
+			data-state--label="start"
+			data-state--flag="false"
+			class="space-y-4"
+		>
+			<pg-controls class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-attribute-target="#reverse-store" data-attribute-set="data-state--count" data-attribute-value="10">count = "10"</button>
+				<button class="btn btn-sm" data-attribute-target="#reverse-store" data-attribute-set="data-state--count" data-attribute-value="abc">count = "abc"</button>
+				<button class="btn btn-sm" data-attribute-target="#reverse-store" data-attribute-set="data-state--label" data-attribute-value="42">label = "42"</button>
+				<button class="btn btn-sm" data-attribute-target="#reverse-store" data-attribute-set="data-state--label">Remove label</button>
+				<button class="btn btn-sm" data-attribute-target="#reverse-store" data-attribute-set="data-state--flag" data-attribute-value="true">flag = "true"</button>
+			</pg-controls>
+			<dl class="grid gap-1.5 font-mono text-xs sm:grid-cols-3">
+				<div><dt class="text-subtle">count</dt><dd class="text-accent" data-dom--text="$types.count"></dd></div>
+				<div><dt class="text-subtle">label</dt><dd class="text-accent" data-dom--text="$types.label"></dd></div>
+				<div><dt class="text-subtle">flag</dt><dd class="text-accent" data-dom--text="$types.flag"></dd></div>
+			</dl>
+			<AttributeReadout target="#reverse-store" exclude={["id"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="late-attributes"
+		title="Attributes added after start"
+		description="A `data-state--*` attribute added to an existing store element is picked up by the next `Catalyst.sync`. `known` is declared in the definition but has no attribute until you add one."
+		expect={[
+			"On load, the log warns that state `late` can't be found, because nothing declares it yet.",
+			"`Add data-state--late` adds the attribute, but `$late` stays empty until `Run sync`.",
+			"After `Run sync`, `$late` renders `hello` and the types list includes `late`.",
+			"`Add data-state--known` changes `known` straight away, because the definition declares it.",
+			"After adding `data-state--known` and running sync, `Change known` rewrites the attribute.",
+		]}
+		gap="Between `Add data-state--known` and the next sync, the attribute only syncs one way. The attribute updates `known`, but `Change known` doesn't write back, so the readout and the types list disagree until `Run sync`."
+	>
+		<div id="late-store" data-store="late" class="space-y-4">
+			<pg-controls class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-attribute-target="#late-store" data-attribute-set="data-state--late" data-attribute-value="hello">Add data-state--late</button>
+				<button class="btn btn-sm" data-attribute-target="#late-store" data-attribute-set="data-state--known" data-attribute-value="from an attribute">Add data-state--known</button>
+				<button class="btn btn-sm btn-primary" data-late-sync>Run sync</button>
+			</pg-controls>
+			<div class="flex flex-wrap items-center gap-3">
+				<button class="btn btn-sm" data-events--click="@changeKnown">Change known</button>
+				<p class="text-sm">$late: <span class="font-mono text-accent" data-dom--text="$late"></span></p>
+			</div>
+			<pre class="readout" data-dom--text="$types"></pre>
+			<AttributeReadout target="#late-store" exclude={["id"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="styling"
+		title="Styling from state attributes"
+		description="State attributes are ordinary attributes, so CSS can style from them without any bindings. This card uses Tailwind's `data-[state--active=true]:` variants."
+		expect={[
+			"`Toggle active` switches the card's border and background.",
+			"`Cycle level` changes the bar width through `data-[state--level=…]` variants.",
+		]}
+	>
+		<div
+			data-store="styled"
+			data-state--active="false"
+			data-state--level="low"
+			class="group/styled space-y-3 rounded-lg border border-line bg-raised/40 p-4 transition-colors data-[state--active=true]:border-accent/60 data-[state--active=true]:bg-accent/10"
+		>
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn btn-sm" data-events--click="@toggle">Toggle active</button>
+				<button class="btn btn-sm" data-events--click="@cycleLevel">Cycle level</button>
+				<span class="ml-auto font-mono text-xs text-subtle" data-dom--text="$level"></span>
+			</div>
+			<div class="h-1.5 overflow-hidden rounded-full bg-line">
+				<div class="h-full w-1/4 rounded-full bg-accent transition-all group-data-[state--level=high]/styled:w-full group-data-[state--level=medium]/styled:w-2/3"></div>
+			</div>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/state-attributes";
+	</script>
+</Playground>

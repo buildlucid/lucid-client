@@ -1,0 +1,195 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Stores">
+	<Fragment slot="intro">
+		<p>
+			A store is the state, computed values and actions behind one
+			<code>data-store</code> element. Markup reads state and computed values
+			with <code>$name</code> and calls actions with <code>@name</code>.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="counter"
+		title="State, computed values and actions"
+		description="A counter with `count` and `step` state, three computed values and four actions."
+		expect={[
+			"`+` and `−` change the count by the current step, and `double` and `parity` follow it.",
+			"`Step` cycles 1 → 5 → 10 → 1 and its label updates.",
+			"`Reset` sets the count back to 0 without changing the step.",
+		]}
+	>
+		<div data-store="counter" class="flex flex-wrap items-center gap-4">
+			<div class="flex items-center gap-1.5">
+				<button class="btn w-9" data-events--click="@decrement" aria-label="Decrement">−</button>
+				<output
+					class="min-w-14 text-center font-mono text-2xl font-semibold tabular-nums"
+					data-dom--text="$count">0</output
+				>
+				<button class="btn w-9" data-events--click="@increment" aria-label="Increment">+</button>
+			</div>
+			<dl class="flex gap-5 text-sm">
+				<div>
+					<dt class="text-xs text-subtle">double</dt>
+					<dd class="font-mono" data-dom--text="$double"></dd>
+				</div>
+				<div>
+					<dt class="text-xs text-subtle">parity</dt>
+					<dd class="font-mono" data-dom--text="$parity"></dd>
+				</div>
+			</dl>
+			<div class="ml-auto flex gap-2">
+				<button class="btn" data-events--click="@cycleStep" data-dom--text="$stepLabel">Step</button>
+				<button class="btn btn-ghost" data-events--click="@reset">Reset</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="shared-definition"
+		title="One definition, two scopes"
+		description="The same `disclosure` definition is registered as `loginPanel` and `signupPanel`. Each element sets its own `label` with a state attribute."
+		expect={[
+			"Each button opens and closes only its own panel.",
+			"Each button label uses its own `label` state.",
+			"The log shows `init` running once per instance.",
+		]}
+	>
+		<div class="grid gap-3 sm:grid-cols-2">
+			<div data-store="loginPanel" data-state--label="login" class="space-y-3">
+				<button class="btn w-full" data-events--click="@toggle" data-bind--aria-expanded="$open" data-dom--text="$buttonLabel"></button>
+				<p class="rounded-md bg-raised px-3 py-2 text-sm text-muted" data-bind--hidden="$closed" hidden>
+					The login panel is open.
+				</p>
+			</div>
+			<div data-store="signupPanel" data-state--label="sign-up" class="space-y-3">
+				<button class="btn w-full" data-events--click="@toggle" data-bind--aria-expanded="$open" data-dom--text="$buttonLabel"></button>
+				<p class="rounded-md bg-raised px-3 py-2 text-sm text-muted" data-bind--hidden="$closed" hidden>
+					The sign-up panel is open.
+				</p>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="markup-only"
+		title="A store without a definition"
+		description="`markupOnly` has no registered definition, so its state comes entirely from `data-state--*` attributes. The button is plain JavaScript that rewrites the attribute."
+		expect={[
+			"The message and count render from the attributes on load.",
+			"`Bump attribute` changes `data-state--count` and the rendered count follows it.",
+		]}
+	>
+		<div
+			data-store="markupOnly"
+			data-state--message="Hello from markup"
+			data-state--count="3"
+			class="flex flex-wrap items-center gap-4"
+		>
+			<p class="text-sm"><span data-dom--text="$message"></span>, count <span class="font-mono" data-dom--text="$count"></span></p>
+			<button class="btn ml-auto" data-markup-only-bump>Bump attribute</button>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="state-function"
+		title="State from a function"
+		description="`wallet` returns its state from a function because it holds a `Date` and an `Intl.NumberFormat`, which can't be copied. It is registered as `walletA` and `walletB`."
+		expect={[
+			"Each wallet shows its own id and creation time.",
+			"`Deposit` only changes that wallet's balance, formatted by its `Intl.NumberFormat`.",
+		]}
+	>
+		<div class="grid gap-3 sm:grid-cols-2">
+			{
+				["walletA", "walletB"].map((scope) => (
+					<div data-store={scope} class="space-y-3 rounded-md bg-raised px-4 py-3">
+						<div class="flex items-baseline justify-between gap-2">
+							<span class="font-mono text-xs text-subtle" data-dom--text="$id" />
+							<span class="text-xs text-subtle">
+								created <span data-dom--text="$created" />
+							</span>
+						</div>
+						<p class="font-mono text-xl font-semibold tabular-nums" data-dom--text="$balance" />
+						<button class="btn btn-sm" data-events--click="@deposit">
+							Deposit £99.50
+						</button>
+					</div>
+				))
+			}
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="batching"
+		title="Writes apply on flush"
+		description="Solid 2 batches state writes until the next microtask. The action reads `state.value` before writing, straight after writing, and after calling `flush()`."
+		expect={[
+			"The log shows `straightAfter` equal to `before`, and `afterFlush` one higher.",
+			"The rendered value matches `afterFlush`.",
+		]}
+	>
+		<div data-store="batching" class="flex items-center gap-4">
+			<button class="btn" data-events--click="@writeAndRead">Write, then read</button>
+			<p class="text-sm text-muted">value: <span class="font-mono text-fg" data-dom--text="$value"></span></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="direct-writes"
+		title="Direct writes are rejected"
+		description="`state` is read-only. Writing to it directly is a type error and is ignored at runtime with a warning."
+		expect={[
+			"`Write directly` leaves the value unchanged and logs a Catalyst warning naming `setState`.",
+			"`Write through setState` changes the value.",
+		]}
+	>
+		<div data-store="directWrite" class="flex flex-wrap items-center gap-3">
+			<button class="btn" data-events--click="@writeDirectly">Write directly</button>
+			<button class="btn" data-events--click="@writeThroughSetState">Write through setState</button>
+			<p class="ml-auto font-mono text-sm" data-dom--text="$value"></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="computed-tracking"
+		title="Computed values only recompute for what they read"
+		description="`trackedLabel` reads `tracked` but not `untracked`. Each recompute is logged."
+		expect={[
+			"`Bump tracked` updates the label and logs a recompute.",
+			"`Bump untracked` updates its own count but logs no recompute.",
+		]}
+	>
+		<div data-store="memo" class="flex flex-wrap items-center gap-3">
+			<button class="btn" data-events--click="@bumpTracked">Bump tracked</button>
+			<button class="btn" data-events--click="@bumpUntracked">Bump untracked</button>
+			<p class="ml-auto text-sm text-muted">
+				<span class="font-mono text-fg" data-dom--text="$trackedLabel"></span>
+				· untracked <span class="font-mono text-fg" data-dom--text="$untracked"></span>
+			</p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="definition-throws"
+		title="A definition that throws"
+		description="`broken` has an `actions` factory that throws. The error is logged and the store is still created from its HTML state."
+		expect={[
+			"The log shows a Catalyst error for the actions of `broken`, once, on load.",
+			"The message below still renders from its `data-state--message` attribute.",
+			"Every other scenario on this page keeps working.",
+		]}
+	>
+		<div data-store="broken" data-state--message="Rendered from HTML state" class="flex flex-wrap items-center gap-3">
+			<p class="text-sm" data-dom--text="$message"></p>
+			<button class="btn ml-auto" data-events--click="@missingAction">Call an action that doesn't exist</button>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/stores";
+	</script>
+</Playground>

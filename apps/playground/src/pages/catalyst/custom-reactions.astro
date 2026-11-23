@@ -1,0 +1,186 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Custom reactions">
+	<Fragment slot="intro">
+		<p>
+			A reaction is a <code>name</code>, an <code>attribute</code> and a
+			<code>setup</code> function. It receives the same directive data as the
+			first-party reactions and is registered with
+			<code>Catalyst.start({"{"} reactions {"}"})</code>.
+		</p>
+		<p>
+			This page registers <code>classList</code>, <code>toggleClass</code>
+			(<code>data-class--*</code>), <code>cssVar</code>
+			(<code>data-css-var--*</code>), <code>inspect</code> and
+			<code>clock</code>. Their source is in
+			<code>src/scripts/catalyst/custom-reactions.ts</code>.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="literal-values"
+		title="Literal values"
+		description="The README's `classList` reaction. `italic text-accent` has no `$`, `@` or `#` prefix, so it is a literal and `directive.reference` is `null`. The setup logs the directive it receives."
+		expect={[
+			"The text below renders italic in the accent colour on load.",
+			"The log shows the directive data with `reference: null` and an empty `specifier`.",
+			"`Toggle attribute` removes the attribute and syncs: the cleanup runs and removes the classes. Toggling again adds them back.",
+		]}
+	>
+		<div data-store="literal" class="flex flex-wrap items-center gap-4">
+			<p data-ref="#target" data-class-list="italic text-accent" class="text-sm">
+				Styled by a literal class list.
+			</p>
+			<button class="btn ml-auto" data-events--click="@toggleAttribute">Toggle attribute</button>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="toggle-class"
+		title="Reactive values with context.resolve"
+		description="`data-class--{name}` toggles the class in its specifier while the value is truthy, using `context.resolve` in a Solid 2 `createEffect`. Catalyst has no class binding of its own, since `data-bind--class` replaces the whole attribute."
+		expect={[
+			"The selected plan has an accent ring; selecting another moves it.",
+			"`Mute` toggles `opacity-40` on the whole group without touching the other classes.",
+		]}
+	>
+		<div data-store="options" class="space-y-4">
+			<div class="grid gap-3 sm:grid-cols-3" data-class--opacity-40="$muted">
+				<button
+					class="rounded-lg border border-line bg-raised px-4 py-3 text-left text-sm ring-offset-2 ring-offset-canvas transition"
+					data-plan="starter"
+					data-events--click="@select"
+					data-class--ring-2="$isStarter"
+					data-class--ring-accent="$isStarter"
+					data-bind--aria-pressed="$isStarter"
+				>
+					<span class="block font-medium">Starter</span>
+					<span class="text-xs text-subtle">For one site</span>
+				</button>
+				<button
+					class="rounded-lg border border-line bg-raised px-4 py-3 text-left text-sm ring-offset-2 ring-offset-canvas transition"
+					data-plan="team"
+					data-events--click="@select"
+					data-class--ring-2="$isTeam"
+					data-class--ring-accent="$isTeam"
+					data-bind--aria-pressed="$isTeam"
+				>
+					<span class="block font-medium">Team</span>
+					<span class="text-xs text-subtle">For a few sites</span>
+				</button>
+				<button
+					class="rounded-lg border border-line bg-raised px-4 py-3 text-left text-sm ring-offset-2 ring-offset-canvas transition"
+					data-plan="scale"
+					data-events--click="@select"
+					data-class--ring-2="$isScale"
+					data-class--ring-accent="$isScale"
+					data-bind--aria-pressed="$isScale"
+				>
+					<span class="block font-medium">Scale</span>
+					<span class="text-xs text-subtle">For agencies</span>
+				</button>
+			</div>
+			<button class="btn btn-sm" data-events--click="@toggleMuted">Mute</button>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="css-variables"
+		title="State and actions as CSS variables"
+		description="`data-css-var--{name}` writes a custom property. The bar's width reads `--progress` from the `percent` state; its colour reads `--hue` from the `@hue` action, which the effect re-runs when the state it reads changes."
+		expect={[
+			"Dragging the slider resizes the bar and updates the label.",
+			"The bar shifts from orange towards green as it grows, because `@hue` is re-resolved.",
+		]}
+	>
+		<div data-store="progress" class="space-y-3">
+			<div class="h-3 overflow-hidden rounded-full bg-raised">
+				<div
+					class="h-full rounded-full transition-[width] duration-150"
+					style="width: calc(var(--progress, 0) * 1%); background-color: oklch(0.72 0.15 var(--hue, 25));"
+					data-css-var--progress="$percent"
+					data-css-var--hue="@hue"
+				>
+				</div>
+			</div>
+			<div class="flex items-center gap-3">
+				<input
+					type="range"
+					min="0"
+					max="100"
+					class="flex-1 accent-(--color-accent)"
+					aria-label="Progress"
+					data-dom--value="$percent"
+					data-events--input="@setPercent"
+				/>
+				<output class="w-12 text-right font-mono text-sm tabular-nums" data-dom--text="$label"></output>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="get-store"
+		title="Reading another store with context.getStore"
+		description="The `data-inspect` readout sits outside the `basket` store. Its value, `basket`, is a literal scope name, which the reaction looks up with `context.getStore` and renders as JSON."
+		expect={[
+			"The log shows the store's `key`, `element` and action names on load.",
+			"The readout updates as items are added and cleared.",
+		]}
+	>
+		<div class="space-y-3">
+			<div data-store="basket" class="flex gap-2">
+				<button class="btn" data-events--click="@addItem">Add item</button>
+				<button class="btn btn-ghost" data-events--click="@clear">Clear</button>
+			</div>
+			<pre class="readout" data-inspect="basket"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="cleanup"
+		title="Cleanup on removal"
+		description="`data-clock` starts an interval in `setup` and returns a cleanup that clears it. Clocks are added with `Catalyst.sync` and removed by taking their element off the page."
+		expect={[
+			"`Add clock` starts a new ticking clock and logs it.",
+			"`Remove clock` removes the last one and logs its cleanup, so its interval stops.",
+		]}
+	>
+		<div data-store="clocks" class="space-y-3">
+			<div class="flex gap-2">
+				<button class="btn" data-events--click="@addClock">Add clock</button>
+				<button class="btn btn-ghost" data-events--click="@removeClock">Remove clock</button>
+			</div>
+			<ul data-ref="#list" class="flex flex-wrap gap-2">
+				<li class="rounded-md bg-raised px-3 py-1.5 font-mono text-sm tabular-nums" data-clock="1000"></li>
+			</ul>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="conflicts"
+		title="Conflicting registrations"
+		description="The reactions list also contains `classListCopy`, which reuses the `class-list` attribute, and a different reaction named `bind` on the `bind-again` attribute."
+		expect={[
+			"The log shows a warning on load that a reaction already uses the `class-list` attribute.",
+			"`classList` keeps working: the first scenario is styled.",
+			"The second `bind` should log a warning too, rather than being dropped.",
+		]}
+		gap="`Catalyst.start` skips any reaction whose name is already registered before calling `registerReaction`, so a different reaction reusing a name (here a second `bind`) is dropped without a warning. Stores warn in the same situation."
+		markup={false}
+	>
+		<pre class="readout">{`Catalyst.start({
+  reactions: [
+    ...allReactions, classList, toggleClass, cssVar, inspect, clock,
+    { name: "classListCopy", attribute: "class-list", setup },
+    { name: "bind", attribute: "bind-again", setup },
+  ],
+});`}</pre>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/custom-reactions";
+	</script>
+</Playground>

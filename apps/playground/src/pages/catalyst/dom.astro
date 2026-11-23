@@ -1,0 +1,242 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+
+const valueNames = ["string", "number", "zero", "boolean", "null", "undefined", "object", "array"];
+---
+
+<Playground title="DOM">
+	<Fragment slot="intro">
+		<p>
+			<code>data-dom--{"{specifier}"}</code> writes to the element itself rather
+			than an attribute. The specifiers are <code>text</code> (the default),
+			<code>html</code>, <code>value</code>, <code>focus</code>,
+			<code>blur</code> and <code>scrollto</code>.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="text"
+		title="Text"
+		description="`data-dom--text` and a bare `data-dom` both write `textContent`. It works on SVG `<text>` too. The input updates `name` through an `input` event."
+		expect={[
+			"Typing updates all three outputs on every keystroke.",
+			"The bare `data-dom` output behaves exactly like `data-dom--text`.",
+			"The SVG text shows the upper-cased name.",
+		]}
+	>
+		<div data-store="text" class="grid gap-4 sm:grid-cols-2">
+			<label class="space-y-1.5">
+				<span class="label">Name</span>
+				<input class="input" value="Ada" data-events--input="@setName" />
+			</label>
+			<dl class="space-y-1.5 text-sm">
+				<div class="flex gap-2"><dt class="w-28 text-subtle">data-dom--text</dt><dd class="font-mono" data-dom--text="$name"></dd></div>
+				<div class="flex gap-2"><dt class="w-28 text-subtle">data-dom</dt><dd class="font-mono" data-dom="$name"></dd></div>
+				<div class="flex items-center gap-2">
+					<dt class="w-28 text-subtle">SVG text</dt>
+					<dd>
+						<svg viewBox="0 0 160 24" class="h-6 w-40"><text x="0" y="17" class="fill-accent font-mono text-[13px]" data-dom--text="$upper"></text></svg>
+					</dd>
+				</div>
+			</dl>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="rendering-values"
+		title="How values render"
+		description="Strings render as written, numbers and booleans as their text, and objects and arrays as JSON. `null` and `undefined` render as empty text rather than the words."
+		expect={[
+			"`null` and `undefined` leave the box empty.",
+			"`zero` renders `0` and `boolean` renders `false`.",
+			"`object` and `array` render compact JSON.",
+		]}
+	>
+		<div data-store="rendering" class="space-y-3">
+			<div class="flex flex-wrap gap-2">
+				{valueNames.map((name) => (
+					<button class="btn btn-sm font-mono" data-value-name={name} data-events--click="@choose">{name}</button>
+				))}
+			</div>
+			<div class="flex items-center gap-3">
+				<span class="badge font-mono" data-dom--text="$chosen"></span>
+				<output class="readout min-h-9 flex-1 text-fg" data-dom--text="$value"></output>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="html"
+		title="HTML"
+		description="`data-dom--html` writes the value as raw markup, here from an action that builds a list. Markup it inserts is not synchronized, so directives inside it do nothing."
+		expect={[
+			"`Add item` re-renders the list with one more item.",
+			"Clicking `Inserted button` logs nothing, because its `data-events--click` was never bound.",
+		]}
+	>
+		<div data-store="html" class="space-y-3">
+			<button class="btn btn-sm" data-events--click="@addItem">Add item</button>
+			<div class="text-sm" data-dom--html="@renderList"></div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="value"
+		title="Form values"
+		description="`data-dom--value` sets the `value` property of inputs, textareas and selects. It only writes from state to the field, so each field also has an event action that writes back."
+		expect={[
+			"Typing or choosing updates the state readout.",
+			"`Fill from state` and `Clear` update all three fields.",
+		]}
+	>
+		<div data-store="values" class="space-y-4">
+			<div class="grid gap-3 sm:grid-cols-[1fr_1fr_8rem]">
+				<label class="space-y-1.5">
+					<span class="label">Query</span>
+					<input class="input" data-dom--value="$query" data-events--input="@setQuery" />
+				</label>
+				<label class="space-y-1.5">
+					<span class="label">Notes</span>
+					<textarea class="input h-[38px] resize-y" data-dom--value="$notes" data-events--input="@setNotes"></textarea>
+				</label>
+				<label class="space-y-1.5">
+					<span class="label">Size</span>
+					<select class="input" data-dom--value="$size" data-events--change="@setSize">
+						<option value="s">Small</option>
+						<option value="m">Medium</option>
+						<option value="l">Large</option>
+					</select>
+				</label>
+			</div>
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn btn-sm" data-events--click="@fillExample">Fill from state</button>
+				<button class="btn btn-sm" data-events--click="@clearAll">Clear</button>
+				<p class="ml-auto font-mono text-xs text-subtle">
+					query=<span class="text-fg" data-dom--text="$query"></span>
+					size=<span class="text-fg" data-dom--text="$size"></span>
+				</p>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="one-way-value"
+		title="A value without an input action"
+		description="This field has `data-dom--value` but no event action, so typing doesn't change `oneWay`. The buttons write `oneWay` from state."
+		expect={[
+			"Typing changes the field but not the readout.",
+			"`Set to pear` replaces whatever you typed with `pear`.",
+			"`Reset to apple` after `Set to pear` puts `apple` back.",
+		]}
+		gap="Writing the value state already holds doesn't rewrite the field. Type something, then press `Reset to apple` while `oneWay` is still `apple`: your text stays, because the state didn't change. A form reset has to change state twice, or set the field directly."
+	>
+		<div data-store="oneWay" class="space-y-3">
+			<input class="input" data-dom--value="$oneWay" />
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn btn-sm" data-events--click="@setOneWayPear">Set to pear</button>
+				<button class="btn btn-sm" data-events--click="@resetOneWay">Reset to apple</button>
+				<p class="ml-auto font-mono text-xs text-subtle">oneWay=<span class="text-fg" data-dom--text="$oneWay"></span></p>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="focus"
+		title="Focus"
+		description="`data-dom--focus` focuses the element when the value becomes `true`. The field's `blur` event sets `editing` back to `false`, so `Edit` works again."
+		expect={[
+			"`Edit` focuses the field.",
+			"Leaving the field logs `editing = false`, and `Edit` focuses it again.",
+		]}
+	>
+		<div data-store="focus" class="flex flex-wrap items-center gap-3">
+			<button class="btn" data-events--click="@startEditing">Edit</button>
+			<input class="input max-w-64" placeholder="Focused by state" data-dom--focus="$editing" data-events--blur="@stopEditing" />
+			<span class="badge" data-dom--text="$editing"></span>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="blur"
+		title="Blur"
+		description="`data-dom--blur` blurs the element when the value becomes `true`. The button focuses the field through a ref, then sets `locked` after 1.5 seconds."
+		expect={[
+			"The field is focused, then loses focus when `locked` becomes `true`.",
+			"The log shows the active element is no longer the field.",
+		]}
+	>
+		<div data-store="blur" class="flex flex-wrap items-center gap-3">
+			<button class="btn" data-events--click="@focusThenLock">Focus, then lock</button>
+			<input class="input max-w-64" placeholder="Blurred by state" data-ref="#field" data-dom--blur="$locked" />
+			<button class="btn btn-ghost btn-sm" data-events--click="@unlock">Unlock</button>
+			<span class="text-xs text-subtle" data-dom--text="$countdown"></span>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="scrollto"
+		title="Scroll to"
+		description="`data-dom--scrollto` calls `scrollIntoView` when the value becomes `true`. Like `scrollIntoView`, it also scrolls the page to bring the item to the top."
+		expect={[
+			"Each button scrolls the list so that item is in view, smoothly.",
+			"Pressing the same button twice scrolls again, because the action clears the target and calls `flush()` first.",
+		]}
+	>
+		<div data-store="scroll" class="grid gap-4 sm:grid-cols-[auto_1fr]">
+			<div class="flex gap-2 sm:flex-col">
+				<button class="btn btn-sm" data-scroll-target="1" data-events--click="@scrollTo">Item 1</button>
+				<button class="btn btn-sm" data-scroll-target="6" data-events--click="@scrollTo">Item 6</button>
+				<button class="btn btn-sm" data-scroll-target="12" data-events--click="@scrollTo">Item 12</button>
+			</div>
+			<ol class="h-40 space-y-1.5 overflow-y-auto rounded-md border border-line p-2 text-sm">
+				{
+					Array.from({ length: 12 }, (_, index) => {
+						const n = index + 1;
+						const reference = n === 1 ? "$atFirst" : n === 6 ? "$atMiddle" : n === 12 ? "$atLast" : undefined;
+						return (
+							<li class="rounded bg-raised px-3 py-2 text-muted" data-dom--scrollto={reference}>
+								Item {n}
+							</li>
+						);
+					})
+				}
+			</ol>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="async-values"
+		title="Values from async actions"
+		description={"`data-dom--text=\"@slowGreeting\"` calls an async action that takes a random 0.4–1.3 seconds. It reads `name` before awaiting, so it runs again whenever the name changes."}
+		expect={[
+			"The greeting appears once the first call resolves.",
+			"Typing quickly starts several calls, and only the newest result is shown, even when an older call resolves later.",
+		]}
+	>
+		<div data-store="asyncValue" class="grid gap-4 sm:grid-cols-2">
+			<input class="input" value="Ada" data-events--input="@setName" />
+			<p class="self-center text-lg font-medium" data-dom--text="@slowGreeting">Loading…</p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="misconfigured"
+		title="Misconfigured DOM directives"
+		description="An unknown specifier, and a ref where state is expected, are skipped with a warning."
+		expect={[
+			"On load, the log warns that `data-dom--textcontent` has an unknown specifier and lists the valid ones.",
+			"It also warns that `data-dom--text` requires state or an action.",
+			"Both elements keep their original text.",
+		]}
+	>
+		<div data-store="misconfigured" class="flex flex-wrap gap-3 text-sm text-muted">
+			<p class="rounded-md bg-raised px-3 py-2" data-dom--textcontent="$name">Unknown specifier</p>
+			<p class="rounded-md bg-raised px-3 py-2" data-dom--text="#name">A ref instead of state</p>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/dom";
+	</script>
+</Playground>

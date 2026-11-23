@@ -1,0 +1,244 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+
+const values = ["text", "empty", "zero", "false", "true", "null", "undefined"];
+---
+
+<Playground title="Bindings">
+	<Fragment slot="intro">
+		<p>
+			<code>data-bind--{"{attribute}"}</code> writes an HTML attribute from
+			state, a computed value or an action's return value, and keeps it up to
+			date. The live readouts show each target element's attributes as they
+			change.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="data-attribute"
+		title="A data attribute from state"
+		description="`data-bind--data-store-count` writes the `storeState` number to `data-store-count` on the button."
+		expect={[
+			"On load, the button has `data-store-count=\"69\"` and shows 69.",
+			"Each click increments both the attribute and the text.",
+		]}
+	>
+		<div data-store="dataAttribute" class="flex flex-wrap items-start gap-4">
+			<button
+				id="data-attribute-target"
+				class="btn"
+				data-bind--data-store-count="$storeState"
+				data-events--click="@incrementStoreState"
+			>
+				Increment the count <span class="font-mono" data-dom--text="$storeState"></span>
+			</button>
+			<div class="min-w-64 flex-1">
+				<AttributeReadout target="#data-attribute-target" exclude={["id", "data-events--click", "data-bind--data-store-count"]} />
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="boolean-attributes"
+		title="Boolean attributes"
+		description="Booleans follow HTML boolean attribute rules: `true` adds the attribute with an empty value and `false` removes it."
+		expect={[
+			"Each toggle adds or removes `disabled`, `required` and `readonly` on the input, and the field reflects it.",
+			"`Toggle open` opens and closes the `<details>` element.",
+			"No attribute is ever written as `disabled=\"false\"`.",
+		]}
+	>
+		<div data-store="booleans" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-events--click="@toggleDisabled">Toggle disabled</button>
+				<button class="btn btn-sm" data-events--click="@toggleRequired">Toggle required</button>
+				<button class="btn btn-sm" data-events--click="@toggleReadonly">Toggle readonly</button>
+				<button class="btn btn-sm" data-events--click="@toggleOpen">Toggle open</button>
+			</div>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div class="space-y-3">
+					<input
+						id="boolean-target"
+						class="input"
+						value="Bound input"
+						data-bind--disabled="$disabled"
+						data-bind--required="$required"
+						data-bind--readonly="$readonly"
+					/>
+					<details class="rounded-md border border-line px-3 py-2 text-sm" data-bind--open="$open">
+						<summary class="cursor-pointer text-muted">A details element</summary>
+						<p class="mt-2 text-subtle">Opened by state.</p>
+					</details>
+				</div>
+				<AttributeReadout target="#boolean-target" exclude={["id", "data-bind--disabled", "data-bind--required", "data-bind--readonly"]} />
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="enumerated-attributes"
+		title="aria-*, data-* and enumerated attributes"
+		description={"For `aria-*`, `data-*`, `contenteditable`, `draggable` and `spellcheck`, a `false` value is meaningful, so booleans are written as the strings `\"true\"` and `\"false\"` instead of being removed."}
+		expect={[
+			"`aria-expanded` and `data-expanded` are always present, as `\"true\"` or `\"false\"`.",
+			"`contenteditable` and `spellcheck` are `\"false\"` until `Toggle editable`, which makes the box editable.",
+			"`draggable` switches between `\"false\"` and `\"true\"`.",
+		]}
+	>
+		<div data-store="enumerated" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-events--click="@toggleExpanded" data-bind--aria-expanded="$expanded">Toggle expanded</button>
+				<button class="btn btn-sm" data-events--click="@toggleEditable">Toggle editable</button>
+				<button class="btn btn-sm" data-events--click="@toggleDraggable">Toggle draggable</button>
+			</div>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div
+					id="enumerated-target"
+					class="rounded-md border border-dashed border-line-strong px-3 py-3 text-sm text-muted aria-expanded:border-accent/60 aria-expanded:text-fg"
+					data-bind--aria-expanded="$expanded"
+					data-bind--data-expanded="$expanded"
+					data-bind--contenteditable="$editable"
+					data-bind--spellcheck="$editable"
+					data-bind--draggable="$draggable"
+				>
+					Edit me once contenteditable is true.
+				</div>
+				<AttributeReadout target="#enumerated-target" exclude={["id", "data-bind--aria-expanded", "data-bind--data-expanded", "data-bind--contenteditable", "data-bind--spellcheck", "data-bind--draggable"]} />
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="nullish-values"
+		title="Nullish, empty and falsy values"
+		description={"The same value is bound to `title` and to `data-value`. `null` and `undefined` remove both attributes. `false` removes `title` but writes `data-value=\"false\"`."}
+		expect={[
+			"`text` writes the text to both, `empty` writes empty values, and `zero` writes `\"0\"`.",
+			"`true` writes `title` with an empty value and `data-value=\"true\"`.",
+			"`false` removes `title` and writes `data-value=\"false\"`.",
+			"`null` and `undefined` remove both attributes, and choosing another value afterwards adds them back.",
+		]}
+	>
+		<div data-store="nullish" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				{values.map((name) => (
+					<button class="btn btn-sm font-mono" data-value-name={name} data-events--click="@setValue">{name}</button>
+				))}
+			</div>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<p id="nullish-target" class="self-start rounded-md bg-raised px-3 py-2 text-sm text-muted" data-bind--title="$value" data-bind--data-value="$value">
+					Hover for the title.
+				</p>
+				<AttributeReadout target="#nullish-target" exclude={["id", "data-bind--title", "data-bind--data-value"]} />
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="paths"
+		title="Nested paths"
+		description="References can read into objects and arrays: `$links[0].url`, `$object.world` and `$array[0]`. Changing one nested value updates only the bindings that read it."
+		expect={[
+			"`Change first URL` switches the link's `href` between `/` and `/home`.",
+			"`Swap object` swaps `data-object-hello` between `hello` and `world`.",
+			"`Flip array[0]` switches `data-array-hello` between `\"false\"` and `\"true\"`.",
+		]}
+	>
+		<div data-store="paths" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-events--click="@changeFirstUrl">Change first URL</button>
+				<button class="btn btn-sm" data-events--click="@swapObject">Swap object</button>
+				<button class="btn btn-sm" data-events--click="@flipArray">Flip array[0]</button>
+			</div>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<a
+					id="paths-target"
+					class="self-start text-sm text-accent underline underline-offset-2"
+					data-bind--href="$links[0].url"
+					data-bind--data-object-hello="$object.world"
+					data-bind--data-array-hello="$array[0]"
+					data-dom--text="$links[0].title"
+				></a>
+				<AttributeReadout target="#paths-target" exclude={["id", "data-bind--href", "data-bind--data-object-hello", "data-bind--data-array-hello", "data-dom--text"]} />
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="svg"
+		title="Case-sensitive SVG attributes"
+		description="HTML lowercases attribute names, so the directive is `data-bind--viewbox`. On SVG elements Catalyst writes the correctly cased `viewBox`, which the browser needs."
+		expect={[
+			"The readout shows `viewBox`, not `viewbox`.",
+			"`Zoom` changes the `viewBox`, and the circle grows 1× → 2× → 4× → 1×.",
+			"`Shift hue` changes the circle's `fill`.",
+		]}
+	>
+		<div data-store="svg" class="grid gap-4 sm:grid-cols-[auto_1fr]">
+			<div class="space-y-3">
+				<svg id="svg-target" class="size-32 rounded-md border border-line bg-canvas" data-bind--viewbox="$viewBox">
+					<circle cx="50" cy="50" r="18" data-bind--fill="$fill"></circle>
+					<circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-opacity="0.2"></circle>
+				</svg>
+				<div class="flex gap-2">
+					<button class="btn btn-sm" data-events--click="@zoomIn">Zoom <span data-dom--text="$zoomLabel"></span></button>
+					<button class="btn btn-sm" data-events--click="@shiftHue">Shift hue</button>
+				</div>
+			</div>
+			<AttributeReadout target="#svg-target" exclude={["id", "data-bind--viewbox"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="derived-values"
+		title="Objects, computed values and actions"
+		description="An object is written as JSON and updates when a nested field changes. `style` comes from a computed value and `title` from an action's return value."
+		expect={[
+			"`Advance` moves the bar, and updates `aria-valuenow`, `style` and `title` together.",
+			"`Toggle category` and `Add tag` rewrite the JSON in `data-filters`.",
+		]}
+	>
+		<div data-store="derived" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-events--click="@advance">Advance</button>
+				<button class="btn btn-sm" data-events--click="@toggleCategory">Toggle category</button>
+				<button class="btn btn-sm" data-events--click="@addTag">Add tag</button>
+			</div>
+			<div
+				id="derived-target"
+				role="progressbar"
+				aria-valuemin="0"
+				aria-valuemax="100"
+				class="h-2 overflow-hidden rounded-full bg-line"
+				data-bind--aria-valuenow="$progress"
+				data-bind--title="@describeProgress"
+				data-bind--data-filters="$filters"
+			>
+				<div class="h-full rounded-full bg-accent transition-[width]" data-bind--style="$barStyle"></div>
+			</div>
+			<AttributeReadout target="#derived-target" exclude={["id", "role", "aria-valuemin", "aria-valuemax", "data-bind--aria-valuenow", "data-bind--title", "data-bind--data-filters"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="misconfigured"
+		title="Misconfigured bindings"
+		description="A binding without an attribute specifier, and one that references a ref instead of state, are skipped with a warning."
+		expect={[
+			"On load, the log shows a Catalyst warning that bind directives need a target attribute.",
+			"It also warns that `data-bind--title` requires state or an action.",
+			"Neither element gets a new attribute.",
+		]}
+	>
+		<div data-store="misconfigured" class="flex flex-wrap gap-3 text-sm text-muted">
+			<p class="rounded-md bg-raised px-3 py-2" data-bind="$label">No specifier</p>
+			<p class="rounded-md bg-raised px-3 py-2" data-bind--title="#label">A ref instead of state</p>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/bindings";
+	</script>
+</Playground>

@@ -1,0 +1,214 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Dynamic markup">
+	<Fragment slot="intro">
+		<p>
+			Markup added after <code>start</code> needs <code>Catalyst.sync</code>,
+			removed markup is disposed automatically, and <code>refresh</code>,
+			<code>destroy</code> and <code>add</code> rebuild stores at runtime.
+		</p>
+		<p>
+			<code>data-probe</code> is a small custom reaction this page registers to
+			count live directives, so you can see when they are created and disposed.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="sync-injected"
+		title="sync on injected markup"
+		description="`injector` replaces the contents of its `#slot` ref with a new `injected` store. The `injected` definition is registered at start, before its element exists."
+		expect={[
+			"`Inject only` adds the markup but nothing in it works: no count, the button does nothing and the probe count stays at 0.",
+			"`Sync slot` then wires it up: `injected` init runs, the count shows 0 and the button counts.",
+			"`Sync slot` again is idempotent: each click still adds exactly 1 and the probe count doesn't grow.",
+			"`Toggle open` updates the `injector:$open` binding inside the injected markup.",
+			"Replacing existing markup removes the old `injected` store: its cleanup runs.",
+		]}
+		gap="Replacing a store's markup and calling `Catalyst.sync` in the same task (`Inject and sync` once something is already injected) skips the new store with a duplicate-scope warning. The removed store is only disposed when the MutationObserver runs afterwards, so the new element is left unbound. Syncing on the next task works."
+	>
+		<div data-store="injector" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-primary" data-events--click="@injectAndSync">Inject and sync</button>
+				<button class="btn" data-events--click="@injectAndSyncNextTask">Inject, sync next task</button>
+				<button class="btn" data-events--click="@injectOnly">Inject only</button>
+				<button class="btn" data-events--click="@syncSlot">Sync slot</button>
+				<button class="btn btn-ghost" data-events--click="@toggleOpen">Toggle open</button>
+			</div>
+			<div data-ref="#slot" class="min-h-11 rounded-md border border-dashed border-line p-2 text-sm text-subtle">
+				Nothing injected yet.
+			</div>
+			<pg-stat class="flex items-center gap-2 text-xs text-subtle">
+				<span class="badge font-mono tabular-nums" data-probe-count="inject">0</span>
+				live probe directives in the slot
+			</pg-stat>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="removal"
+		title="Removing markup disposes it"
+		description="The `ticker` store runs an interval from `init` and listens for `document` keydown. Removing its element disposes the store, its effects and its document listener."
+		expect={[
+			"While attached, the seconds tick and each keydown (press a key, or `Dispatch keydown`) is logged.",
+			"`Remove` logs the ticker cleanup, the probe count drops to 0, and keydowns are no longer handled.",
+			"`Re-insert` puts the same element back, but it stays inert: the seconds are frozen and keydowns aren't handled.",
+			"`Sync` creates a fresh `ticker`: init runs again and the seconds restart from 0.",
+		]}
+	>
+		<div data-store="removal" class="space-y-4">
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn" data-events--click="@remove" data-bind--disabled="$isRemoved">Remove</button>
+				<button class="btn" data-events--click="@reinsert" data-bind--disabled="$isAttached">Re-insert</button>
+				<button class="btn" data-events--click="@syncHost" data-bind--disabled="$isSynced">Sync</button>
+				<span class="badge ml-auto" data-dom--text="$status"></span>
+			</div>
+			<div data-ref="#host" class="min-h-11 rounded-md border border-dashed border-line p-2">
+				<div
+					data-store="ticker"
+					data-probe="removal"
+					data-events--document.keydown="@onKey"
+					class="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-md bg-raised px-3 py-2 text-sm text-muted"
+				>
+					<span>seconds <span class="font-mono text-fg" data-dom--text="$seconds" data-probe="removal"></span></span>
+					<span>keydowns <span class="font-mono text-fg" data-dom--text="$keys" data-probe="removal"></span></span>
+				</div>
+			</div>
+			<pg-stat class="flex flex-wrap items-center gap-2 text-xs text-subtle">
+				<span class="badge font-mono tabular-nums" data-probe-count="removal">0</span>
+				live probe directives in the ticker
+				<button class="btn btn-sm ml-auto" data-dispatch-keydown>Dispatch keydown</button>
+			</pg-stat>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="late-state"
+		title="State attributes added later"
+		description="`lateState` has no definition. A `data-state--*` attribute added to its element after it was created is picked up by the next `sync`; existing state attributes update straight away."
+		expect={[
+			"The readout starts as `{\"count\":1}`.",
+			"`Add attribute` sets `data-state--added-later` but the readout doesn't change.",
+			"`Sync` adds `addedLater: true` to the readout.",
+			"`Change count attribute` updates `count` immediately, without a sync.",
+		]}
+	>
+		<div data-store="lateState" data-state--count="1" data-ref="#root" class="space-y-3">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn" data-events--click="@addAttribute">Add attribute</button>
+				<button class="btn" data-events--click="@syncRoot">Sync</button>
+				<button class="btn btn-ghost" data-events--click="@changeAttribute">Change count attribute</button>
+			</div>
+			<pre class="readout" data-dom--text="@stateJson"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="store-swap"
+		title="Changing an element's data-store"
+		description="The button sets its store element's `data-store` to the other scope and calls `sync`. `swapA` and `swapB` are different definitions with the same action name."
+		expect={[
+			"Each click logs the old store's cleanup, then the new store's init.",
+			"The label and creation time switch to the new store's.",
+			"The button keeps working after every swap: its inferred `@swap` follows the new scope.",
+		]}
+	>
+		<div data-store="swapA" class="flex flex-wrap items-center gap-4">
+			<button class="btn" data-events--click="@swap">Swap store</button>
+			<p class="text-sm text-muted">
+				<span class="font-medium text-fg" data-dom--text="$label"></span>
+				· created <span class="font-mono" data-dom--text="$createdAt"></span>
+			</p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="refresh"
+		title="refresh() and refresh(scope)"
+		description="`refreshA` has no state attribute; `refreshB` starts from a `data-state--count` attribute of 5. A binding outside both stores reads `refreshA:$count`."
+		expect={[
+			"`Refresh refreshA` logs its cleanup and init and resets its count to 0. `refreshB` is untouched.",
+			"The outside `refreshA:$count` binding keeps following the rebuilt store.",
+			"`refreshB` keeps its current count when refreshed, because its state attribute is kept in sync and sets the starting value.",
+			"`Refresh all` rebuilds every store on the page, so other scenarios reset too.",
+			"`Refresh unknown` logs a warning.",
+		]}
+	>
+		<div class="space-y-4">
+			<div class="grid gap-3 sm:grid-cols-2">
+				<div data-store="refreshA" class="flex items-center justify-between rounded-md bg-raised px-3 py-2">
+					<span class="text-sm text-muted">refreshA <span class="font-mono text-fg" data-dom--text="$count"></span></span>
+					<button class="btn btn-sm" data-events--click="@increment">+1</button>
+				</div>
+				<div data-store="refreshB" data-state--count="5" class="flex items-center justify-between rounded-md bg-raised px-3 py-2">
+					<span class="text-sm text-muted">refreshB <span class="font-mono text-fg" data-dom--text="$count"></span></span>
+					<button class="btn btn-sm" data-events--click="@increment">+1</button>
+				</div>
+			</div>
+			<p class="text-sm text-muted">
+				Outside both stores: <code>refreshA:$count</code> is
+				<span class="font-mono text-fg" data-dom--text="refreshA:$count"></span>
+			</p>
+			<div data-store="refreshControls" class="flex flex-wrap gap-2">
+				<button class="btn" data-events--click="@refreshA">Refresh refreshA</button>
+				<button class="btn" data-events--click="@refreshAll">Refresh all</button>
+				<button class="btn btn-ghost" data-events--click="@refreshUnknown">Refresh unknown</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="destroy-start"
+		title="destroy() then start()"
+		description="These buttons are plain JavaScript, so they work while Catalyst is destroyed. `Start again` calls `Catalyst.start({ debug: true })` with no stores or reactions: the ones registered earlier are reused."
+		expect={[
+			"`Destroy` logs the cleanup of every store on the page, the probe total drops to 0 and the counter stops responding.",
+			"`Start again` recreates every store and everything works again, including the probe reaction. The counter has no state attribute, so it is back to 0; stores with state attributes, such as `refreshB`, keep their attribute value.",
+			"`Start while running` logs a warning that Catalyst has already been started.",
+		]}
+	>
+		<div class="space-y-4">
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn btn-danger" data-lifecycle="destroy">Destroy</button>
+				<button class="btn" data-lifecycle="start">Start again</button>
+				<button class="btn btn-ghost" data-lifecycle="start-again">Start while running</button>
+				<span class="badge ml-auto data-[running=false]:border-rose-400/30 data-[running=false]:text-rose-300 data-[running=true]:border-emerald-400/30 data-[running=true]:text-emerald-300" data-lifecycle-status>running</span>
+			</div>
+			<div data-store="lifecycleCounter" class="flex items-center gap-3 rounded-md bg-raised px-3 py-2">
+				<button class="btn btn-sm" data-events--click="@increment" data-probe="lifecycle">+1</button>
+				<span class="text-sm text-muted">count <span class="font-mono text-fg" data-dom--text="$count" data-probe="lifecycle"></span></span>
+			</div>
+			<pg-stat class="flex items-center gap-2 text-xs text-subtle">
+				<span class="badge font-mono tabular-nums" data-probe-count="*">0</span>
+				live probe directives on the whole page
+			</pg-stat>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="catalyst-add"
+		title="Catalyst.add with a lazily loaded store"
+		description="`lazyCart` starts as a markup-only store. Loading `lazy-cart.ts` with a dynamic `import()` and passing it to `Catalyst.add` rebuilds the store with its definition."
+		expect={[
+			"Before loading, `Add item` logs a warning that the `addItem` action can't be found.",
+			"`Load the store module` imports the module, logs `lazyCart` init with the count from the state attribute, and disables itself.",
+			"After loading, `Add item` increments the count.",
+		]}
+	>
+		<div class="flex flex-wrap items-center gap-3">
+			<div data-store="lazyLoader">
+				<button class="btn btn-primary" data-events--click="@load" data-bind--disabled="$loaded" data-dom--text="$buttonLabel">Load the store module</button>
+			</div>
+			<div data-store="lazyCart" data-state--items="0" class="flex items-center gap-3">
+				<button class="btn" data-events--click="@addItem">Add item</button>
+				<span class="text-sm text-muted">items <span class="font-mono text-fg" data-dom--text="$items"></span></span>
+			</div>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/dynamic-markup";
+	</script>
+</Playground>

@@ -1,0 +1,566 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Forms">
+	<Fragment slot="intro">
+		<p>
+			Catalyst has no two-way binding. Fields are filled from state with
+			<code>data-dom--value</code> and write back through an action, usually
+			one <code>input</code> listener on the form that copies each field onto the
+			state key matching its <code>name</code>.
+		</p>
+		<p>
+			Each scenario's <span class="text-fg">Fields show</span> readout comes straight
+			from the DOM, so you can compare what the fields display with what the store
+			holds.
+		</p>
+	</Fragment>
+
+	<!-- Text and number fields -->
+	<Scenario
+		id="text-fields"
+		title="Text and number fields"
+		description="Inputs and a textarea filled with `data-dom--value`. One `data-events--input` on the form writes every field back, and the number field stores a number or `null`."
+		expect={[
+			"Typing in any field updates the state preview on every keystroke.",
+			"Typing in the middle of a field keeps the cursor where it is.",
+			"`Fill sample` and `Clear` update every field from state, including the number field.",
+			"Clearing the age field stores `null`, not `0` or `NaN`.",
+		]}
+	>
+		<div data-store="profile" class="grid gap-5 sm:grid-cols-[1fr_16rem]">
+			<form class="space-y-4" data-events--input="@setField" autocomplete="off">
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div class="space-y-1.5">
+						<label class="label" for="profile-name">Name</label>
+						<input id="profile-name" name="name" class="input" data-dom--value="$name" />
+					</div>
+					<div class="space-y-1.5">
+						<label class="label" for="profile-email">Email</label>
+						<input id="profile-email" name="email" type="email" class="input" data-dom--value="$email" />
+					</div>
+				</div>
+				<div class="space-y-1.5 sm:w-32">
+					<label class="label" for="profile-age">Age</label>
+					<input id="profile-age" name="age" type="number" min="0" class="input" data-dom--value="$age" />
+				</div>
+				<div class="space-y-1.5">
+					<div class="flex items-baseline justify-between">
+						<label class="label" for="profile-bio">Bio</label>
+						<span class="hint font-mono" data-dom--text="$bioCount"></span>
+					</div>
+					<textarea id="profile-bio" name="bio" rows="3" maxlength="140" class="input resize-y" data-dom--value="$bio"></textarea>
+				</div>
+				<div class="flex gap-2">
+					<button type="button" class="btn" data-events--click="@fillSample">Fill sample</button>
+					<button type="button" class="btn btn-ghost" data-events--click="@clear">Clear</button>
+				</div>
+			</form>
+			<div class="space-y-1.5">
+				<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">State</p>
+				<pre class="readout" data-dom--text="$json"></pre>
+			</div>
+		</div>
+	</Scenario>
+
+	<!-- Checkboxes and radios -->
+	<Scenario
+		id="checkboxes-radios"
+		title="Checkboxes and radios"
+		description="The newsletter checkbox and the plan radios are checked with `data-bind--checked`, and the buttons change the same state."
+		gap="`data-bind--checked` sets the `checked` attribute, which is only the field's default. Once you click a checkbox or radio yourself, state changes stop updating that field. Catalyst needs a way to set the `checked` property, such as a `data-dom--checked` specifier."
+		expect={[
+			"On load the checkbox is unchecked and the Pro radio is selected.",
+			"Clicking the checkbox or a radio updates the state preview.",
+			"After clicking the fields yourself, `Toggle newsletter`, `Choose Team` and `Choose Free` still change what the fields show, and the Fields show readout matches the state.",
+		]}
+	>
+		<div data-store="choices" class="grid gap-5 sm:grid-cols-[1fr_16rem]">
+			<div class="space-y-5" data-events--input="@setField">
+				<label class="flex items-center gap-2.5 text-sm">
+					<input type="checkbox" name="newsletter" class="check" data-bind--checked="$newsletter" />
+					Send me the newsletter
+				</label>
+				<fieldset class="space-y-2">
+					<legend class="label mb-2">Plan</legend>
+					<label class="flex items-center gap-2.5 text-sm">
+						<input type="radio" name="plan" value="free" class="check" data-bind--checked="$planFree" /> Free
+					</label>
+					<label class="flex items-center gap-2.5 text-sm">
+						<input type="radio" name="plan" value="pro" class="check" data-bind--checked="$planPro" /> Pro
+					</label>
+					<label class="flex items-center gap-2.5 text-sm">
+						<input type="radio" name="plan" value="team" class="check" data-bind--checked="$planTeam" /> Team
+					</label>
+				</fieldset>
+				<div class="flex flex-wrap gap-2">
+					<button type="button" class="btn btn-sm" data-events--click="@toggleNewsletter">Toggle newsletter</button>
+					<button type="button" class="btn btn-sm" data-events--click="@chooseTeam">Choose Team</button>
+					<button type="button" class="btn btn-sm" data-events--click="@chooseFree">Choose Free</button>
+				</div>
+			</div>
+			<div class="space-y-3">
+				<div class="space-y-1.5">
+					<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">State</p>
+					<pre class="readout" data-dom--text="$json"></pre>
+				</div>
+				<pg-readout class="block space-y-1.5">
+					<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">Fields show</p>
+					<pre class="readout" data-field-readout="[name=newsletter], [name=plan]"></pre>
+				</pg-readout>
+			</div>
+		</div>
+	</Scenario>
+
+	<!-- Selects -->
+	<Scenario
+		id="selects"
+		title="Selects"
+		description="A single `<select>` is filled with `data-dom--value`. A multiple `<select>` writes its selected options to an array through `selectedOptions`."
+		gap="A multiple `<select>` can be read but not set from state: `data-dom--value` selects one option at most, so `Select design and docs` changes the state but not the field."
+		expect={[
+			"Choosing a size updates the state, and `Pick XL` selects XL in the field.",
+			"Selecting interests (hold ⌘ or Ctrl) writes them to the `interests` array.",
+			"`Select design and docs` selects both options in the field.",
+		]}
+	>
+		<div data-store="selects" class="grid gap-5 sm:grid-cols-[1fr_16rem]">
+			<div class="space-y-4">
+				<div class="flex items-end gap-2">
+					<div class="flex-1 space-y-1.5">
+						<label class="label" for="select-size">Size</label>
+						<select id="select-size" name="size" class="input" data-dom--value="$size" data-events--change="@setField">
+							<option value="s">Small</option>
+							<option value="m">Medium</option>
+							<option value="l">Large</option>
+							<option value="xl">Extra large</option>
+						</select>
+					</div>
+					<button type="button" class="btn" data-events--click="@pickXl">Pick XL</button>
+				</div>
+				<div class="space-y-1.5">
+					<label class="label" for="select-interests">Interests</label>
+					<select id="select-interests" name="interests" multiple size="4" class="input" data-events--change="@setInterests">
+						<option value="design">Design</option>
+						<option value="engineering">Engineering</option>
+						<option value="docs">Docs</option>
+						<option value="support">Support</option>
+					</select>
+				</div>
+				<button type="button" class="btn btn-sm" data-events--click="@pickDesignAndDocs">Select design and docs</button>
+			</div>
+			<div class="space-y-3">
+				<div class="space-y-1.5">
+					<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">State</p>
+					<pre class="readout" data-dom--text="$json"></pre>
+				</div>
+				<pg-readout class="block space-y-1.5">
+					<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">Fields show</p>
+					<pre class="readout" data-field-readout="[name=size], [name=interests]"></pre>
+				</pg-readout>
+			</div>
+		</div>
+	</Scenario>
+
+	<!-- Dependent selects -->
+	<Scenario
+		id="dependent-selects"
+		title="Dependent selects"
+		description="The region `<select>` renders its options with `data-loop` from a computed list that depends on the country, and is filled with `data-dom--value`. Changing the country picks the first region."
+		gap="When the country and region change together, `data-dom--value` sets the region before the loop renders the new country's options, so the field falls back to the first option. After `Texas` the state says `tx` but the field shows California."
+		expect={[
+			"On load the country is United Kingdom and Scotland is selected.",
+			"Changing the country replaces the region options and selects the first one.",
+			"`Texas` and `Wales` change both selects, and the region field shows the new region rather than the first option.",
+		]}
+	>
+		<div data-store="address" class="grid gap-5 sm:grid-cols-[1fr_16rem]">
+			<div class="space-y-4">
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div class="space-y-1.5">
+						<label class="label" for="address-country">Country</label>
+						<select id="address-country" name="country" class="input" data-dom--value="$country" data-events--change="@setCountry">
+							<option value="uk">United Kingdom</option>
+							<option value="us">United States</option>
+							<option value="de">Germany</option>
+						</select>
+					</div>
+					<div class="space-y-1.5">
+						<label class="label" for="address-region">Region</label>
+						<select id="address-region" name="region" class="input" data-loop="$regions" data-dom--value="$region" data-events--change="@setField">
+							<template>
+								<option data-bind--value="$item.value" data-dom--text="$item.label"></option>
+							</template>
+						</select>
+					</div>
+				</div>
+				<div class="flex gap-2">
+					<button type="button" class="btn btn-sm" data-events--click="@pickTexas">Texas</button>
+					<button type="button" class="btn btn-sm" data-events--click="@pickWales">Wales</button>
+				</div>
+			</div>
+			<div class="space-y-3">
+				<div class="space-y-1.5">
+					<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">State</p>
+					<pre class="readout" data-dom--text="$json"></pre>
+				</div>
+				<pg-readout class="block space-y-1.5">
+					<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">Fields show</p>
+					<pre class="readout" data-field-readout="[name=country], [name=region]"></pre>
+				</pg-readout>
+			</div>
+		</div>
+	</Scenario>
+
+	<!-- Validation -->
+	<Scenario
+		id="validation"
+		title="Validation"
+		description="Errors are computed from state. A field's error shows once you leave it (`focusout` on the form) or after a submit, sets `aria-invalid` and is linked with `aria-describedby`. Submitting focuses the first invalid field through refs."
+		expect={[
+			"No errors show until you leave a field or submit.",
+			"Leaving an empty or malformed email shows its error and outlines the field.",
+			"The strength label follows the password as you type.",
+			"`Create account` with errors shows every error, the summary, and focuses the first invalid field. The log names it.",
+			"Fixing a field removes its error immediately. With all fields valid, `Create account` logs success.",
+			"`Reset` clears the fields and hides every error.",
+		]}
+	>
+		<form
+			data-store="signup"
+			class="max-w-md space-y-4"
+			novalidate
+			data-events--input="@input"
+			data-events--focusout="@touch"
+			data-events--submit="@submit"
+			data-events--reset="@reset"
+		>
+			<p
+				role="alert"
+				class="rounded-md border border-rose-400/25 bg-rose-400/10 px-3 py-2 text-[13px] text-rose-200"
+				data-dom--text="$summary"
+				data-bind--hidden="$summaryHidden"
+				hidden></p>
+			<div class="space-y-1.5">
+				<label class="label" for="signup-email">Email</label>
+				<input
+					id="signup-email"
+					name="email"
+					type="email"
+					class="input"
+					autocomplete="off"
+					data-ref="#email"
+					data-bind--aria-invalid="$emailInvalid"
+					aria-describedby="signup-email-error"
+				/>
+				<p id="signup-email-error" class="error-text" data-dom--text="$emailError"></p>
+			</div>
+			<div class="space-y-1.5">
+				<div class="flex items-baseline justify-between">
+					<label class="label" for="signup-password">Password</label>
+					<span class="hint" data-dom--text="$strengthLabel"></span>
+				</div>
+				<input
+					id="signup-password"
+					name="password"
+					type="password"
+					class="input"
+					autocomplete="new-password"
+					data-ref="#password"
+					data-bind--aria-invalid="$passwordInvalid"
+					aria-describedby="signup-password-error"
+				/>
+				<div class="flex gap-1" aria-hidden="true" data-bind--data-strength="$strength">
+					{[1, 2, 3, 4].map((level) => (
+						<span class:list={["h-1 flex-1 rounded-full bg-line transition-colors", `strength-${level}`]} />
+					))}
+				</div>
+				<p id="signup-password-error" class="error-text" data-dom--text="$passwordError"></p>
+			</div>
+			<div class="space-y-1.5">
+				<label class="label" for="signup-confirm">Confirm password</label>
+				<input
+					id="signup-confirm"
+					name="confirm"
+					type="password"
+					class="input"
+					autocomplete="new-password"
+					data-ref="#confirm"
+					data-bind--aria-invalid="$confirmInvalid"
+					aria-describedby="signup-confirm-error"
+				/>
+				<p id="signup-confirm-error" class="error-text" data-dom--text="$confirmError"></p>
+			</div>
+			<div class="space-y-1.5">
+				<label class="flex items-center gap-2.5 text-sm">
+					<input
+						type="checkbox"
+						name="terms"
+						class="check"
+						data-ref="#terms"
+						data-bind--aria-invalid="$termsInvalid"
+						aria-describedby="signup-terms-error"
+					/>
+					I accept the terms
+				</label>
+				<p id="signup-terms-error" class="error-text" data-dom--text="$termsError"></p>
+			</div>
+			<div class="flex gap-2 pt-1">
+				<button type="submit" class="btn btn-primary">Create account</button>
+				<button type="reset" class="btn btn-ghost">Reset</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<!-- Async submit -->
+	<Scenario
+		id="async-submit"
+		title="Async submit"
+		description="Submitting builds a payload from `FormData`, then waits 1.2 seconds. While sending, the form has `aria-busy`, the fields are read-only and the button is disabled."
+		expect={[
+			"While sending, the button reads `Sending…` and is disabled, and the fields are read-only.",
+			"Pressing Enter or clicking again while sending doesn't send twice.",
+			"On success, a status message shows and the fields clear.",
+			"With `Fail the next submit` ticked, an error message shows and the text is kept.",
+			"The last payload appears below the form.",
+		]}
+	>
+		<div data-store="contact" class="grid gap-5 sm:grid-cols-[1fr_16rem]">
+			<div class="space-y-4">
+				<form class="space-y-4" data-events--input="@input" data-events--submit="@submit" data-bind--aria-busy="$sending">
+					<div class="space-y-1.5">
+						<label class="label" for="contact-name">Name</label>
+						<input id="contact-name" name="name" class="input" required data-dom--value="$name" data-bind--readonly="$sending" />
+					</div>
+					<div class="space-y-1.5">
+						<label class="label" for="contact-message">Message</label>
+						<textarea id="contact-message" name="message" rows="3" class="input" required data-dom--value="$message" data-bind--readonly="$sending"></textarea>
+					</div>
+					<div class="flex items-center gap-3">
+						<button type="submit" class="btn btn-primary" data-bind--disabled="$sending" data-dom--text="$buttonLabel">Send message</button>
+						<p role="status" class="text-[13px] text-muted" data-dom--text="$statusText" data-bind--hidden="$statusHidden" hidden></p>
+					</div>
+				</form>
+				<label class="flex items-center gap-2.5 text-sm text-muted" data-events--input="@input">
+					<input type="checkbox" name="failNext" class="check" />
+					Fail the next submit
+				</label>
+			</div>
+			<div class="space-y-1.5">
+				<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">Last payload</p>
+				<pre class="readout" data-dom--text="$payloadJson"></pre>
+			</div>
+		</div>
+	</Scenario>
+
+	<!-- Field arrays -->
+	<Scenario
+		id="field-arrays"
+		title="Field arrays"
+		description="Invoice lines rendered with `data-loop`. One `input` listener on the list updates the line its field belongs to, and the total is computed."
+		gap="Actions called from inside a loop don't receive `$item` or `$index`. Each row carries a `data-row` index bound from `$index`, which the actions read from the event target, and each line's amount is stored on the item because a computed value can't be calculated per item."
+		expect={[
+			"Editing a quantity or price updates that line's amount and the total.",
+			"`Add line` adds an empty line and focuses its description.",
+			"Removing a middle line keeps the other lines and their values, and the row numbers update.",
+			"`Reverse` reorders the lines without losing what you typed.",
+			"`Submit` logs the lines.",
+		]}
+	>
+		<form data-store="invoice" class="space-y-3" data-events--submit="@submit" autocomplete="off">
+			<div class="hidden grid-cols-[2rem_1fr_5rem_6rem_6.5rem_2rem] gap-2 px-1 text-[11px] font-medium tracking-wide text-subtle uppercase sm:grid">
+				<span>#</span><span>Description</span><span>Qty</span><span>Price</span><span class="text-right">Amount</span><span></span>
+			</div>
+			<ol class="space-y-2" data-loop="$lines" data-events--input="@updateLine">
+				<template>
+					<li class="grid grid-cols-[2rem_1fr_2rem] items-center gap-2 sm:grid-cols-[2rem_1fr_5rem_6rem_6.5rem_2rem]" data-bind--data-row="$index">
+						<span class="font-mono text-xs text-subtle" data-dom--text="$indexOne"></span>
+						<input name="description" class="input" placeholder="Description" aria-label="Description" data-ref="#descriptions[]" data-dom--value="$item.description" />
+						<button type="button" class="btn btn-ghost btn-sm px-1.5 sm:order-last" aria-label="Remove line" data-events--click="@removeLine">✕</button>
+						<input name="qty" type="number" min="0" class="input col-start-2 sm:col-start-auto" aria-label="Quantity" data-dom--value="$item.qty" />
+						<input name="price" type="number" min="0" step="0.01" class="input col-start-2 sm:col-start-auto" aria-label="Price" data-dom--value="$item.price" />
+						<span class="col-start-2 text-right font-mono text-sm tabular-nums sm:col-start-auto" data-dom--text="$item.amount"></span>
+					</li>
+				</template>
+			</ol>
+			<p class="rounded-md border border-dashed border-line px-3 py-4 text-center text-[13px] text-subtle" data-bind--hidden="$hasLines" hidden>No lines yet.</p>
+			<div class="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+				<button type="button" class="btn btn-sm" data-events--click="@addLine">Add line</button>
+				<button type="button" class="btn btn-sm btn-ghost" data-events--click="@reverse">Reverse</button>
+				<span class="hint" data-dom--text="$count"></span>
+				<p class="ml-auto text-sm">Total <span class="ml-2 font-mono font-semibold tabular-nums" data-dom--text="$total"></span></p>
+				<button type="submit" class="btn btn-sm btn-primary">Submit</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<!-- Multi-step form -->
+	<Scenario
+		id="multi-step"
+		title="Multi-step form"
+		description="Three steps in one form. Each step is shown with `data-bind--hidden`, the progress uses `aria-current`, and `data-dom--focus` moves focus to the new step's heading."
+		expect={[
+			"`Next` stays disabled until step 1 has a name and an email containing `@`.",
+			"`Next` and `Back` move focus to the new step's heading. Nothing is focused on page load.",
+			"Pressing Enter in a field moves to the next step.",
+			"Values entered on earlier steps are kept when going back, and step 3 shows a summary.",
+			"`Submit` logs the values and returns to step 1 with the fields cleared.",
+		]}
+	>
+		<form data-store="wizard" class="space-y-5" data-events--input="@input" data-events--submit="@submit" autocomplete="off">
+			<ol class="grid grid-cols-3 gap-2 text-xs">
+				<li class="rounded-md border border-line px-3 py-2 text-subtle aria-[current=step]:border-accent/50 aria-[current=step]:text-accent data-[done=true]:text-muted" data-bind--aria-current="$step1Current" data-bind--data-done="$step1Done">1 · Details</li>
+				<li class="rounded-md border border-line px-3 py-2 text-subtle aria-[current=step]:border-accent/50 aria-[current=step]:text-accent data-[done=true]:text-muted" data-bind--aria-current="$step2Current" data-bind--data-done="$step2Done">2 · Plan</li>
+				<li class="rounded-md border border-line px-3 py-2 text-subtle aria-[current=step]:border-accent/50 aria-[current=step]:text-accent" data-bind--aria-current="$step3Current">3 · Review</li>
+			</ol>
+
+			<fieldset class="space-y-4" data-bind--hidden="$step1Hidden">
+				<h3 tabindex="-1" class="text-sm font-semibold outline-none focus-visible:underline" data-dom--focus="$focusStep1">Your details</h3>
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div class="space-y-1.5">
+						<label class="label" for="wizard-name">Name</label>
+						<input id="wizard-name" name="name" class="input" data-dom--value="$name" />
+					</div>
+					<div class="space-y-1.5">
+						<label class="label" for="wizard-email">Email</label>
+						<input id="wizard-email" name="email" type="email" class="input" data-dom--value="$email" />
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="space-y-4" data-bind--hidden="$step2Hidden" hidden>
+				<h3 tabindex="-1" class="text-sm font-semibold outline-none focus-visible:underline" data-dom--focus="$focusStep2">Choose a plan</h3>
+				<div class="space-y-1.5 sm:w-1/2">
+					<label class="label" for="wizard-plan">Plan</label>
+					<select id="wizard-plan" name="plan" class="input" data-dom--value="$plan">
+						<option value="starter">Starter</option>
+						<option value="growth">Growth</option>
+						<option value="scale">Scale</option>
+					</select>
+				</div>
+				<div class="space-y-1.5">
+					<label class="label" for="wizard-notes">Notes</label>
+					<textarea id="wizard-notes" name="notes" rows="2" class="input" data-dom--value="$notes"></textarea>
+				</div>
+			</fieldset>
+
+			<fieldset class="space-y-3" data-bind--hidden="$step3Hidden" hidden>
+				<h3 tabindex="-1" class="text-sm font-semibold outline-none focus-visible:underline" data-dom--focus="$focusStep3">Review</h3>
+				<dl class="grid grid-cols-[6rem_1fr] gap-x-4 gap-y-1.5 text-sm">
+					<dt class="text-subtle">Name</dt><dd data-dom--text="$name"></dd>
+					<dt class="text-subtle">Email</dt><dd data-dom--text="$email"></dd>
+					<dt class="text-subtle">Plan</dt><dd data-dom--text="$plan"></dd>
+					<dt class="text-subtle">Notes</dt><dd class="text-muted" data-dom--text="$notes"></dd>
+				</dl>
+			</fieldset>
+
+			<div class="flex items-center gap-2 border-t border-line pt-4">
+				<span class="hint" data-dom--text="$progress"></span>
+				<button type="button" class="btn ml-auto" data-events--click="@back" data-bind--hidden="$backHidden" hidden>Back</button>
+				<button type="button" class="btn btn-primary" data-events--click="@next" data-bind--hidden="$nextHidden" data-bind--disabled="$nextDisabled">Next</button>
+				<button type="submit" class="btn btn-primary" data-bind--hidden="$submitHidden" hidden>Submit</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<!-- Native reset -->
+	<Scenario
+		id="native-reset"
+		title="Native reset"
+		description="Both forms use the same definition. A native reset puts each field back to its `value` attribute. The first form also handles the `reset` event and resets its state, the second doesn't."
+		gap="With no two-way binding, a native reset only changes the fields. Without a `reset` handler the store keeps the edited values, as the second form shows."
+		expect={[
+			"Edit both forms, then press `Reset` in each.",
+			"The first form's fields and state both return to their defaults.",
+			"The second form's fields reset but its state keeps the edited values.",
+		]}
+	>
+		<div class="grid gap-4 sm:grid-cols-2">
+			<form data-store="resetHandled" class="space-y-3 rounded-md bg-raised/60 p-4" data-events--input="@input" data-events--reset="@reset" autocomplete="off">
+				<p class="text-xs font-medium text-accent">Handles reset</p>
+				<input name="title" class="input" value="Quarterly report" aria-label="Title" data-dom--value="$title" />
+				<input name="owner" class="input" value="Ada" aria-label="Owner" data-dom--value="$owner" />
+				<button type="reset" class="btn btn-sm">Reset</button>
+				<pre class="readout" data-dom--text="$json"></pre>
+			</form>
+			<form data-store="resetUnhandled" class="space-y-3 rounded-md bg-raised/60 p-4" data-events--input="@input" autocomplete="off">
+				<p class="text-xs font-medium text-subtle">Doesn't handle reset</p>
+				<input name="title" class="input" value="Quarterly report" aria-label="Title" data-dom--value="$title" />
+				<input name="owner" class="input" value="Ada" aria-label="Owner" data-dom--value="$owner" />
+				<button type="reset" class="btn btn-sm">Reset</button>
+				<pre class="readout" data-dom--text="$json"></pre>
+			</form>
+		</div>
+	</Scenario>
+
+	<!-- Server-rendered values -->
+	<Scenario
+		id="server-values"
+		title="Server-rendered values"
+		description="An edit form whose values come from `data-state--*` attributes on the form, as a server would render them. The definition's defaults decide each value's type."
+		expect={[
+			"The fields start with Grace Hopper's values and the Admin role. The marketing box is checked.",
+			"The log shows `seats` as a number and `marketing` as a boolean.",
+			"Editing a field updates its `data-state--*` attribute in the readout.",
+			"`Save` logs the current values.",
+		]}
+	>
+		<form
+			id="account-form"
+			data-store="account"
+			class="space-y-4"
+			data-state--display-name="Grace Hopper"
+			data-state--email="grace@example.com"
+			data-state--role="admin"
+			data-state--seats="12"
+			data-state--marketing="true"
+			data-events--input="@input"
+			data-events--submit="@save"
+			autocomplete="off"
+		>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div class="space-y-1.5">
+					<label class="label" for="account-name">Display name</label>
+					<input id="account-name" name="displayName" class="input" data-dom--value="$displayName" />
+				</div>
+				<div class="space-y-1.5">
+					<label class="label" for="account-email">Email</label>
+					<input id="account-email" name="email" type="email" class="input" data-dom--value="$email" />
+				</div>
+				<div class="space-y-1.5">
+					<label class="label" for="account-role">Role</label>
+					<select id="account-role" name="role" class="input" data-dom--value="$role">
+						<option value="viewer">Viewer</option>
+						<option value="editor">Editor</option>
+						<option value="admin">Admin</option>
+					</select>
+				</div>
+				<div class="space-y-1.5">
+					<label class="label" for="account-seats">Seats</label>
+					<input id="account-seats" name="seats" type="number" min="1" class="input" data-dom--value="$seats" />
+				</div>
+			</div>
+			<label class="flex items-center gap-2.5 text-sm">
+				<input type="checkbox" name="marketing" class="check" data-bind--checked="$marketing" />
+				Product updates by email
+			</label>
+			<button type="submit" class="btn btn-primary">Save</button>
+			<AttributeReadout target="#account-form" exclude={["id", "novalidate", "autocomplete"]} />
+		</form>
+	</Scenario>
+
+	<style is:global>
+		/* Password strength bars, coloured up to the current score. */
+		[data-strength="1"] .strength-1 { background-color: var(--color-rose-400); }
+		[data-strength="2"] :is(.strength-1, .strength-2) { background-color: var(--color-amber-400); }
+		[data-strength="3"] :is(.strength-1, .strength-2, .strength-3) { background-color: var(--color-lime-400); }
+		[data-strength="4"] :is(.strength-1, .strength-2, .strength-3, .strength-4) { background-color: var(--color-emerald-400); }
+	</style>
+
+	<script>
+		import "../../scripts/catalyst/forms";
+	</script>
+</Playground>

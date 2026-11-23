@@ -1,0 +1,208 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Effects & lifecycle">
+	<Fragment slot="intro">
+		<p>
+			Store effects run for as long as their store exists, starting after
+			<code>init</code>. Each one has a tracked <code>compute</code> and an
+			untracked callback, which may return a cleanup. <code>init</code> runs once
+			the store's refs exist, and the function it returns runs when the store
+			is destroyed.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="tracking"
+		title="Effects track what their compute reads"
+		description="`logQuery` computes `state.query`, so it re-runs when the query changes and not when `count` does. Its callback receives the value with `isInitial` and `previous`."
+		expect={[
+			"On load the log shows `logQuery ran` with `isInitial: true`.",
+			"Typing logs each new query with the previous one and `isInitial: false`.",
+			"`Bump count` updates the count but doesn't run `logQuery`.",
+		]}
+	>
+		<div data-store="tracking" class="flex flex-wrap items-end gap-3">
+			<label class="min-w-56 flex-1 space-y-1.5">
+				<span class="label">Query</span>
+				<input class="input" type="text" placeholder="Type to run the effect" data-dom--value="$query" data-events--input="@setQuery" />
+			</label>
+			<button class="btn" data-events--click="@bumpCount">
+				Bump count <span class="font-mono text-subtle" data-dom--text="$count"></span>
+			</button>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="cleanup"
+		title="Cleanups run before the next run"
+		description="An autosave effect waits 700ms after the draft changes. Its cleanup clears the pending timer, so typing quickly saves once."
+		expect={[
+			"Typing several characters quickly logs one `Saved` entry after you pause, with the number of pending saves that were cancelled.",
+			"The status reads `Saving soon…` while a save is pending, then the saved text.",
+		]}
+	>
+		<div data-store="autosave" class="space-y-3">
+			<label class="block space-y-1.5">
+				<span class="label">Draft</span>
+				<input class="input" type="text" placeholder="Type quickly, then pause" data-dom--value="$draft" data-events--input="@setDraft" />
+			</label>
+			<p class="text-sm text-muted" data-dom--text="$statusLabel"></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="interval"
+		title="An effect that owns an interval"
+		description="While `running` is true the effect runs a 100ms interval that writes `ticks`. Its cleanup clears the interval when `running` changes."
+		expect={[
+			"`Start` logs that the interval started and the counter rises by one tenth of a second every tick.",
+			"`Stop` logs the cleanup and the counter stops.",
+			"Starting and stopping repeatedly never speeds the counter up, because only one interval exists at a time.",
+		]}
+	>
+		<div data-store="ticker" class="flex items-center gap-3">
+			<button class="btn btn-primary w-20" data-events--click="@toggle" data-dom--text="$buttonLabel">Start</button>
+			<button class="btn btn-ghost" data-events--click="@reset">Reset</button>
+			<p class="ml-auto font-mono text-2xl font-semibold tabular-nums"><span data-dom--text="$seconds"></span>s</p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="failing"
+		title="A failing effect is isolated"
+		description="`throwsOnOdd` throws from its callback for odd values, `computeThrowsFromThree` throws from its compute once the value reaches 3, and `steady` never throws. `notAnEffect` wasn't made with the `effect` helper."
+		gap="An error thrown from an effect's callback is logged as a bare error, without the store or effect name. Only errors thrown from the compute are logged with a Catalyst message naming the effect."
+		expect={[
+			"On load the log warns that `notAnEffect` must be created with `effect(compute, callback)`.",
+			"Every `Bump` logs `steady`, and the value on the page keeps updating.",
+			"Odd values log the error from `throwsOnOdd`, and even values log it running normally again.",
+			"From 3 onwards the log shows Catalyst's error for `computeThrowsFromThree`, and the other effects keep running.",
+		]}
+	>
+		<div data-store="fragile" class="flex items-center gap-3">
+			<button class="btn" data-events--click="@bump">Bump</button>
+			<p class="text-sm text-muted">value <span class="font-mono text-fg" data-dom--text="$value"></span></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="callback-reads"
+		title="Reading other state in an effect callback"
+		description="Both effects compute `count` and log `label` from their callback. `direct` reads `state.label` as is; `withUntrack` wraps the read in `untrack`."
+		gap="Reading store state directly in an effect callback logs Solid's `STRICT_READ_UNTRACKED` warning in development, even though the callback is where Catalyst says side effects belong. Wrapping the read in `untrack` or returning it from the compute avoids it."
+		expect={[
+			"`Bump count` logs the current label from both effects.",
+			"`Change label` logs nothing, because neither effect computes `label`.",
+			"Today each bump also logs a `STRICT_READ_UNTRACKED` warning from the `direct` effect.",
+		]}
+	>
+		<div data-store="reads" class="flex flex-wrap items-center gap-3">
+			<button class="btn" data-events--click="@bump">Bump count</button>
+			<button class="btn" data-events--click="@changeLabel">Change label</button>
+			<p class="ml-auto text-sm text-muted">
+				count <span class="font-mono text-fg" data-dom--text="$count"></span>,
+				<span class="text-fg" data-dom--text="$label"></span>
+			</p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="init-cleanup"
+		title="init and its cleanup"
+		description="`init` reads the `#box` ref and starts a `ResizeObserver` that writes `width`. The function it returns disconnects the observer. The buttons on the right are plain JavaScript."
+		expect={[
+			"On load the log shows `init` ran and found the box ref.",
+			"Dragging the box's corner updates the width.",
+			"`Catalyst.refresh` logs the cleanup and then `init` again.",
+			"`Remove` logs the cleanup; `Put back and sync` logs `init` and the width updates again.",
+		]}
+	>
+		<div class="flex flex-wrap items-start gap-4">
+			<div class="min-w-0 flex-1">
+				<div data-store="widget">
+					<div
+						data-ref="#box"
+						class="h-24 w-64 max-w-full min-w-32 resize-x overflow-auto rounded-md border border-line bg-raised p-3"
+					>
+						<p class="text-sm text-muted">Drag my corner</p>
+						<p class="mt-1 font-mono text-lg tabular-nums"><span data-dom--text="$width"></span>px</p>
+					</div>
+				</div>
+			</div>
+			<div class="flex flex-col gap-2">
+				<button class="btn btn-sm" data-lifecycle-action="refresh-widget">Catalyst.refresh("widget")</button>
+				<button class="btn btn-sm" data-lifecycle-action="remove-widget">Remove</button>
+				<button class="btn btn-sm" data-lifecycle-action="restore-widget">Put back and sync</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="async-init"
+		title="An async init"
+		description="`init` waits 900ms before writing state, then returns a cleanup. Each store instance gets a number from its state function."
+		expect={[
+			"On load the card shows `Loading…`, then the name, and the log shows init starting and finishing.",
+			"`Refresh` logs the previous instance's cleanup, then a new instance loads.",
+			"`Refresh twice` destroys an instance whose init is still pending: its cleanup runs as soon as its init settles, and only the newest instance's name shows.",
+		]}
+	>
+		<div class="flex flex-wrap items-center gap-4">
+			<div data-store="asyncProfile" class="min-w-56 flex-1 rounded-md bg-raised px-4 py-3">
+				<p class="text-xs text-subtle">instance <span class="font-mono" data-dom--text="$instance"></span></p>
+				<p class="mt-1 text-sm text-muted" data-bind--hidden="$ready">Loading…</p>
+				<p class="mt-1 text-sm font-medium" data-bind--hidden="$loading" data-dom--text="$name" hidden></p>
+			</div>
+			<div class="flex gap-2">
+				<button class="btn btn-sm" data-lifecycle-action="refresh-profile">Refresh</button>
+				<button class="btn btn-sm" data-lifecycle-action="refresh-profile-twice">Refresh twice</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="refs"
+		title="Refs"
+		description="`#nameInput` is a single ref, `#items[]` collects three list items, and `#rows[]` is registered by rows a loop renders. A second element also claims `#nameInput`."
+		expect={[
+			"On load the log shows the refs were available in `init`, and warns that `nameInput` is already registered.",
+			"`Focus field` focuses the input through `refs.get`.",
+			"`Highlight items` toggles every `#items[]` element through `refs.all`.",
+			"`Count refs` reports 3 items and as many rows as are rendered; adding and removing rows changes the count.",
+		]}
+	>
+		<div data-store="refsDemo" class="space-y-4">
+			<div class="flex flex-wrap items-end gap-3">
+				<label class="min-w-48 flex-1 space-y-1.5">
+					<span class="label">Name</span>
+					<input class="input" type="text" placeholder="Focused through a ref" data-ref="#nameInput" />
+				</label>
+				<span class="hint pb-2" data-ref="#nameInput">A second #nameInput</span>
+			</div>
+			<ul class="flex gap-2">
+				<li class="badge data-highlighted:border-accent/50 data-highlighted:text-accent" data-ref="#items[]">Item one</li>
+				<li class="badge data-highlighted:border-accent/50 data-highlighted:text-accent" data-ref="#items[]">Item two</li>
+				<li class="badge data-highlighted:border-accent/50 data-highlighted:text-accent" data-ref="#items[]">Item three</li>
+			</ul>
+			<ul data-loop="$rows" class="flex min-h-7 flex-wrap gap-2">
+				<template>
+					<li class="badge font-mono" data-ref="#rows[]">row <span data-dom--text="$item"></span></li>
+				</template>
+			</ul>
+			<div class="flex flex-wrap gap-2">
+				<button class="btn" data-events--click="@focusInput">Focus field</button>
+				<button class="btn" data-events--click="@highlightItems">Highlight items</button>
+				<button class="btn" data-events--click="@countRefs">Count refs</button>
+				<button class="btn btn-ghost" data-events--click="@addRow">Add row</button>
+				<button class="btn btn-ghost" data-events--click="@removeRow">Remove row</button>
+			</div>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/lifecycle";
+	</script>
+</Playground>

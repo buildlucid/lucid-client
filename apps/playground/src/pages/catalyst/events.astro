@@ -1,0 +1,204 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+
+const fruits = ["Apple", "Banana", "Cherry", "Damson"];
+---
+
+<Playground title="Events">
+	<Fragment slot="intro">
+		<p>
+			<code>data-events--{"{event}"}</code> calls an action when the event
+			fires, passing the <code>Event</code> as the first argument. Prefix the
+			event with <code>document.</code>, <code>window.</code>,
+			<code>body.</code> or <code>head.</code> to listen there instead.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="element-events"
+		title="Element events"
+		description="Each action receives the event. The click handler reads its modifier keys and position, the input handler its `inputType`, and the scroll handler the box's `scrollTop`."
+		expect={[
+			"Clicking the button describes the click, including any of Shift, Alt, Meta or Ctrl held.",
+			"Typing in the field describes the input, and the key badge shows the last key pressed in it.",
+			"Scrolling the box updates its `scrollTop` readout.",
+		]}
+	>
+		<div data-store="elementEvents" class="space-y-4">
+			<div class="grid gap-3 sm:grid-cols-2">
+				<button class="btn" data-events--click="@onClick">Click me, with or without modifiers</button>
+				<div class="flex items-center gap-2">
+					<input class="input" placeholder="Type here" data-events--input="@onInput" data-events--keydown="@onKeydown" />
+					<span class="kbd min-w-12 py-1" data-dom--text="$key"></span>
+				</div>
+			</div>
+			<p class="readout text-fg" data-dom--text="$last"></p>
+			<div class="flex items-center gap-4">
+				<div class="h-24 flex-1 overflow-y-auto rounded-md border border-line p-3 text-sm text-subtle" data-events--scroll="@onScroll">
+					<p class="h-64">Scroll this box. Scroll events don't bubble, so the listener sits on the box itself.</p>
+				</div>
+				<p class="w-32 font-mono text-xs text-subtle">scrollTop <span class="text-fg" data-dom--text="$scrollTop"></span></p>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="global-targets"
+		title="Document, window and body"
+		description="These listeners are declared on elements in the store but attached to `document`, `window` and `body`, and removed with the element."
+		expect={[
+			"Pressing any key anywhere on the page updates the last key.",
+			"Resizing the window updates the viewport size.",
+			"Clicking anywhere on the page increments the body click count.",
+		]}
+	>
+		<div
+			data-store="globalTargets"
+			data-events--document.keydown="@onDocumentKeydown"
+			data-events--window.resize="@onResize"
+			data-events--body.click="@onBodyClick"
+			class="grid gap-3 text-sm sm:grid-cols-3"
+		>
+			<div class="rounded-md bg-raised px-3 py-2"><p class="text-xs text-subtle">Last key on document</p><p class="font-mono" data-dom--text="$lastKey"></p></div>
+			<div class="rounded-md bg-raised px-3 py-2"><p class="text-xs text-subtle">Window size</p><p class="font-mono" data-dom--text="$viewport"></p></div>
+			<div class="rounded-md bg-raised px-3 py-2"><p class="text-xs text-subtle">Body clicks</p><p class="font-mono" data-dom--text="$bodyClicks"></p></div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="shared-targets"
+		title="Identical listeners on a shared target"
+		description="Two elements in `pingA` listen for `playground-ping` on `document` with the same action, so it runs once per event. `pingB` uses the same event and action name in another store, so it runs separately. Listeners are counted, and removed only when their last element goes."
+		expect={[
+			"Each `Dispatch ping` increments `pingA` by 1, not 2, and `pingB` by 1.",
+			"After removing one `pingA` element, pings still increment `pingA`.",
+			"After removing both, pings only increment `pingB`.",
+		]}
+	>
+		<div class="space-y-4">
+			<pg-controls class="flex flex-wrap gap-2">
+				<button class="btn btn-sm btn-primary" data-ping-dispatch>Dispatch ping</button>
+				<button class="btn btn-sm" data-ping-remove="ping-a-1">Remove pingA element 1</button>
+				<button class="btn btn-sm" data-ping-remove="ping-a-2">Remove pingA element 2</button>
+			</pg-controls>
+			<div class="grid gap-3 sm:grid-cols-2">
+				<div data-store="pingA" class="space-y-2 rounded-md bg-raised px-3 py-2.5">
+					<p class="text-sm">pingA count: <span class="font-mono text-accent" data-dom--text="$count"></span></p>
+					<div class="flex gap-2">
+						<span id="ping-a-1" class="badge" data-events--document.playground-ping="@onPing">element 1</span>
+						<span id="ping-a-2" class="badge" data-events--document.playground-ping="@onPing">element 2</span>
+					</div>
+				</div>
+				<div data-store="pingB" class="space-y-2 rounded-md bg-raised px-3 py-2.5">
+					<p class="text-sm">pingB count: <span class="font-mono text-accent" data-dom--text="$count"></span></p>
+					<span class="badge" data-events--document.playground-ping="@onPing">element</span>
+				</div>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="delegation"
+		title="One listener for many children"
+		description="A single click listener on the list handles every item, reading `event.target`. This is also how an action finds out which loop item was clicked, since actions only receive the event."
+		expect={[
+			"Clicking a fruit, or the text inside it, selects that fruit.",
+			"The log shows the inner `target` and the list as `currentTarget`.",
+		]}
+	>
+		<div data-store="delegation" class="space-y-3">
+			<ul class="flex flex-wrap gap-2" data-events--click="@onListClick">
+				{fruits.map((fruit) => (
+					<li>
+						<button class="btn btn-sm" data-fruit={fruit.toLowerCase()}>
+							<span class="size-2 rounded-full bg-accent/70"></span>
+							<span>{fruit}</span>
+						</button>
+					</li>
+				))}
+			</ul>
+			<p class="text-sm text-muted">Selected: <span class="font-mono text-fg" data-dom--text="$selected"></span></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="custom-events"
+		title="Custom events"
+		description="Custom events work when their names are lowercase or kebab-case. HTML lowercases attribute names, so `data-events--itemChosen` becomes `data-events--itemchosen` and never matches an `itemChosen` event."
+		expect={[
+			"`Dispatch item-selected` reaches the action, which reads `event.detail`.",
+			"`Dispatch itemChosen` does nothing, and nothing is logged from the action.",
+		]}
+	>
+		<div
+			data-store="custom"
+			data-events--item-selected="@onItemSelected"
+			data-events--itemChosen="@onItemChosen"
+			class="space-y-3"
+		>
+			<pg-controls class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-custom-dispatch="item-selected" data-custom-id="7">Dispatch item-selected</button>
+				<button class="btn btn-sm" data-custom-dispatch="itemChosen" data-custom-id="8">Dispatch itemChosen</button>
+			</pg-controls>
+			<p class="readout text-fg" data-dom--text="$received"></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="async-actions"
+		title="Async and failing actions"
+		description="Actions can be async. A rejected promise or a thrown error is logged to the console without breaking the listener or the page."
+		expect={[
+			"`Save slowly` shows `saving…`, then the save time.",
+			"`Fail slowly` logs the rejection as an error, and the status still updates.",
+			"`Throw now` logs the error, and every button keeps working afterwards.",
+		]}
+	>
+		<div data-store="asyncActions" class="flex flex-wrap items-center gap-2">
+			<button class="btn btn-sm" data-events--click="@saveSlowly">Save slowly</button>
+			<button class="btn btn-sm btn-danger" data-events--click="@failSlowly">Fail slowly</button>
+			<button class="btn btn-sm btn-danger" data-events--click="@throwNow">Throw now</button>
+			<p class="ml-auto text-sm text-muted">status: <span class="font-mono text-fg" data-dom--text="$status"></span></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="prevent-default"
+		title="Preventing the default action"
+		description="The action receives the real event, so it can call `preventDefault()`."
+		expect={[
+			"Clicking the link doesn't navigate.",
+			"Right-clicking the box doesn't open the context menu.",
+			"Both increment the prevented count and log a line.",
+		]}
+	>
+		<div data-store="defaults" class="flex flex-wrap items-center gap-4 text-sm">
+			<a href="/" data-events--click="@onLinkClick">A link to the overview</a>
+			<div class="rounded-md border border-dashed border-line-strong px-3 py-2 text-muted" data-events--contextmenu="@onContextMenu">Right-click me</div>
+			<p class="ml-auto text-muted">prevented: <span class="font-mono text-fg" data-dom--text="$prevented"></span></p>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="misconfigured"
+		title="Misconfigured event directives"
+		description="Event directives need an event name and an action. Ones that don't are skipped with a warning, and an action that doesn't exist warns when the event fires."
+		expect={[
+			"On load, the log warns that `data-events--click` requires an action, for the `$count` reference.",
+			"It warns twice that a directive requires an event specifier: for bare `data-events` and for `data-events--document`.",
+			"Clicking `Missing action` warns that the action `missing` can't be found.",
+		]}
+	>
+		<div data-store="misconfigured" class="flex flex-wrap gap-2">
+			<button class="btn btn-sm" data-events--click="$count">State instead of an action</button>
+			<button class="btn btn-sm" data-events="@existing">No event name</button>
+			<button class="btn btn-sm" data-events--document="@existing">document without an event</button>
+			<button class="btn btn-sm" data-events--click="@missing">Missing action</button>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/events";
+	</script>
+</Playground>
