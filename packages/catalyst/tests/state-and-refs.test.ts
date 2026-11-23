@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import Catalyst, { storeModule } from "../src/index.js";
-import { bind, dom, refs } from "../src/reactions.js";
-import Runtime from "../src/runtime/catalyst.js";
-import { settle } from "./utils.js";
+import Catalyst, { defineStore } from "../src/index.js";
+import { bind, dom } from "../src/reactions.js";
+import { getStore, setStoreState, settle } from "./utils.js";
 
 describe("store state and refs", () => {
 	it("keeps state attributes and bindings in sync in both directions", async () => {
@@ -14,12 +13,11 @@ describe("store state and refs", () => {
 
 		Catalyst.start({ reactions: [bind] });
 		await settle();
-		const store = Runtime.stores.get("state");
 		const root = document.querySelector('[data-store="state"]');
 		const link = document.querySelector("a");
 		expect(link?.getAttribute("href")).toBe("/one");
 
-		store?.state.items?.[1]([{ url: "/two" }]);
+		setStoreState("state", "items", [{ url: "/two" }]);
 		await settle();
 		expect(root?.getAttribute("data-state--items")).toBe('[{"url":"/two"}]');
 		expect(link?.getAttribute("href")).toBe("/two");
@@ -57,10 +55,12 @@ describe("store state and refs", () => {
 		expect(movable.textContent).toBe("Inner");
 	});
 
-	it("registers refs before the store init action", () => {
+	it("registers refs before init, without registering a reaction", () => {
 		document.body.innerHTML = `
 			<div data-store="refs">
 				<button data-ref="#button"></button>
+				<input data-ref="#fields[]" />
+				<input data-ref="#fields[]" />
 				<div data-store="nested-refs">
 					<span id="cross-ref" data-ref="refs:#cross"></span>
 					<span id="nested-ref" data-ref="#nested"></span>
@@ -68,23 +68,29 @@ describe("store state and refs", () => {
 			</div>
 		`;
 
-		let refAtInit: Element | Element[] | undefined;
-		let crossRefAtInit: Element | Element[] | undefined;
-		storeModule("refs", {
-			setup: (store) => ({
-				actions: {
-					init: () => {
-						refAtInit = store.refs.get("button");
-						crossRefAtInit = store.refs.get("cross");
-					},
-				},
-			}),
+		let button: HTMLButtonElement | undefined;
+		let cross: HTMLElement | undefined;
+		let fields: HTMLInputElement[] = [];
+		let firstField: HTMLInputElement | undefined;
+		let missing: HTMLElement[] = [];
+		const refs = defineStore({
+			init: ({ refs }) => {
+				button = refs.get<HTMLButtonElement>("button");
+				cross = refs.get("cross");
+				fields = refs.all<HTMLInputElement>("fields");
+				firstField = refs.get<HTMLInputElement>("fields");
+				missing = refs.all("missing");
+			},
 		});
 
-		Catalyst.start({ reactions: [refs] });
-		expect(refAtInit).toBe(document.querySelector("button"));
-		expect(crossRefAtInit).toBe(document.querySelector("#cross-ref"));
-		expect(Runtime.stores.get("nested-refs")?.refs.get("nested")).toBe(
+		Catalyst.start({ stores: { refs } });
+		const inputs = Array.from(document.querySelectorAll("input"));
+		expect(button).toBe(document.querySelector("button"));
+		expect(cross).toBe(document.querySelector("#cross-ref"));
+		expect(fields).toEqual(inputs);
+		expect(firstField).toBe(inputs[0]);
+		expect(missing).toEqual([]);
+		expect(getStore("nested-refs")?.refs.get("nested")).toBe(
 			document.querySelector("#nested-ref"),
 		);
 	});

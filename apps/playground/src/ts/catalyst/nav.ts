@@ -1,67 +1,47 @@
-import Catalyst, {
-	createSignal,
-	defineEffect,
-	defineStoreModule,
-} from "@lucidclient/catalyst";
+import Catalyst, { defineStore } from "@lucidclient/catalyst";
 
-const navStore = defineStoreModule({
-	state: () => ({
-		open: createSignal(false),
-		ariaLabel: createSignal("Open Navigation"),
+const navStore = defineStore({
+	state: {
+		open: false,
+	},
+	computed: ({ state }) => ({
+		closed: () => !state.open,
+		buttonLabel: () => (state.open ? "Close Navigation" : "Open Navigation"),
 	}),
-	setup: (store) => ({
-		actions: {
-			toggle: () => {
-				const [getOpen, setOpen] = store.state.open;
-				const [, setAriaLabel] = store.state.ariaLabel;
-
-				setAriaLabel(getOpen() ? "Open Navigation" : "Close Navigation");
-				setOpen((previous) => !previous);
-			},
-			closed: () => {
-				const [getOpen] = store.state.open;
-				return !getOpen();
-			},
-			isOpen: () => {
-				const [getOpen] = store.state.open;
-				return getOpen();
-			},
-			buttonLabel: () => {
-				const [getOpen] = store.state.open;
-				return getOpen() ? "Close Navigation" : "Open Navigation";
-			},
-			replaceChild: () => {
-				const target = store.refs.get("testEleRefresh");
-				if (target instanceof HTMLElement) {
-					target.innerHTML =
-						"<button data-store='testreplace' data-state--example='false' data-events--click='nav:@newClick' data-bind--testing='nav:$open'>after<span data-bind--test='$example'>children</span></button>";
-				}
-				if (target && !Array.isArray(target)) Catalyst.sync(target);
-			},
-			newClick: () => {
-				console.log("newClick");
-			},
-			oldClick: () => {
-				console.log("oldClick");
-			},
-			documentScroll: () => {
-				// console.log("document scrolled");
-			},
+	actions: ({ setState, refs }) => ({
+		toggle: () => {
+			setState((state) => {
+				state.open = !state.open;
+			});
 		},
-		effects: {
-			manual: {
-				customEffect: defineEffect({
-					compute: () => store.state.open[0](),
-					effect: (open, context) => {
-						console.log("effect", open, context);
-					},
-				}),
-			},
+		replaceChild: () => {
+			const target = refs.get("testEleRefresh");
+			if (!target) return;
+			target.innerHTML =
+				"<button data-store='testreplace' data-state--example='false' data-events--click='nav:@newClick' data-bind--testing='nav:$open'>after<span data-bind--test='$example'>children</span></button>";
+			Catalyst.sync(target);
 		},
-		cleanup: () => {
-			console.log("CLEANEDUP");
+		newClick: () => {
+			console.log("newClick");
+		},
+		oldClick: () => {
+			console.log("oldClick");
+		},
+		documentScroll: () => {
+			// console.log("document scrolled");
 		},
 	}),
+	effects: ({ state, effect }) => ({
+		logOpen: effect(
+			() => state.open,
+			(open, context) => {
+				console.log("effect", open, context);
+			},
+		),
+	}),
+	init: () => () => {
+		console.log("CLEANEDUP");
+	},
 });
 
 export default navStore;

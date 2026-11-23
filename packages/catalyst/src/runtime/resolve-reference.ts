@@ -36,15 +36,14 @@ const resolveReference = (reference: MemberReference, args: unknown[] = []) => {
 	}
 
 	if (reference.type === "state") {
-		const signal = store.state[reference.key];
-		if (!signal) {
+		if (!(reference.key in store.state)) {
 			warn(
 				`Cannot find state "${reference.key}" on store "${reference.scope}".`,
 			);
 			return undefined;
 		}
 
-		const value = signal[0]();
+		const value = store.state[reference.key];
 		return reference.path.length
 			? evaluatePathValue(value, reference.path)
 			: value;

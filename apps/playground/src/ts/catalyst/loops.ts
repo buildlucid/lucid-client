@@ -1,30 +1,24 @@
-import { createSignal, defineStoreModule } from "@lucidclient/catalyst";
+import { defineStore } from "@lucidclient/catalyst";
 
-const loopsStore = defineStoreModule({
-	state: () => ({
-		items: createSignal([
+const loopsStore = defineStore({
+	state: {
+		items: [
 			{ title: "title one", url: "/one" },
 			{ title: "title two", url: "/two" },
 			{ title: "title threee", url: "/three" },
-		]),
-	}),
-	setup: (store) => ({
-		actions: {
-			init: () => {
-				console.log("store", store);
-			},
-			childOnClick: () => {
-				const [getItems, setItems] = store.state.items;
-				const items = getItems();
-				items.push({ title: "A new title?", url: "/new" });
-				setItems([...items]);
-			},
-			getItems: () => {
-				const [getItems] = store.state.items;
-				return getItems();
-			},
+		],
+	},
+	actions: ({ state, setState }) => ({
+		childOnClick: () => {
+			setState((draft) => {
+				draft.items.push({ title: "A new title?", url: "/new" });
+			});
 		},
+		getItems: () => state.items,
 	}),
+	init: ({ state }) => {
+		console.log("store", state);
+	},
 });
 
 export default loopsStore;

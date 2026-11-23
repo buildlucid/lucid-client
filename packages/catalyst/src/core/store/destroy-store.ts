@@ -1,7 +1,7 @@
 import Catalyst from "../../runtime/catalyst.js";
-import { debug, error } from "../../runtime/log.js";
-import { runUnowned } from "../../runtime/reactive.js";
-import type { Store } from "../../types/index.js";
+import { debug } from "../../runtime/log.js";
+import type { RuntimeStore } from "../../runtime/types.js";
+import runStoreCleanup from "./run-store-cleanup.js";
 
 const attempt = (fn: () => void) => {
 	try {
@@ -11,24 +11,18 @@ const attempt = (fn: () => void) => {
 	}
 };
 
-const destroyStore = (store: Store) => {
+const destroyStore = (store: RuntimeStore) => {
 	if (store.destroyed) return;
 	store.destroyed = true;
 
 	store.stateObserver?.disconnect();
-	if (store.cleanup) {
-		const cleanup = store.cleanup;
-		runUnowned(() => {
-			try {
-				cleanup();
-			} catch (cause) {
-				error(`The cleanup for store "${store.key}" threw.`, cause);
-			}
-		});
-	}
+	const cleanup = store.cleanup;
+	store.cleanup = undefined;
+	if (cleanup) runStoreCleanup(store, cleanup);
 
 	for (const dispose of store.stateAttributeDisposes.values()) attempt(dispose);
 	store.stateAttributeDisposes.clear();
+	// Disposes the store's computed values and effects.
 	attempt(store.disposeRoot);
 
 	if (Catalyst.stores.get(store.key) === store) {

@@ -1,57 +1,34 @@
-import {
-	createSignal,
-	defineEffect,
-	defineStoreModule,
-} from "@lucidclient/catalyst";
+import { defineStore } from "@lucidclient/catalyst";
 
-const exampleStore = defineStoreModule({
-	state: () => ({
-		boolean: createSignal(false),
-		number: createSignal(1),
-		string: createSignal("hello world"),
-		object: createSignal({ hello: "world", world: "hello" }),
-		array: createSignal([false, "world"]),
-		customState: createSignal("hello world"),
+const exampleStore = defineStore({
+	state: {
+		boolean: false,
+		number: 1,
+		string: "hello world",
+		object: { hello: "world", world: "hello" },
+		array: [false, "world"] as (boolean | string)[],
+		customState: "hello world",
+	},
+	computed: ({ state }) => ({
+		contentCopy: () => (state.boolean ? "yea im open" : "no imma closed"),
 	}),
-	setup: (store) => {
-		const handleClick = () => {
-			const [, setBoolean] = store.state.boolean;
-			// const [getNumber] = store.state.number;
-			// const [getString] = store.state.string;
-			// const [getObject] = store.state.object;
-			// const [getArray] = store.state.array;
-			// const [getCustomState] = store.state.customState;
-
-			// console.log(getNumber());
-			// console.log(getString());
-			// console.log(getObject());
-			// console.log(getArray());
-			// console.log(getCustomState());
-			// console.log(store.refs.get("button"));
-
-			setBoolean((previous) => !previous);
-		};
-
-		return {
-			actions: {
-				init: handleClick,
-				contentCopy: () => {
-					const [getBoolean] = store.state.boolean;
-					return getBoolean() ? "yea im open" : "no imma closed";
-				},
-				handleClick,
+	actions: ({ setState }) => ({
+		handleClick: () => {
+			setState((state) => {
+				state.boolean = !state.boolean;
+			});
+		},
+	}),
+	effects: ({ state, effect }) => ({
+		elementEffect: effect(
+			() => state.boolean,
+			(value, context) => {
+				console.log("element effect", value, context);
 			},
-			effects: {
-				manual: {
-					elementEffect: defineEffect({
-						compute: () => store.state.boolean[0](),
-						effect: (value, context) => {
-							console.log("element effect", value, context);
-						},
-					}),
-				},
-			},
-		};
+		),
+	}),
+	init: ({ actions }) => {
+		actions.handleClick();
 	},
 });
 

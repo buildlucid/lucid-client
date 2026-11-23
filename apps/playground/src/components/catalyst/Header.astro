@@ -2,7 +2,6 @@
     data-store="nav"
     data-state--open="false"
     class="h-10 bg-black text-white"
-    data-effects="#customEffect"
     data-events--document.scroll="@documentScroll"
 >
     <div class="flex justify-between items-center">
@@ -27,17 +26,17 @@
             data-events--click="@toggle"
             data-trap-allow
             data-bind--aria-expanded="$open"
-            data-bind--aria-label="$ariaLabel"
+            data-bind--aria-label="$buttonLabel"
             aria-controls="main-nav"
         >
-            <span data-dom--text="@buttonLabel">
+            <span data-dom--text="$buttonLabel">
                 Open Navigation
             </span>
         </button>
     </div>
     <nav
         id="main-nav"
-        data-bind--aria-hidden="@closed"
+        data-bind--aria-hidden="$closed"
         class="[&[aria-hidden='false']]:translate-x-0 fixed inset-0 top-10 bg-gray-800 z-50 transition-transform duration-200 translate-x-full p-2.5"
         aria-label="Main navigation"
         aria-hidden="true"

@@ -11,7 +11,7 @@ afterEach(async () => {
 	await settle();
 	Catalyst.destroy();
 	Runtime.reactions.clear();
-	Runtime.storeModules.clear();
+	Runtime.storeDefinitions.clear();
 	document.body.innerHTML = "";
 	document.body.removeAttribute("style");
 	try {

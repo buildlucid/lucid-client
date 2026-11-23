@@ -1,6 +1,7 @@
 import { stringifyState } from "../../helpers.js";
 import type { Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
+import { readSerialised } from "../utils/read-value.js";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
@@ -115,9 +116,14 @@ const bindReaction: Reaction = {
 		}
 
 		const name = getAttributeName(directive.element, directive.specifier);
-		createResolvedEffect(directive, context, (value) => {
-			writeAttribute(directive.element, name, value);
-		});
+		createResolvedEffect(
+			directive,
+			context,
+			(value) => {
+				writeAttribute(directive.element, name, value);
+			},
+			{ read: readSerialised },
+		);
 		return undefined;
 	},
 };

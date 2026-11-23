@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 import Catalyst from "../src/index.js";
 import { trap } from "../src/reactions.js";
-import Runtime from "../src/runtime/catalyst.js";
-import { settle } from "./utils.js";
+import { setStoreState, settle } from "./utils.js";
 
 const setState = async (store: string, key: string, value: unknown) => {
-	Runtime.stores.get(store)?.state[key]?.[1](() => value);
+	setStoreState(store, key, value);
 	await settle();
 };
 

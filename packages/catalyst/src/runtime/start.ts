@@ -1,3 +1,4 @@
+import { refsReaction } from "../core/refs/index.js";
 import type { CatalystStartOptions } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import DEFAULT_OPTIONS from "./constants.js";
@@ -5,7 +6,11 @@ import { debug, warn } from "./log.js";
 import { createRuntimeOwner, flushUpdates } from "./reactive.js";
 import registerReaction from "./register-reaction.js";
 import registerRemovalObserver from "./register-removal-observer.js";
+import { registerStores } from "./register-store.js";
 import { syncTarget } from "./sync.js";
+
+/** Reactions every application gets, because stores depend on them. */
+const CORE_REACTIONS = [refsReaction];
 
 let pendingStart = false;
 
@@ -46,7 +51,8 @@ const start = (options?: CatalystStartOptions) => {
 	};
 	Catalyst.startOptions = options;
 
-	for (const reaction of options?.reactions ?? []) {
+	registerStores(options?.stores);
+	for (const reaction of [...CORE_REACTIONS, ...(options?.reactions ?? [])]) {
 		if (!Catalyst.reactions.has(reaction.name)) registerReaction(reaction);
 	}
 

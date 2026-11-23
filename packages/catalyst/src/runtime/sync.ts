@@ -1,18 +1,13 @@
-import { initialiseStoreAction } from "../core/store/index.js";
-import type {
-	Directive,
-	ReactionPhase,
-	Store,
-	SyncOptions,
-} from "../types/index.js";
+import { startStore } from "../core/store/index.js";
+import type { Directive, ReactionPhase, SyncOptions } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import collectDirectives from "./collect-directives.js";
 import collectStores from "./collect-stores.js";
-import createGlobalEffectDirectives from "./create-global-effect-directives.js";
 import disposeStaleDirectives from "./dispose-stale-directives.js";
 import initialiseDirective from "./initialise-directive.js";
 import { warn } from "./log.js";
 import { flushUpdates } from "./reactive.js";
+import type { RuntimeStore } from "./types.js";
 
 const isWithin = (target: Element, element: Element) =>
 	element === target || target.contains(element);
@@ -22,7 +17,7 @@ const isWithin = (target: Element, element: Element) =>
  * such as `data-dom--text="dialog:$label"` after `refresh("dialog")`. They
  * still point at the previous store, or at none, so they initialise again.
  */
-const collectScopeDependents = (target: Element, stores: Store[]) => {
+const collectScopeDependents = (target: Element, stores: RuntimeStore[]) => {
 	const directives: Directive[] = [];
 	for (const store of stores) {
 		const dependents = Catalyst.scopeDependents.get(store.key);
@@ -67,9 +62,7 @@ export const syncTarget = (target: Element, options?: SyncOptions) => {
 			: isWithin(target, directive.element);
 
 	initialisePhase(directives, "beforeStoreInit", shouldInitialise);
-	for (const store of stores) initialiseStoreAction(store);
-
-	directives.push(...createGlobalEffectDirectives(stores));
+	for (const store of stores) startStore(store);
 	initialisePhase(directives, "afterStoreInit", shouldInitialise);
 };
 

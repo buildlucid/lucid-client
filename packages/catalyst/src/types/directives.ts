@@ -36,5 +36,4 @@ export type Directive = {
 	specifier: string;
 	value: string;
 	reference: MemberReference | null;
-	synthetic: boolean;
 };

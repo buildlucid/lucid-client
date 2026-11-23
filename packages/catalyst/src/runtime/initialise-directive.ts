@@ -1,5 +1,5 @@
 import { onCleanup } from "solid-js";
-import type { ReactionContext, Directive, Store } from "../types/index.js";
+import type { Directive, ReactionContext } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import disposeRegistration, {
 	indexRegistration,
@@ -9,7 +9,7 @@ import { debug, warn } from "./log.js";
 import { createOwnedRoot } from "./reactive.js";
 import resolveReference from "./resolve-reference.js";
 import { syncTarget } from "./sync.js";
-import type { DirectiveRegistration } from "./types.js";
+import type { DirectiveRegistration, RuntimeStore } from "./types.js";
 
 const context: ReactionContext = {
 	getStore: (scope) => Catalyst.stores.get(scope),
@@ -20,7 +20,7 @@ const context: ReactionContext = {
 	debug,
 };
 
-const getScopeStore = (directive: Directive): Store | undefined => {
+const getScopeStore = (directive: Directive): RuntimeStore | undefined => {
 	const reference = directive.reference;
 	if (!reference || reference.type === "loop" || !reference.scope) {
 		return undefined;
@@ -56,7 +56,7 @@ const referencesMatch = (
 const registrationMatches = (
 	registration: DirectiveRegistration,
 	directive: Directive,
-	scopeStore: Store | undefined,
+	scopeStore: RuntimeStore | undefined,
 ) =>
 	registration.scopeStore === scopeStore &&
 	registration.directive.reaction === directive.reaction &&

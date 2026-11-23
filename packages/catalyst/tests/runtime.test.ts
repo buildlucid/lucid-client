@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vite-plus/test";
-import Catalyst, { createSignal, storeModule } from "../src/index.js";
-import { dom, events, refs } from "../src/reactions.js";
+import Catalyst, { defineStore } from "../src/index.js";
+import { dom, events, loop } from "../src/reactions.js";
 import Runtime from "../src/runtime/catalyst.js";
-import { allowConsoleErrors, catalystWarnings, settle } from "./utils.js";
+import {
+	allowConsoleErrors,
+	catalystWarnings,
+	getStore,
+	setStoreState,
+	settle,
+} from "./utils.js";
 
 describe("runtime robustness", () => {
-	it("isolates a store module whose setup throws", () => {
+	it("isolates a store whose definition throws", () => {
 		allowConsoleErrors();
 		document.body.innerHTML = `
 			<div data-store="broken" data-state--label="html state">
@@ -15,13 +21,22 @@ describe("runtime robustness", () => {
 				<span id="healthy" data-dom--text="$label"></span>
 			</div>
 		`;
-		storeModule("broken", {
-			setup: () => {
-				throw new Error("setup failure");
+		const fail = (message: string) => {
+			throw new Error(message);
+		};
+		const broken = defineStore({
+			state: (): { label: string } => fail("state failure"),
+			computed: (): { upper: () => string } => fail("computed failure"),
+			actions: (): { run: () => void } => fail("actions failure"),
+			effects: () => fail("effects failure"),
+			init: () => {
+				throw new Error("init failure");
 			},
 		});
 
-		expect(() => Catalyst.start({ reactions: [dom] })).not.toThrow();
+		expect(() =>
+			Catalyst.start({ stores: { broken }, reactions: [dom] }),
+		).not.toThrow();
 		expect(Runtime.started).toBe(true);
 		expect(Runtime.removalObserver).toBeDefined();
 		expect(document.querySelector("#broken")?.textContent).toBe("html state");
@@ -32,23 +47,20 @@ describe("runtime robustness", () => {
 		allowConsoleErrors();
 		document.body.innerHTML = `<div data-store="c1"></div><div data-store="c2"></div>`;
 		let secondCleanedUp = false;
-		storeModule("c1", {
-			setup: () => ({
-				actions: {},
-				cleanup: () => {
-					throw new Error("cleanup failure");
-				},
-			}),
+		Catalyst.start({
+			stores: {
+				c1: defineStore({
+					init: () => () => {
+						throw new Error("cleanup failure");
+					},
+				}),
+				c2: defineStore({
+					init: () => () => {
+						secondCleanedUp = true;
+					},
+				}),
+			},
 		});
-		storeModule("c2", {
-			setup: () => ({
-				actions: {},
-				cleanup: () => {
-					secondCleanedUp = true;
-				},
-			}),
-		});
-		Catalyst.start();
 
 		expect(() => Catalyst.destroy()).not.toThrow();
 		expect(Runtime.started).toBe(false);
@@ -62,17 +74,18 @@ describe("runtime robustness", () => {
 			<span data-dom--text="a:$label"></span>
 			<button data-ref="a:#trigger"></button>
 		`;
-		Catalyst.start({ reactions: [dom, refs] });
+		Catalyst.start({ reactions: [dom] });
 		Catalyst.refresh("a");
 
-		const store = Runtime.stores.get("a");
-		expect(store?.refs.get("trigger")).toBe(document.querySelector("button"));
-		store?.state.label?.[1]("two");
+		expect(getStore("a")?.refs.get("trigger")).toBe(
+			document.querySelector("button"),
+		);
+		setStoreState("a", "label", "two");
 		await settle();
 		expect(document.querySelector("span")?.textContent).toBe("two");
 	});
 
-	it("initialises directives once a store they reference appears", async () => {
+	it("initialises directives once a store they reference appears", () => {
 		document.body.innerHTML = `
 			<span data-dom--text="late:$label"></span>
 			<div id="host"></div>
@@ -109,15 +122,12 @@ describe("runtime robustness", () => {
 			</div>
 		`;
 		let cleanups = 0;
-		storeModule("before", {
-			setup: () => ({
-				actions: {},
-				cleanup: () => {
-					cleanups += 1;
-				},
-			}),
+		const before = defineStore({
+			init: () => () => {
+				cleanups += 1;
+			},
 		});
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.start({ stores: { before }, reactions: [dom] });
 
 		const root = document.querySelector("[data-store]");
 		root?.setAttribute("data-store", "after");
@@ -125,20 +135,73 @@ describe("runtime robustness", () => {
 
 		expect(cleanups).toBe(1);
 		expect(Runtime.stores.has("before")).toBe(false);
-		expect(Runtime.stores.get("after")?.element).toBe(root);
+		expect(getStore("after")?.element).toBe(root);
 		expect(document.querySelector("span")?.textContent).toBe("value");
 	});
 
-	it("warns when a module is registered after its store exists", () => {
-		document.body.innerHTML = `<div data-store="early"></div>`;
-		Catalyst.start();
-		storeModule("early", {
-			state: () => ({ label: createSignal("late") }),
-			setup: () => ({ actions: {} }),
+	it("adds stores after start and rebuilds a store already on the page", async () => {
+		document.body.innerHTML = `
+			<div data-store="early" data-state--label="from markup">
+				<span data-dom--text="$label"></span>
+				<button data-events--click="@shout"></button>
+			</div>
+		`;
+		Catalyst.start({ reactions: [dom, events] });
+		expect(document.querySelector("span")?.textContent).toBe("from markup");
+
+		Catalyst.add({
+			stores: {
+				early: defineStore({
+					state: { label: "" },
+					actions: ({ state, setState }) => ({
+						shout: () =>
+							setState((draft) => {
+								draft.label = state.label.toUpperCase();
+							}),
+					}),
+				}),
+			},
 		});
+		document.querySelector("button")?.click();
+		await settle();
+		expect(document.querySelector("span")?.textContent).toBe("FROM MARKUP");
+	});
+
+	it("warns when a different definition is registered for a scope", () => {
+		const first = defineStore({});
+		Catalyst.start({ stores: { taken: first } });
+		Catalyst.add({ stores: { taken: first } });
+		expect(catalystWarnings()).toEqual([]);
+
+		Catalyst.add({ stores: { taken: defineStore({}) } });
 		expect(catalystWarnings()).toContainEqual(
-			expect.stringContaining('Call Catalyst.refresh("early")'),
+			expect.stringContaining('already registered for scope "taken"'),
 		);
+	});
+
+	it("reports first-party reactions that aren't registered in debug mode", () => {
+		document.body.innerHTML = `
+			<div data-store="debugged" data-state--items="[]">
+				<ul data-loop="$items"><template><li></li></template></ul>
+				<ol data-loop="$items"><template><li></li></template></ol>
+				<span data-dom--text="$items"></span>
+			</div>
+		`;
+		Catalyst.start({ debug: true, reactions: [dom] });
+		const reports = catalystWarnings().filter((message) =>
+			message.includes("reaction isn't registered"),
+		);
+		expect(reports).toEqual([
+			'[Catalyst] Found "data-loop" but the loop reaction isn\'t registered. Add loop to Catalyst.start({ reactions }).',
+		]);
+
+		Catalyst.destroy();
+		Catalyst.start({ reactions: [loop] });
+		expect(
+			catalystWarnings().filter((message) =>
+				message.includes("reaction isn't registered"),
+			),
+		).toHaveLength(1);
 	});
 
 	it("waits for the body when started too early", () => {

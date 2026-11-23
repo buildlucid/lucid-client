@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import Catalyst from "../src/index.js";
 import { bind, dom } from "../src/reactions.js";
-import Runtime from "../src/runtime/catalyst.js";
-import { catalystWarnings, settle } from "./utils.js";
+import { catalystWarnings, setStoreState, settle } from "./utils.js";
 
 describe("bind reaction", () => {
 	it("treats booleans and nullish values as attribute presence", async () => {
@@ -33,7 +32,7 @@ describe("bind reaction", () => {
 		expect(button?.getAttribute("data-open")).toBe("false");
 		expect(button?.getAttribute("draggable")).toBe("false");
 
-		Runtime.stores.get("b")?.state.off?.[1](true);
+		setStoreState("b", "off", true);
 		await settle();
 		expect(button?.getAttribute("disabled")).toBe("");
 		expect(button?.getAttribute("aria-expanded")).toBe("true");
@@ -63,7 +62,7 @@ describe("dom reaction", () => {
 		Catalyst.start({ reactions: [dom] });
 		expect(document.querySelector("span")?.textContent).toBe("");
 
-		Runtime.stores.get("d")?.state.label?.[1]("Hello");
+		setStoreState("d", "label", "Hello");
 		await settle();
 		expect(document.querySelector("span")?.textContent).toBe("Hello");
 		expect(document.querySelector("text")?.textContent).toBe("Hello");

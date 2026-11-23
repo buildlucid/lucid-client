@@ -8,34 +8,44 @@
 - Rebuilt dynamic synchronization so reactions are idempotent and are disposed with their elements.
 - Loops now keep the markup of items that are still in the array, matching them by identity, and `$index` updates as items move.
 - Traps can now be stacked, and elements marked `data-trap-allow` stay interactive while a trap is active.
-- Added `defineEffect` to type a store effect's value, and `flush` and `untrack` are now exported.
+- Added `defineStore`. State, `computed` values, actions, effects and `init` are top-level keys, and their types are inferred without explicit generics. State and computed values are read with `$name`, and actions are called with `@name`.
+- Store state is a Solid store. Actions read `state.key` and write with `setState((state) => { ... })`, and changing nested data, such as pushing to an array, updates the bindings, loops and `data-state--*` attributes that read it.
+- Added `computed` values: read-only, memoised values derived from state, read in markup like state and available on `state` in store code.
+- Added the `effect(compute, callback)` helper for store effects, which types the callback's value from `compute`.
+- Stores are registered with `Catalyst.start({ stores: { scope: definition } })`. One definition can be registered under several scopes, and `Catalyst.add({ stores })` registers stores after `start`, rebuilding any that are already on the page.
+- `init` is a store hook rather than an action. It can write state, and the function it returns, including from an async `init`, runs when the store is destroyed.
+- Refs are part of the core. `refs.get<E>(name)` returns one element and `refs.all<E>(name)` returns every element registered under a name.
+- `flush`, `untrack` and `snapshot` are exported from `solid-js`.
 - `start`, `sync` and `refresh` apply bindings before they return, and `start` waits for `DOMContentLoaded` when it runs before `<body>` exists.
-- Catalyst now warns when a store module is registered after its store exists, when `sync` runs before `start`, when a `data-dom` specifier is unknown, and when a lowercased state attribute cannot match camelCase module state.
+- Catalyst now warns when a different store is registered for a scope that already has one, when state is written directly instead of through `setState`, when `sync` runs before `start`, when a `data-dom` specifier is unknown, and when a lowercased state attribute cannot match camelCase state. In debug mode it also warns when markup uses a first-party reaction that isn't registered.
 
 ### Breaking Changes:
 
 - Renamed the package from `@lucidclient/elements` to `@lucidclient/catalyst`.
 - Removed the all-in preset, so only the reactions you register are included.
 - Reworked all non-store behavior into first-party reactions that share one directive format.
-- Simplified reaction attributes to `data-{reaction}--{specifier}`, such as `data-events--click`, `data-dom--text` and `data-effects`.
+- Simplified reaction attributes to `data-{reaction}--{specifier}`, such as `data-events--click` and `data-dom--text`.
 - Replaced the textual loop index placeholders with `$item`, `$index`, `$indexOne` and traversable `$parent` loop contexts.
-- Reworked store modules around per-store `state` factories and `setup` callbacks, so state and action types are inferred without explicit generics.
-- Upgraded to Solid 2. The re-exported `createEffect` now takes separate `compute` and `effect` functions, signal writes apply on the next microtask (call `flush()` to apply them sooner), and signals can't be written in the body of `setup` or a `state` factory.
-- Store effects are now `{ compute, effect }` objects. `compute` tracks the state it reads, and `effect` receives its value with `{ isInitial, previous }` and can return a cleanup function.
+- Replaced `storeModule` with `defineStore` and `Catalyst.start({ stores })`. State is a plain object of values instead of a record of signals, actions and effects are top-level keys instead of being returned from `setup`, and the `cleanup` key is replaced by the function `init` returns.
+- Store effects always run for as long as their store exists. The `effects` reaction, `data-effects`, and the separate `manual` and `global` effects are removed, and `defineEffect` is replaced by the `effect` helper.
+- Upgraded to Solid 2. State writes apply on the next microtask (call `flush()` to apply them sooner), and state can't be written while a computed value or an effect's tracked function runs.
+- `createSignal`, `createMemo` and `createEffect` are no longer re-exported, and `registerReaction` is replaced by `Catalyst.start({ reactions })`. The `refs` reaction is no longer exported, because refs are always available.
+- A `data-state--*` attribute now sets its state's starting value even when the store definition declares a default, which is kept for its type.
+- Custom reactions receive a public store with `key`, `element`, `state`, `setState`, `actions` and `refs` from `context.getStore`, and directives no longer have a `synthetic` field.
 - `data-state--*` attributes now map to camelCase keys, so `data-state--user-name` is `$userName`.
 - `data-bind` now removes the attribute for `false`, `null` and `undefined`, and writes an empty value for `true`. `aria-*`, `data-*` and enumerated attributes such as `draggable` still receive `"true"` and `"false"`.
 - `data-trap` now makes everything outside the trap inert at every level of the page, not just other children of `<body>`, and moves focus into the trap.
 
 ### Bug Fixes:
 
-- Fixed state bindings inside loop templates, including `data-bind--href="$item.url"` when the array comes from a store module signal.
+- Fixed state bindings inside loop templates, including `data-bind--href="$item.url"` when the array comes from a store definition's state.
 - Primitive, object and array state attributes stay synchronized without state mutations driving bindings.
 - State attributes are no longer rewritten on start: `""`, `"007"`, long numeric ids and other values that would not convert back exactly stay strings.
 - State keeps its type when its attribute changes, and removing a state attribute no longer adds it back as `"null"`.
 - `data-dom--text` renders `null` and `undefined` as empty text, and now works on SVG elements.
 - `data-bind` writes case-sensitive SVG attributes such as `viewBox` with their correct casing.
 - Closing a trap only restores the `inert` attributes and page overflow it changed, and closing a stacked trap no longer releases the trap beneath it.
-- A store module whose `state` factory, `setup` or `cleanup` throws no longer stops `start`, `sync` or `destroy` for the rest of the page.
+- A store whose `state`, `computed`, `actions`, `effects`, `init` or cleanup throws no longer stops `start`, `sync` or `destroy` for the rest of the page.
 - `refresh(scope)` re-binds directives elsewhere on the page that reference the refreshed store, and directives that reference a store before it exists start working once it is created.
 - Loops clear their items when the array becomes `null` or `undefined`, and replace server-rendered placeholders without leaking their directives.
 - A store inside a loop is no longer recreated when its `init` action reads its own state.

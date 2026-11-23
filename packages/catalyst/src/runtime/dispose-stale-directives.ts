@@ -9,7 +9,6 @@ const disposeStaleDirectives = (target: Element, options?: SyncOptions) => {
 		if (!registrations) continue;
 
 		for (const registration of Array.from(registrations.values())) {
-			if (registration.directive.synthetic) continue;
 			if (
 				element.getAttribute(registration.directive.attributeName) !==
 				registration.directive.value

@@ -1,9 +1,8 @@
-import { createSignal } from "solid-js";
 import { describe, expect, it } from "vite-plus/test";
-import Catalyst, { storeModule } from "../src/index.js";
+import Catalyst, { defineStore } from "../src/index.js";
 import { events, bind, dom, loop } from "../src/reactions.js";
 import Runtime from "../src/runtime/catalyst.js";
-import { settle } from "./utils.js";
+import { getStore, setStoreState, settle } from "./utils.js";
 
 describe("bindings rendered by loops", () => {
 	it("runs bindings against store-module array state", async () => {
@@ -25,65 +24,60 @@ describe("bindings rendered by loops", () => {
 			</div>
 		`;
 
-		let setItems: ReturnType<typeof createSignal<Link[]>>[1] | undefined;
 		let selections = 0;
 		type Link = { title: string; url: string };
-		storeModule("links", {
-			state: () => {
-				const items = createSignal<Link[]>([
+		const links = defineStore({
+			state: {
+				items: [
 					{ title: "One", url: "/one" },
 					{ title: "Two", url: "/two" },
-				]);
-				setItems = items[1];
-				return { items };
+				] as Link[],
 			},
-			setup: () => ({
-				actions: {
-					select: () => {
-						selections += 1;
-					},
+			actions: () => ({
+				select: () => {
+					selections += 1;
 				},
 			}),
 		});
 
-		Catalyst.start({ reactions: [loop, bind, dom, events] });
+		Catalyst.start({ stores: { links }, reactions: [loop, bind, dom, events] });
 		await settle();
 
-		let links = Array.from(document.querySelectorAll("ul > li > a"));
-		expect(links.map((link) => link.textContent)).toEqual(["One", "Two"]);
-		expect(links.map((link) => link.getAttribute("href"))).toEqual([
+		let anchors = Array.from(document.querySelectorAll("ul > li > a"));
+		expect(anchors.map((link) => link.textContent)).toEqual(["One", "Two"]);
+		expect(anchors.map((link) => link.getAttribute("href"))).toEqual([
 			"/one",
 			"/two",
 		]);
-		expect(links.map((link) => link.getAttribute("data-index"))).toEqual([
+		expect(anchors.map((link) => link.getAttribute("data-index"))).toEqual([
 			"0",
 			"1",
 		]);
-		expect(links.map((link) => link.getAttribute("data-index-one"))).toEqual([
+		expect(anchors.map((link) => link.getAttribute("data-index-one"))).toEqual([
 			"1",
 			"2",
 		]);
 
-		setItems?.([
+		setStoreState("links", "items", [
 			{ title: "One updated", url: "/one-updated" },
 			{ title: "Two", url: "/two" },
 			{ title: "Three", url: "/three" },
 		]);
 		await settle();
 
-		links = Array.from(document.querySelectorAll("ul > li > a"));
-		expect(links.map((link) => link.textContent)).toEqual([
+		anchors = Array.from(document.querySelectorAll("ul > li > a"));
+		expect(anchors.map((link) => link.textContent)).toEqual([
 			"One updated",
 			"Two",
 			"Three",
 		]);
-		expect(links.map((link) => link.getAttribute("href"))).toEqual([
+		expect(anchors.map((link) => link.getAttribute("href"))).toEqual([
 			"/one-updated",
 			"/two",
 			"/three",
 		]);
 
-		links[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		anchors[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 		expect(selections).toBe(1);
 	});
 
@@ -117,9 +111,9 @@ describe("bindings rendered by loops", () => {
 			title: string;
 			links: { title: string; url: string }[];
 		};
-		storeModule("navigation", {
-			state: () => ({
-				groups: createSignal<Group[]>([
+		const navigation = defineStore({
+			state: {
+				groups: [
 					{
 						title: "First",
 						links: [
@@ -131,12 +125,11 @@ describe("bindings rendered by loops", () => {
 						title: "Second",
 						links: [{ title: "Three", url: "/three" }],
 					},
-				]),
-			}),
-			setup: () => ({ actions: {} }),
+				] as Group[],
+			},
 		});
 
-		Catalyst.start({ reactions: [loop, bind, dom] });
+		Catalyst.start({ stores: { navigation }, reactions: [loop, bind, dom] });
 		await settle();
 
 		const groups = Array.from(document.querySelectorAll("#groups > li"));
@@ -187,19 +180,15 @@ describe("bindings rendered by loops", () => {
 		`;
 
 		type Item = { title: string };
-		let setItems: ReturnType<typeof createSignal<Item[]>>[1] | undefined;
-		storeModule("action-loop", {
-			state: () => {
-				const items = createSignal<Item[]>([{ title: "One" }]);
-				setItems = items[1];
-				return { items };
-			},
-			setup: (store) => ({
-				actions: { getItems: () => store.state.items[0]() },
-			}),
+		const actionLoop = defineStore({
+			state: { items: [{ title: "One" }] as Item[] },
+			actions: ({ state }) => ({ getItems: () => state.items }),
 		});
 
-		Catalyst.start({ reactions: [loop, dom] });
+		Catalyst.start({
+			stores: { "action-loop": actionLoop },
+			reactions: [loop, dom],
+		});
 		await settle();
 		expect(
 			Array.from(document.querySelectorAll("li")).map(
@@ -207,7 +196,9 @@ describe("bindings rendered by loops", () => {
 			),
 		).toEqual(["One"]);
 
-		setItems?.([{ title: "Two" }, { title: "Three" }]);
+		getStore("action-loop")?.setState((state) => {
+			state.items = [{ title: "Two" }, { title: "Three" }];
+		});
 		await settle();
 		expect(
 			Array.from(document.querySelectorAll("li")).map(
@@ -243,19 +234,18 @@ describe("bindings rendered by loops", () => {
 			</div>
 		`;
 
-		storeModule("tree", {
-			state: () => ({
-				groups: createSignal([
+		const tree = defineStore({
+			state: {
+				groups: [
 					{
 						title: "Group",
 						sections: [{ title: "Section", links: [{ title: "Link" }] }],
 					},
-				]),
-			}),
-			setup: () => ({ actions: {} }),
+				],
+			},
 		});
 
-		Catalyst.start({ reactions: [loop, bind, dom] });
+		Catalyst.start({ stores: { tree }, reactions: [loop, bind, dom] });
 		await settle();
 		const link = document.querySelector("li[data-group]");
 		expect(link?.textContent).toBe("Link");
@@ -275,17 +265,18 @@ describe("loop updates", () => {
 				</ul>
 			</div>
 		`;
-		const one = { title: "One" };
-		const two = { title: "Two" };
-		const three = { title: "Three" };
-		storeModule("keyed", {
-			state: () => ({ items: createSignal([one, two]) }),
-			setup: () => ({ actions: {} }),
+		type Item = { title: string };
+		const keyed = defineStore({
+			state: { items: [{ title: "One" }, { title: "Two" }] as Item[] },
 		});
-		Catalyst.start({ reactions: [loop, bind, dom] });
+		Catalyst.start({ stores: { keyed }, reactions: [loop, bind, dom] });
 
 		const [firstOne, firstTwo] = Array.from(document.querySelectorAll("li"));
-		Runtime.stores.get("keyed")?.state.items?.[1]([three, two, one]);
+		getStore("keyed")?.setState((state) => {
+			const [one, two] = state.items as Item[];
+			if (!one || !two) return;
+			state.items = [{ title: "Three" }, two, one];
+		});
 		await settle();
 
 		const items = Array.from(document.querySelectorAll("li"));
@@ -303,20 +294,60 @@ describe("loop updates", () => {
 		]);
 	});
 
+	it("updates when items are changed in place", async () => {
+		document.body.innerHTML = `
+			<div data-store="mutable">
+				<span data-dom--text="$items.length"></span>
+				<ul data-loop="$items">
+					<template><li data-dom--text="$item.title"></li></template>
+				</ul>
+			</div>
+		`;
+		type Item = { title: string };
+		const mutable = defineStore({
+			state: { items: [{ title: "One" }] as Item[] },
+			actions: ({ setState }) => ({
+				add: (title: string) =>
+					setState((state) => {
+						state.items.push({ title });
+					}),
+				rename: (index: number, title: string) =>
+					setState((state) => {
+						const item = state.items[index];
+						if (item) item.title = title;
+					}),
+			}),
+		});
+		Catalyst.start({ stores: { mutable }, reactions: [loop, dom] });
+		const [first] = Array.from(document.querySelectorAll("li"));
+
+		getStore("mutable")?.actions.add?.("Two");
+		await settle();
+		let items = Array.from(document.querySelectorAll("li"));
+		expect(items.map((item) => item.textContent)).toEqual(["One", "Two"]);
+		expect(items[0]).toBe(first);
+		expect(document.querySelector("span")?.textContent).toBe("2");
+
+		getStore("mutable")?.actions.rename?.(0, "Uno");
+		await settle();
+		items = Array.from(document.querySelectorAll("li"));
+		expect(items.map((item) => item.textContent)).toEqual(["Uno", "Two"]);
+		expect(items[0]).toBe(first);
+	});
+
 	it("clears rendered items when the value becomes nullish", async () => {
 		document.body.innerHTML = `
 			<div data-store="nullable">
 				<ul data-loop="$items"><template><li></li></template></ul>
 			</div>
 		`;
-		storeModule("nullable", {
-			state: () => ({ items: createSignal<number[] | null>([1, 2]) }),
-			setup: () => ({ actions: {} }),
+		const nullable = defineStore({
+			state: { items: [1, 2] as number[] | null },
 		});
-		Catalyst.start({ reactions: [loop] });
+		Catalyst.start({ stores: { nullable }, reactions: [loop] });
 		expect(document.querySelectorAll("li")).toHaveLength(2);
 
-		Runtime.stores.get("nullable")?.state.items?.[1](null);
+		setStoreState("nullable", "items", null);
 		await settle();
 		expect(document.querySelectorAll("li")).toHaveLength(0);
 	});
@@ -330,29 +361,22 @@ describe("loop updates", () => {
 			</div>
 		`;
 		let inits = 0;
-		storeModule("list", {
-			state: () => ({ items: createSignal([1]) }),
-			setup: () => ({ actions: {} }),
+		const list = defineStore({ state: { items: [1] } });
+		const child = defineStore({
+			state: { count: 0 },
+			init: ({ state }) => {
+				inits += 1;
+				void state.count;
+			},
 		});
-		storeModule("child", {
-			state: () => ({ count: createSignal(0) }),
-			setup: (store) => ({
-				actions: {
-					init: () => {
-						inits += 1;
-						store.state.count[0]();
-					},
-				},
-			}),
-		});
-		Catalyst.start({ reactions: [loop] });
+		Catalyst.start({ stores: { list, child }, reactions: [loop] });
 
-		const child = Runtime.stores.get("child");
-		child?.state.count?.[1](5);
+		const childStore = getStore("child");
+		setStoreState("child", "count", 5);
 		await settle();
 		expect(inits).toBe(1);
-		expect(Runtime.stores.get("child")).toBe(child);
-		expect(child?.state.count?.[0]()).toBe(5);
+		expect(getStore("child")).toBe(childStore);
+		expect(childStore?.state.count).toBe(5);
 	});
 
 	it("replaces server-rendered children without leaking their directives", async () => {
@@ -365,17 +389,15 @@ describe("loop updates", () => {
 				</ul>
 			</div>
 		`;
-		storeModule("ssr", {
-			state: () => ({ items: createSignal([1]) }),
-			setup: () => ({
-				actions: {
-					ping: () => {
-						pings += 1;
-					},
+		const ssr = defineStore({
+			state: { items: [1] },
+			actions: () => ({
+				ping: () => {
+					pings += 1;
 				},
 			}),
 		});
-		Catalyst.start({ reactions: [loop, events] });
+		Catalyst.start({ stores: { ssr }, reactions: [loop, events] });
 		await settle();
 
 		expect(document.querySelector("#placeholder")).toBeNull();

@@ -7,9 +7,10 @@ const Catalyst: CatalystRuntime = {
 	reactions: new Map(),
 	stores: new Map(),
 	storesByElement: new Map(),
-	storeModules: new Map(),
+	storeDefinitions: new Map(),
 	registrations: new Map(),
 	scopeDependents: new Map(),
+	reportedReactions: new Set(),
 };
 
 export default Catalyst;

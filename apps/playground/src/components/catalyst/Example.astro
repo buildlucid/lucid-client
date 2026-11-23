@@ -12,7 +12,6 @@
     data-bind--data-array-hello="$array[0]"
     data-bind--data-custom-state-attribute="$customState"
     data-events--scroll="@handleScroll"
-    data-effects="#elementEffect"
     class="data-[state--boolean=true]:bg-red-500"
 >
     <span data-bind--data-boolean="$boolean" data-ref="#span[]"
@@ -30,7 +29,7 @@
         data-ref="#span[]"></span>
     <button
         data-events--click="@handleClick"
-        data-dom--text="@contentCopy"
+        data-dom--text="$contentCopy"
         data-ref="#button"
         class="cursor-pointer pointer-events-auto"
     >

@@ -1,10 +1,12 @@
+import type { Accessor, Owner, StoreSetter } from "solid-js";
 import type {
+	AnyStoreDefinition,
 	CatalystStartOptions,
-	Reaction,
 	Directive,
-	Store,
+	Reaction,
 	StoreActions,
-	StoreModule,
+	StoreCleanup,
+	StoreRefs,
 	StoreState,
 } from "../types/index.js";
 
@@ -19,10 +21,35 @@ export type ResolvedCatalystOptions = {
 	};
 };
 
+/** A store's full runtime record. Reactions receive it as the public `Store`. */
+export type RuntimeStore = {
+	key: string;
+	element: Element;
+	definition: AnyStoreDefinition | undefined;
+	initialised: boolean;
+	destroyed: boolean;
+	/** Read-only view over `raw` and the computed values. */
+	state: StoreState;
+	/** The Solid store holding the state values. */
+	raw: StoreState;
+	setState: StoreSetter<StoreState>;
+	computed: Map<string, Accessor<unknown>>;
+	actions: StoreActions;
+	refs: StoreRefs;
+	refElements: Map<string, Element | Element[]>;
+	/** The store's reactive owner, which store effects are created under. */
+	owner: Owner | null;
+	stateAttributeDisposes: Map<string, () => void>;
+	internalStateWrites: Map<string, string>;
+	stateObserver?: MutationObserver;
+	disposeRoot: () => void;
+	cleanup?: StoreCleanup;
+};
+
 export type DirectiveRegistration = {
 	directive: Directive;
 	/** The store the directive's scope resolved to when it was initialised. */
-	scopeStore: Store | undefined;
+	scopeStore: RuntimeStore | undefined;
 	dispose: () => void;
 };
 
@@ -31,11 +58,13 @@ export type CatalystRuntime = {
 	startOptions?: CatalystStartOptions;
 	started: boolean;
 	reactions: Map<string, Reaction>;
-	stores: Map<string, Store>;
-	storesByElement: Map<Element, Store>;
-	storeModules: Map<string, StoreModule<StoreState, StoreActions>>;
+	stores: Map<string, RuntimeStore>;
+	storesByElement: Map<Element, RuntimeStore>;
+	storeDefinitions: Map<string, AnyStoreDefinition>;
 	registrations: Map<Element, Map<string, DirectiveRegistration>>;
 	/** Registrations indexed by the store scope their reference targets. */
 	scopeDependents: Map<string, Set<DirectiveRegistration>>;
+	/** First-party reactions already reported as missing while debugging. */
+	reportedReactions: Set<string>;
 	removalObserver?: MutationObserver;
 };

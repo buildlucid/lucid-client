@@ -1,6 +1,7 @@
 import { stringifyState } from "../../helpers.js";
 import type { Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
+import { readSerialised } from "../utils/read-value.js";
 
 const SPECIFIERS = ["text", "html", "value", "focus", "blur", "scrollto"];
 
@@ -63,9 +64,14 @@ const domReaction: Reaction = {
 			return;
 		}
 
-		createResolvedEffect(directive, context, (value) => {
-			updateDom(directive.element, specifier, value);
-		});
+		createResolvedEffect(
+			directive,
+			context,
+			(value) => {
+				updateDom(directive.element, specifier, value);
+			},
+			{ read: readSerialised },
+		);
 		return undefined;
 	},
 };

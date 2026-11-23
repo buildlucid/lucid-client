@@ -1,28 +1,16 @@
-import Catalyst, { storeModule } from "@lucidclient/catalyst";
-import {
-	bind,
-	dom,
-	effects,
-	events,
-	loop,
-	refs,
-	trap,
-} from "@lucidclient/catalyst/reactions";
+import Catalyst from "@lucidclient/catalyst";
+import { bind, dom, events, loop, trap } from "@lucidclient/catalyst/reactions";
 import { speculateLinks } from "@lucidclient/speculate";
 import "./speculate/speculator";
-import bindsStore from "./catalyst/binds";
-import exampleStore from "./catalyst/example";
-import loopsStore from "./catalyst/loops";
-import navStore from "./catalyst/nav";
-
-storeModule("loops", loopsStore);
-storeModule("example", exampleStore);
-storeModule("nav", navStore);
-storeModule("binds", bindsStore);
+import binds from "./catalyst/binds";
+import example from "./catalyst/example";
+import loops from "./catalyst/loops";
+import nav from "./catalyst/nav";
 
 Catalyst.start({
 	debug: true,
-	reactions: [refs, bind, effects, loop, events, dom, trap],
+	stores: { loops, example, nav, binds },
+	reactions: [bind, loop, events, dom, trap],
 });
 
 speculateLinks();

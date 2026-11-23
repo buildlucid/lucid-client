@@ -1,4 +1,5 @@
 import { vi } from "vite-plus/test";
+import Runtime from "../src/runtime/catalyst.js";
 
 export const settle = async () => {
 	await Promise.resolve();
@@ -58,4 +59,14 @@ export const assertCleanConsole = () => {
 		);
 		throw new Error(`Unexpected console errors:\n${messages.join("\n")}`);
 	}
+};
+
+/** The running store for a scope. */
+export const getStore = (scope: string) => Runtime.stores.get(scope);
+
+/** Writes one state value of a running store, as an action would. */
+export const setStoreState = (scope: string, key: string, value: unknown) => {
+	Runtime.stores.get(scope)?.setState((state) => {
+		state[key] = value;
+	});
 };

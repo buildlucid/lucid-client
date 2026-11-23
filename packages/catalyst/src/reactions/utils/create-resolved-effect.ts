@@ -13,6 +13,12 @@ type ResolvedEffectOptions = {
 	 * render exists before the rest of the sync runs.
 	 */
 	immediate?: boolean;
+	/**
+	 * Reads the resolved value while it is tracked. Store state is tracked per
+	 * property, so a reaction that uses the contents of an object or array reads
+	 * them here to update when they change, not only when they are replaced.
+	 */
+	read?: (value: unknown) => unknown;
 };
 
 // The resolved value is boxed so Solid never sees a Promise returned from a
@@ -62,7 +68,11 @@ const createResolvedEffect = (
 		return;
 	}
 
-	const compute = (): Resolved => ({ value: context.resolve(reference) });
+	const read = options?.read;
+	const compute = (): Resolved => {
+		const value = context.resolve(reference);
+		return { value: read && !isPromiseLike(value) ? read(value) : value };
+	};
 	const effect = {
 		effect: (resolved: Resolved) =>
 			runEffectCallback(() => apply(resolved, onValue)),

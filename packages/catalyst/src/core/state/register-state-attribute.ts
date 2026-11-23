@@ -1,39 +1,37 @@
-import { createEffect, createSignal } from "solid-js";
-import { parseStateString, stringifyState } from "../../helpers.js";
+import { createEffect } from "solid-js";
+import { stringifyState } from "../../helpers.js";
 import { createOwnedRoot, runEffectCallback } from "../../runtime/reactive.js";
-import type { Store } from "../../types/index.js";
+import type { RuntimeStore } from "../../runtime/types.js";
 import { stateKeyToAttribute } from "./state-attribute.js";
 
-const registerStateAttribute = (
-	store: Store,
-	key: string,
-	initialValue: string | null,
-) => {
-	if (!store.state[key]) {
-		store.state[key] = createSignal<unknown>(parseStateString(initialValue));
-	}
+type AttributeValue = { empty: boolean; text: string };
 
-	if (store.stateAttributeDisposes.has(key)) return;
+/**
+ * Writes a state value to its `data-state--*` attribute whenever it changes.
+ * The value is serialised while tracking, so changing nested data, such as
+ * pushing to an array, updates the attribute too.
+ */
+const registerStateAttribute = (store: RuntimeStore, key: string) => {
+	if (store.stateAttributeDisposes.has(key) || store.computed.has(key)) return;
 
 	const attributeName = stateKeyToAttribute(key);
-	const signal = store.state[key];
-	if (!signal) return;
-
 	const dispose = createOwnedRoot((disposeRoot) => {
 		createEffect(
-			() => signal[0](),
+			(): AttributeValue => {
+				const value = store.raw[key];
+				return {
+					empty: value === null || value === undefined,
+					text: stringifyState(value),
+				};
+			},
 			(value) =>
 				runEffectCallback(() => {
 					const current = store.element.getAttribute(attributeName);
 					// A removed attribute is not recreated just to hold an empty value.
-					if (current === null && (value === null || value === undefined)) {
-						return;
-					}
-
-					const next = stringifyState(value);
-					if (current === next) return;
-					store.internalStateWrites.set(attributeName, next);
-					store.element.setAttribute(attributeName, next);
+					if (current === null && value.empty) return;
+					if (current === value.text) return;
+					store.internalStateWrites.set(attributeName, value.text);
+					store.element.setAttribute(attributeName, value.text);
 				}),
 		);
 		return disposeRoot;

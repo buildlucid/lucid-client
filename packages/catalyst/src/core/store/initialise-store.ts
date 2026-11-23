@@ -1,60 +1,143 @@
+import { type Accessor, createMemo, createStore, getOwner } from "solid-js";
 import Catalyst from "../../runtime/catalyst.js";
-import { debug, error } from "../../runtime/log.js";
+import { debug, error, warn } from "../../runtime/log.js";
 import { createOwnedRoot } from "../../runtime/reactive.js";
-import type { Store, StoreModule } from "../../types/index.js";
-import { createStateObserver, syncStateAttributes } from "../state/index.js";
-import getStoreInterface from "./get-store-interface.js";
+import type { RuntimeStore } from "../../runtime/types.js";
+import type { AnyStoreDefinition, StoreState } from "../../types/index.js";
+import { createRefs } from "../refs/index.js";
+import {
+	createStateObserver,
+	createStateView,
+	readStateAttributes,
+	registerStateAttribute,
+} from "../state/index.js";
 
-const applyModuleState = (store: Store, storeModule: StoreModule) => {
-	if (!storeModule.state) return;
+const isStateObject = (value: unknown): value is StoreState =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * A plain state object is copied for every store so a refreshed store starts
+ * from its defaults again. A function is called instead, for state that can't
+ * be copied, such as functions or class instances.
+ */
+const resolveDefaults = (
+	key: string,
+	definition: AnyStoreDefinition | undefined,
+): StoreState => {
+	const state = definition?.state;
+	if (state === undefined) return {};
+
+	const isFactory = typeof state === "function";
+	let value: unknown;
 	try {
-		const state = storeModule.state();
-		if (state) Object.assign(store.state, state);
+		value = isFactory ? (state as () => unknown)() : structuredClone(state);
 	} catch (cause) {
-		error(`The state factory for store "${store.key}" threw.`, cause);
+		error(
+			isFactory
+				? `The state function for store "${key}" threw.`
+				: `The state for store "${key}" could not be copied. Use a function that returns the state instead.`,
+			cause,
+		);
+		return {};
+	}
+
+	if (isStateObject(value)) return value;
+	warn(`The state for store "${key}" must be an object.`);
+	return {};
+};
+
+const applyComputed = (store: RuntimeStore, definition: AnyStoreDefinition) => {
+	if (!definition.computed) return;
+
+	let values: Record<string, unknown>;
+	try {
+		values = definition.computed({ state: store.state }) ?? {};
+	} catch (cause) {
+		error(`The computed values for store "${store.key}" threw.`, cause);
+		return;
+	}
+
+	for (const [name, compute] of Object.entries(values)) {
+		if (typeof compute !== "function") {
+			warn(
+				`The computed value "${name}" on store "${store.key}" must be a function.`,
+			);
+			continue;
+		}
+		if (name in store.raw) {
+			warn(
+				`The computed value "${name}" on store "${store.key}" has the same name as a state value, which it hides.`,
+			);
+		}
+		try {
+			const memo: Accessor<unknown> = createMemo(() => compute());
+			store.computed.set(name, memo);
+		} catch (cause) {
+			error(
+				`The computed value "${name}" on store "${store.key}" threw.`,
+				cause,
+			);
+		}
 	}
 };
 
-const applyModuleSetup = (store: Store, storeModule: StoreModule) => {
+const applyActions = (store: RuntimeStore, definition: AnyStoreDefinition) => {
+	if (!definition.actions) return;
 	try {
-		const result = storeModule.setup(getStoreInterface(store));
-		if (result.actions) Object.assign(store.actions, result.actions);
-		if (result.effects?.global) {
-			Object.assign(store.effects.global, result.effects.global);
-		}
-		if (result.effects?.manual) {
-			Object.assign(store.effects.manual, result.effects.manual);
-		}
-		if (result.cleanup) store.cleanup = result.cleanup;
+		const actions = definition.actions({
+			state: store.state,
+			setState: store.setState,
+			refs: store.refs,
+		});
+		if (actions) Object.assign(store.actions, actions);
 	} catch (cause) {
-		error(`The setup for store "${store.key}" threw.`, cause);
+		error(`The actions for store "${store.key}" threw.`, cause);
 	}
 };
 
 /**
- * A failing module never prevents the store from being created: its HTML
+ * A failing definition never prevents the store from being created: its HTML
  * state still works, and every other store and directive still initialises.
  */
-const initialiseStore = (element: Element, key: string): Store => {
+const initialiseStore = (element: Element, key: string): RuntimeStore => {
+	const definition = Catalyst.storeDefinitions.get(key);
+
 	const store = createOwnedRoot((disposeRoot) => {
-		const nextStore: Store = {
+		// State is complete before the Solid store exists, because writing to it
+		// while this root is being set up is not allowed.
+		const initial = readStateAttributes(
+			element,
+			key,
+			resolveDefaults(key, definition),
+		);
+		const [raw, setState] = createStore<StoreState>(initial.state);
+		const computed = new Map<string, Accessor<unknown>>();
+		const refElements = new Map<string, Element | Element[]>();
+
+		const nextStore: RuntimeStore = {
 			key,
 			element,
+			definition,
 			initialised: false,
 			destroyed: false,
-			state: {},
+			state: createStateView(key, raw, computed),
+			raw,
+			setState,
+			computed,
 			actions: {},
-			effects: { global: {}, manual: {} },
-			refs: new Map(),
+			refs: createRefs(refElements),
+			refElements,
+			owner: getOwner(),
 			stateAttributeDisposes: new Map(),
 			internalStateWrites: new Map(),
 			disposeRoot,
 		};
 
-		const storeModule = Catalyst.storeModules.get(key);
-		if (storeModule) applyModuleState(nextStore, storeModule);
-		syncStateAttributes(nextStore);
-		if (storeModule) applyModuleSetup(nextStore, storeModule);
+		if (definition) applyComputed(nextStore, definition);
+		for (const stateKey of initial.keys) {
+			registerStateAttribute(nextStore, stateKey);
+		}
+		if (definition) applyActions(nextStore, definition);
 
 		nextStore.stateObserver = createStateObserver(nextStore);
 		return nextStore;

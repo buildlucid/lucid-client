@@ -36,6 +36,7 @@ const destroy = () => {
 		Catalyst.scopeDependents.clear();
 		Catalyst.stores.clear();
 		Catalyst.storesByElement.clear();
+		Catalyst.reportedReactions.clear();
 		Catalyst.started = false;
 		Catalyst.startOptions = undefined;
 		Catalyst.options = DEFAULT_OPTIONS;

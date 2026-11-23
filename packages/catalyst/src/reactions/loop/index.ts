@@ -2,6 +2,7 @@ import { createSignal } from "solid-js";
 import { getLoopContext, setLoopContext } from "../../runtime/loop-context.js";
 import type { LoopContext, Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
+import { readItems } from "../utils/read-value.js";
 
 type LoopEntry = {
 	item: unknown;
@@ -147,7 +148,10 @@ const loopReaction: Reaction = {
 			for (const entry of created) context.sync(entry.root);
 		};
 
-		createResolvedEffect(directive, context, render, { immediate: true });
+		createResolvedEffect(directive, context, render, {
+			immediate: true,
+			read: readItems,
+		});
 
 		return () => {
 			for (const entry of entries) context.disposeSubtree(entry.root);

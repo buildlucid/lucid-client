@@ -1,5 +1,10 @@
+import Catalyst from "../../runtime/catalyst.js";
 import type { Reaction } from "../../types/index.js";
 
+/**
+ * Registers `data-ref="#name"` and `data-ref="#name[]"` elements on their
+ * store. Refs are part of the core, so this reaction is always registered.
+ */
 const refsReaction: Reaction = {
 	name: "refs",
 	attribute: "ref",
@@ -19,32 +24,35 @@ const refsReaction: Reaction = {
 			return;
 		}
 
-		const store = context.getStore(reference.scope);
+		const store = Catalyst.stores.get(reference.scope);
 		if (!store) {
 			context.warn(`Cannot find a store with the scope "${reference.scope}".`);
 			return;
 		}
 
+		const refs = store.refElements;
 		const isArray = reference.key.endsWith("[]");
 		const key = isArray ? reference.key.slice(0, -2) : reference.key;
 		if (!key) return;
 
 		if (isArray) {
-			const existing = store.refs.get(key);
-			const refs = Array.isArray(existing) ? existing : [];
-			if (!refs.includes(directive.element)) refs.push(directive.element);
-			store.refs.set(key, refs);
+			const existing = refs.get(key);
+			const elements = Array.isArray(existing) ? existing : [];
+			if (!elements.includes(directive.element)) {
+				elements.push(directive.element);
+			}
+			refs.set(key, elements);
 
 			return () => {
-				const current = store.refs.get(key);
+				const current = refs.get(key);
 				if (!Array.isArray(current)) return;
 				const index = current.indexOf(directive.element);
 				if (index >= 0) current.splice(index, 1);
-				if (current.length === 0) store.refs.delete(key);
+				if (current.length === 0) refs.delete(key);
 			};
 		}
 
-		const existing = store.refs.get(key);
+		const existing = refs.get(key);
 		if (existing && existing !== directive.element) {
 			context.warn(
 				`The ref "${key}" is already registered on store "${reference.scope}".`,
@@ -52,9 +60,9 @@ const refsReaction: Reaction = {
 			return;
 		}
 
-		store.refs.set(key, directive.element);
+		refs.set(key, directive.element);
 		return () => {
-			if (store.refs.get(key) === directive.element) store.refs.delete(key);
+			if (refs.get(key) === directive.element) refs.delete(key);
 		};
 	},
 };

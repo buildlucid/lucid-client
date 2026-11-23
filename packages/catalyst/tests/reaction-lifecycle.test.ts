@@ -1,10 +1,8 @@
-import { createSignal } from "solid-js";
 import { describe, expect, it } from "vite-plus/test";
-import Catalyst, { registerReaction, storeModule } from "../src/index.js";
-import { events, bind, dom } from "../src/reactions.js";
-import Runtime from "../src/runtime/catalyst.js";
+import Catalyst, { defineStore } from "../src/index.js";
+import { bind, dom, events } from "../src/reactions.js";
 import type { Reaction } from "../src/types/index.js";
-import { settle } from "./utils.js";
+import { setStoreState, settle } from "./utils.js";
 
 describe("reaction lifecycle", () => {
 	it("initialises dynamic bindings once and disposes removed events", async () => {
@@ -14,24 +12,17 @@ describe("reaction lifecycle", () => {
 			</div>
 		`;
 
-		let setLabel: ReturnType<typeof createSignal<string>>[1] | undefined;
 		let clicks = 0;
-		storeModule("dynamic", {
-			state: () => {
-				const label = createSignal("initial");
-				setLabel = label[1];
-				return { label };
-			},
-			setup: () => ({
-				actions: {
-					select: () => {
-						clicks += 1;
-					},
+		const dynamic = defineStore({
+			state: { label: "initial" },
+			actions: () => ({
+				select: () => {
+					clicks += 1;
 				},
 			}),
 		});
 
-		Catalyst.start({ reactions: [bind, events] });
+		Catalyst.start({ stores: { dynamic }, reactions: [bind, events] });
 		const target = document.querySelector("#target");
 		if (!(target instanceof HTMLElement)) throw new Error("Missing target");
 		target.innerHTML = `
@@ -49,7 +40,7 @@ describe("reaction lifecycle", () => {
 		button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 		expect(clicks).toBe(1);
 
-		setLabel?.("updated");
+		setStoreState("dynamic", "label", "updated");
 		await settle();
 		expect(button?.getAttribute("title")).toBe("updated");
 
@@ -71,12 +62,12 @@ describe("reaction lifecycle", () => {
 		const reaction: Reaction = {
 			name: "inspect",
 			attribute: "inspect",
-			setup: (directive) => {
+			setup: (directive, context) => {
 				expect(directive.element).toBe(element);
 				expect(directive.reaction).toBe("inspect");
 				expect(directive.attributeName).toBe("data-inspect--value");
 				expect(directive.specifier).toBe("value");
-				expect(directive.synthetic).toBe(false);
+				expect(context.getStore("scope")?.key).toBe("scope");
 				if (directive.value === "$key") {
 					expect(directive.reference).toMatchObject({
 						type: "state",
@@ -93,8 +84,7 @@ describe("reaction lifecycle", () => {
 			},
 		};
 
-		registerReaction(reaction);
-		Catalyst.start();
+		Catalyst.start({ reactions: [reaction] });
 		expect(values).toEqual(["$key"]);
 
 		element?.setAttribute("data-inspect--value", "is-active");
@@ -114,47 +104,43 @@ describe("reaction lifecycle", () => {
 		`;
 		let firstRuns = 0;
 		let secondRuns = 0;
-		storeModule("first", {
-			setup: () => ({
-				actions: {
-					run: () => {
-						firstRuns += 1;
-					},
-				},
-			}),
-		});
-		storeModule("second", {
-			setup: () => ({
-				actions: {
-					run: () => {
-						secondRuns += 1;
-					},
-				},
-			}),
+		Catalyst.start({
+			stores: {
+				first: defineStore({
+					actions: () => ({
+						run: () => {
+							firstRuns += 1;
+						},
+					}),
+				}),
+				second: defineStore({
+					actions: () => ({
+						run: () => {
+							secondRuns += 1;
+						},
+					}),
+				}),
+			},
+			reactions: [events],
 		});
 
-		Catalyst.start({ reactions: [events] });
 		document.dispatchEvent(new Event("catalyst-test"));
 		expect(firstRuns).toBe(1);
 		expect(secondRuns).toBe(1);
 	});
 
-	it("can restart without registering reactions or modules again", async () => {
-		storeModule("restartable", {
-			state: () => ({ label: createSignal("ready") }),
-			setup: () => ({ actions: {} }),
-		});
+	it("can restart without registering reactions or stores again", async () => {
+		const restartable = defineStore({ state: { label: "ready" } });
 		document.body.innerHTML = `
 			<div data-store="restartable">
 				<span data-dom--text="$label"></span>
 			</div>
 		`;
 
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.start({ stores: { restartable }, reactions: [dom] });
 		await settle();
 		expect(document.querySelector("span")?.textContent).toBe("ready");
-		const firstStore = Runtime.stores.get("restartable");
-		firstStore?.state.label?.[1]("changed");
+		setStoreState("restartable", "label", "changed");
 		await settle();
 		expect(document.querySelector("span")?.textContent).toBe("changed");
 		Catalyst.destroy();

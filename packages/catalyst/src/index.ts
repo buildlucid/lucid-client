@@ -1,23 +1,19 @@
+import add from "./runtime/add.js";
 import destroy from "./runtime/destroy.js";
 import refresh from "./runtime/refresh.js";
 import start from "./runtime/start.js";
 import sync from "./runtime/sync.js";
+import type { CatalystApi } from "./types/index.js";
 
-export { default as registerReaction } from "./runtime/register-reaction.js";
-export { default as defineEffect } from "./core/define-effect.js";
-export { default as defineStoreModule } from "./core/define-store-module.js";
-export { default as storeModule } from "./core/store-module.js";
-export {
-	createEffect,
-	createMemo,
-	createSignal,
-	flush,
-	untrack,
-} from "solid-js";
+export { default as defineStore } from "./core/define-store.js";
+export { flush, snapshot, untrack } from "solid-js";
 
-export default {
+const Catalyst: CatalystApi = {
 	start,
+	add,
 	destroy,
 	refresh,
 	sync,
 };
+
+export default Catalyst;
