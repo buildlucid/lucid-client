@@ -150,8 +150,10 @@ const tableHeadClass = "py-2 pr-4 font-medium text-right whitespace-nowrap";
 				<li>
 					<strong class="text-fg">Same DOM.</strong> Before timing anything, every
 					library runs every scenario and the benchmark checks its DOM matches
-					Catalyst's: the same elements, text, classes and ARIA attributes. A
-					library can't win by doing less.
+					Catalyst's: the same elements, text, classes and ARIA attributes. For
+					keyed updates, such as swapping or selecting rows, it also checks that
+					the existing elements are kept rather than rendered again. A library
+					can't win by doing less.
 				</li>
 				<li>
 					<strong class="text-fg">Idiomatic pages.</strong> Each library's pages
