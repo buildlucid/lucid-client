@@ -1,0 +1,73 @@
+---
+
+---
+
+<aside
+	data-log-panel
+	data-open="false"
+	data-debug="false"
+	aria-label="Activity log"
+	class="group/log fixed inset-x-0 bottom-0 z-20 flex max-h-[55vh] flex-col border-t border-line bg-panel/95 shadow-[0_-12px_32px_-12px_rgb(0_0_0/0.6)] backdrop-blur data-[open=true]:h-[55vh] xl:sticky xl:top-0 xl:z-auto xl:h-dvh xl:max-h-none xl:border-t-0 xl:border-l xl:bg-panel xl:shadow-none xl:backdrop-blur-none xl:data-[open=true]:h-dvh"
+>
+	<div class="flex h-12 shrink-0 items-center gap-3 border-b border-line px-4 xl:h-14">
+		<button
+			type="button"
+			data-log-toggle
+			aria-expanded="false"
+			class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left xl:pointer-events-none xl:cursor-default"
+		>
+			<svg viewBox="0 0 24 24" class="size-4 shrink-0 text-subtle transition-transform group-data-[open=true]/log:rotate-180 xl:hidden" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="m6 15 6-6 6 6"></path>
+			</svg>
+			<span class="text-[13px] font-semibold">Activity</span>
+			<span class="badge font-mono tabular-nums" data-log-count>0</span>
+			<span
+				data-log-latest
+				class="min-w-0 truncate text-xs text-subtle group-data-[open=true]/log:hidden xl:hidden"
+			>
+				Nothing logged yet
+			</span>
+		</button>
+		<label class="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs text-subtle select-none">
+			<input type="checkbox" data-log-debug class="check size-3.5" />
+			Debug
+		</label>
+		<button type="button" data-log-clear class="btn btn-ghost btn-sm shrink-0">
+			Clear
+		</button>
+	</div>
+	<div
+		class="hidden min-h-0 flex-1 overflow-y-auto group-data-[open=true]/log:block xl:block"
+	>
+		<p data-log-empty class="px-4 py-6 text-[13px] leading-6 text-subtle">
+			Nothing yet. Actions, effects, lifecycle hooks and library warnings
+			show up here as you use the scenarios. Tick
+			<span class="text-muted">Debug</span> to include Catalyst's debug messages.
+		</p>
+		<ol data-log-list></ol>
+	</div>
+</aside>
+
+<script>
+	import { clearLog, refreshLogSummary } from "../lib/log";
+
+	const panel = document.querySelector<HTMLElement>("[data-log-panel]");
+	const toggle = panel?.querySelector<HTMLButtonElement>("[data-log-toggle]");
+	const debug = panel?.querySelector<HTMLInputElement>("[data-log-debug]");
+
+	toggle?.addEventListener("click", () => {
+		if (!panel) return;
+		const open = panel.dataset.open !== "true";
+		panel.dataset.open = String(open);
+		toggle.setAttribute("aria-expanded", String(open));
+	});
+
+	debug?.addEventListener("change", () => {
+		if (panel) panel.dataset.debug = String(debug.checked);
+		refreshLogSummary();
+	});
+
+	panel
+		?.querySelector("[data-log-clear]")
+		?.addEventListener("click", () => clearLog());
+</script>

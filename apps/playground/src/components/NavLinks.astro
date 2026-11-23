@@ -1,0 +1,82 @@
+---
+import nav, { normalise } from "../nav";
+
+const current = normalise(Astro.url.pathname);
+const isCurrent = (href: string) => normalise(href) === current;
+
+const [single, groups] = [
+	nav.filter((group) => group.pages.length === 1),
+	nav.filter((group) => group.pages.length > 1),
+];
+
+const linkClass =
+	"group/link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] leading-5 text-muted transition-colors hover:bg-raised hover:text-fg aria-[current=page]:bg-raised aria-[current=page]:font-medium aria-[current=page]:text-fg";
+const tocClass =
+	"mt-1 mb-2 ml-3.5 space-y-0.5 border-l border-line pl-2.5 empty:hidden";
+---
+
+<nav aria-label="Playground" class="space-y-7">
+	<ul class="space-y-0.5">
+		<li>
+			<a href="/" class={linkClass} aria-current={isCurrent("/") ? "page" : undefined}>
+				Overview
+			</a>
+		</li>
+		{
+			single.map((group) => {
+				const page = group.pages[0]!;
+				const active = isCurrent(page.href);
+				return (
+					<li>
+						<a
+							href={page.href}
+							class={linkClass}
+							aria-current={active ? "page" : undefined}
+						>
+							{page.title}
+							<span class="ml-auto font-mono text-[11px] text-subtle">
+								{group.version}
+							</span>
+						</a>
+						{active && <ul data-toc class={tocClass} />}
+					</li>
+				);
+			})
+		}
+	</ul>
+
+	{
+		groups.map((group) => (
+			<div>
+				<p class="mb-2 flex items-center px-2.5 text-[11px] font-semibold tracking-[0.08em] text-subtle uppercase">
+					{group.title}
+					<span class="ml-auto font-mono font-normal tracking-normal normal-case">
+						{group.version}
+					</span>
+				</p>
+				<ul class="space-y-0.5">
+					{group.pages.map((page) => {
+						const active = isCurrent(page.href);
+						return (
+							<li>
+								<a
+									href={page.href}
+									class={linkClass}
+									aria-current={active ? "page" : undefined}
+								>
+									{page.title}
+									{page.isNew && (
+										<span class="ml-auto rounded-full bg-accent/15 px-1.5 text-[10px] leading-4 font-semibold text-accent">
+											New
+										</span>
+									)}
+								</a>
+								{active && <ul data-toc class={tocClass} />}
+							</li>
+						);
+					})}
+				</ul>
+			</div>
+		))
+	}
+</nav>

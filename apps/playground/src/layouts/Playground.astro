@@ -1,0 +1,71 @@
+---
+import LogPanel from "../components/LogPanel.astro";
+import Sidebar from "../components/Sidebar.astro";
+import { findGroup } from "../nav";
+import "../styles/global.css";
+
+interface Props {
+	title: string;
+	/** Shows the activity log. Defaults to true. */
+	log?: boolean;
+	/** Hides the page header, for pages that render their own. */
+	header?: boolean;
+}
+
+const { title, log = true, header = true } = Astro.props;
+const group = findGroup(Astro.url.pathname);
+const isGroupPage = group !== undefined && group.pages.length > 1;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="dark" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>{title} · Lucid Playground</title>
+		<slot name="head" />
+	</head>
+	<body class="min-h-dvh">
+		<div
+			class:list={[
+				"lg:grid lg:grid-cols-[15.5rem_minmax(0,1fr)]",
+				log && "xl:grid-cols-[15.5rem_minmax(0,1fr)_21rem]",
+			]}
+		>
+			<Sidebar />
+			<main class:list={["min-w-0 px-5 py-8 sm:px-8 lg:px-12 lg:py-12", log && "pb-24 xl:pb-12"]}>
+				<div class="mx-auto max-w-3xl">
+					{
+						header && (
+							<header class="mb-10">
+								{group && (
+									<p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-accent">
+										{isGroupPage ? group.title : "Package"}
+										<span class="text-line-strong">/</span>
+										<span class="font-mono font-normal text-subtle">
+											{group.package}@{group.version}
+										</span>
+									</p>
+								)}
+								<h1 class="mt-2.5 text-[28px] leading-tight font-semibold tracking-tight text-balance">
+									{title}
+								</h1>
+								{Astro.slots.has("intro") && (
+									<div class="mt-3 max-w-2xl space-y-3 text-[15px] leading-7 text-muted">
+										<slot name="intro" />
+									</div>
+								)}
+							</header>
+						)
+					}
+					<div class="space-y-6">
+						<slot />
+					</div>
+				</div>
+			</main>
+			{log && <LogPanel />}
+		</div>
+	</body>
+</html>

@@ -1,1 +1,114 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+@theme {
+	--font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-mono:
+		ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+	/* Surfaces, from the page background up. */
+	--color-canvas: oklch(0.155 0.004 286);
+	--color-panel: oklch(0.183 0.005 286);
+	--color-raised: oklch(0.222 0.006 286);
+	--color-line: oklch(0.275 0.006 286);
+	--color-line-strong: oklch(0.36 0.009 286);
+
+	/* Text. */
+	--color-fg: oklch(0.955 0.003 286);
+	--color-muted: oklch(0.74 0.012 286);
+	--color-subtle: oklch(0.58 0.014 286);
+
+	/* One accent, used sparingly. */
+	--color-accent: oklch(0.76 0.12 277);
+	--color-accent-strong: oklch(0.69 0.15 277);
+	--color-accent-fg: oklch(0.2 0.04 277);
+}
+
+@layer base {
+	html {
+		color-scheme: dark;
+		background-color: var(--color-canvas);
+		scrollbar-color: var(--color-line-strong) transparent;
+	}
+
+	body {
+		@apply bg-canvas font-sans text-fg antialiased;
+		font-feature-settings: "cv11", "ss01";
+	}
+
+	::selection {
+		background-color: color-mix(in oklch, var(--color-accent) 35%, transparent);
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+
+	:not(pre) > code {
+		@apply rounded border border-line/70 bg-raised px-1 py-px font-mono text-[0.84em] text-fg;
+	}
+
+	a:not([class]) {
+		@apply text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent;
+	}
+
+	[hidden] {
+		display: none !important;
+	}
+}
+
+@layer components {
+	/* Buttons */
+	.btn {
+		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-line bg-raised px-3 py-1.5 text-[13px] leading-5 font-medium text-fg transition-colors select-none hover:border-line-strong hover:bg-line disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-line disabled:hover:bg-raised;
+	}
+	.btn-primary {
+		@apply border-transparent bg-accent text-accent-fg hover:border-transparent hover:bg-accent-strong disabled:hover:border-transparent disabled:hover:bg-accent;
+	}
+	.btn-ghost {
+		@apply border-transparent bg-transparent text-muted hover:border-transparent hover:bg-raised hover:text-fg;
+	}
+	.btn-danger {
+		@apply border-rose-400/25 bg-rose-400/10 text-rose-200 hover:border-rose-400/40 hover:bg-rose-400/20;
+	}
+	.btn-sm {
+		@apply gap-1.5 px-2 py-1 text-xs;
+	}
+
+	/* Form fields */
+	.label {
+		@apply block text-[13px] font-medium text-fg;
+	}
+	.hint {
+		@apply text-xs text-subtle;
+	}
+	.error-text {
+		@apply text-xs text-rose-300;
+	}
+	.input {
+		@apply block w-full rounded-md border border-line bg-canvas px-3 py-2 text-sm text-fg transition-colors placeholder:text-subtle hover:border-line-strong focus:border-accent/70 focus:ring-3 focus:ring-accent/20 focus:outline-none disabled:opacity-50 aria-[invalid=true]:border-rose-400/60 aria-[invalid=true]:focus:ring-rose-400/20;
+	}
+	.check {
+		@apply size-4 shrink-0 cursor-pointer accent-(--color-accent);
+	}
+
+	/* Display */
+	.badge {
+		@apply inline-flex items-center gap-1 rounded-full border border-line bg-raised/60 px-2 py-0.5 text-[11px] leading-4 font-medium text-muted;
+	}
+	.readout {
+		@apply rounded-md border border-line bg-canvas px-3 py-2 font-mono text-xs leading-5 break-words whitespace-pre-wrap text-muted;
+	}
+	.surface {
+		@apply rounded-lg border border-line bg-canvas/60;
+	}
+	.kbd {
+		@apply inline-flex min-w-5 items-center justify-center rounded border border-line-strong/70 bg-raised px-1 font-mono text-[11px] leading-4 text-muted;
+	}
+}
+
+/* Shiki output in the "Markup" panels sits on our own surface colour. */
+.astro-code {
+	background-color: transparent !important;
+}

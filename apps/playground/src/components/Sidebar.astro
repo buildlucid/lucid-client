@@ -1,0 +1,100 @@
+---
+import Brand from "./Brand.astro";
+import NavLinks from "./NavLinks.astro";
+
+---
+
+<!-- Desktop sidebar -->
+<aside
+	class="sticky top-0 hidden h-dvh flex-col overflow-y-auto border-r border-line bg-panel lg:flex"
+>
+	<div class="flex h-14 shrink-0 items-center px-5"><Brand /></div>
+	<div class="flex-1 px-3 pt-3 pb-8">
+		<NavLinks />
+	</div>
+</aside>
+
+<!-- Mobile top bar and drawer -->
+<div
+	class="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-canvas/85 px-4 backdrop-blur lg:hidden"
+>
+	<button
+		type="button"
+		popovertarget="mobile-nav"
+		class="btn btn-ghost -ml-1.5 px-1.5"
+		aria-label="Open navigation"
+	>
+		<svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+			<path d="M4 7h16M4 12h16M4 17h16"></path>
+		</svg>
+	</button>
+	<Brand />
+</div>
+<div
+	id="mobile-nav"
+	popover
+	class="fixed inset-y-0 right-auto left-0 m-0 h-dvh max-h-none w-72 max-w-[85vw] overflow-y-auto border-r border-line bg-panel p-0 text-fg backdrop:bg-black/60 lg:hidden"
+>
+	<div class="flex h-14 items-center justify-between px-5">
+		<Brand />
+		<button
+			type="button"
+			popovertarget="mobile-nav"
+			popovertargetaction="hide"
+			class="btn btn-ghost px-1.5"
+			aria-label="Close navigation"
+		>
+			<svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+				<path d="M6 6l12 12M18 6 6 18"></path>
+			</svg>
+		</button>
+	</div>
+	<div class="px-3 pt-3 pb-8">
+		<NavLinks />
+	</div>
+</div>
+
+<script>
+	// Lists the current page's scenarios under its nav link, and highlights the
+	// one in view.
+	const scenarios = Array.from(
+		document.querySelectorAll<HTMLElement>("[data-scenario]"),
+	);
+	const lists = document.querySelectorAll<HTMLUListElement>("[data-toc]");
+	const links = new Map<string, HTMLAnchorElement[]>();
+
+	for (const list of lists) {
+		for (const scenario of scenarios) {
+			const item = document.createElement("li");
+			const link = document.createElement("a");
+			link.href = `#${scenario.id}`;
+			link.textContent = scenario.dataset.scenario ?? scenario.id;
+			link.className =
+				"block truncate rounded px-2 py-1 text-xs text-subtle transition-colors hover:text-fg data-[active=true]:text-accent";
+			link.addEventListener("click", () => {
+				document.getElementById("mobile-nav")?.hidePopover();
+			});
+			item.append(link);
+			list.append(item);
+			links.set(scenario.id, [...(links.get(scenario.id) ?? []), link]);
+		}
+	}
+
+	const setActive = (id: string) => {
+		for (const [key, anchors] of links) {
+			for (const anchor of anchors) anchor.dataset.active = String(key === id);
+		}
+	};
+
+	const observer = new IntersectionObserver(
+		(entries) => {
+			const visible = entries
+				.filter((entry) => entry.isIntersecting)
+				.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+			const first = visible[0];
+			if (first) setActive(first.target.id);
+		},
+		{ rootMargin: "-15% 0px -70% 0px" },
+	);
+	for (const scenario of scenarios) observer.observe(scenario);
+</script>

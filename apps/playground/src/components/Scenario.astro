@@ -1,0 +1,107 @@
+---
+import { Code } from "astro:components";
+import { formatMarkup } from "../lib/markup";
+import { inline } from "../lib/text";
+
+interface Props {
+	/** Anchor id, also used for the page's table of contents. */
+	id: string;
+	title: string;
+	/** One or two sentences on what the scenario covers. `backticks` become code. */
+	description?: string;
+	/** What correct behaviour looks like, as a checklist. */
+	expect?: string[];
+	/** A known library gap or bug this scenario exposes, fixed separately. */
+	gap?: string;
+	/** Show the "Markup" panel. Defaults to true. */
+	markup?: boolean;
+}
+
+const { id, title, description, expect = [], gap, markup = true } = Astro.props;
+
+const html = await Astro.slots.render("default");
+const code = markup ? await formatMarkup(html) : "";
+---
+
+<section
+	id={id}
+	data-scenario={title}
+	class="scroll-mt-20 overflow-hidden rounded-xl border border-line bg-panel lg:scroll-mt-8"
+>
+	<header class="px-5 pt-5 sm:px-6">
+		<h2 class="group/title flex items-center gap-2 text-[15px] font-semibold tracking-tight">
+			{title}
+			<a
+				href={`#${id}`}
+				class="text-subtle opacity-0 transition-opacity group-hover/title:opacity-100 focus-visible:opacity-100"
+				aria-label={`Link to ${title}`}
+			>
+				#
+			</a>
+		</h2>
+		{
+			description && (
+				<p class="mt-1.5 text-[13px] leading-6 text-muted" set:html={inline(description)} />
+			)
+		}
+		{
+			gap && (
+				<div class="mt-3.5 flex gap-2.5 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-3.5 py-2.5 text-[13px] leading-6 text-amber-100/90">
+					<svg viewBox="0 0 24 24" class="mt-1 size-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M12 9v4M12 17h.01" />
+						<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+					</svg>
+					<p>
+						<span class="font-semibold text-amber-300">Known gap.</span>
+						<Fragment set:html={inline(gap)} />
+					</p>
+				</div>
+			)
+		}
+	</header>
+
+	<div class="px-5 pt-4 sm:px-6">
+		<div class="surface p-4 sm:p-5" data-scenario-demo>
+			<Fragment set:html={html} />
+		</div>
+	</div>
+
+	{
+		expect.length > 0 && (
+			<div class="px-5 pt-4 sm:px-6">
+				<p class="text-[11px] font-semibold tracking-[0.08em] text-subtle uppercase">
+					Expect
+				</p>
+				<ul class="mt-2 space-y-1.5">
+					{expect.map((item) => (
+						<li class="flex gap-2.5 text-[13px] leading-5 text-muted">
+							<svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0 text-accent/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M20 6 9 17l-5-5" />
+							</svg>
+							<span set:html={inline(item)} />
+						</li>
+					))}
+				</ul>
+			</div>
+		)
+	}
+
+	{
+		markup ? (
+			<details class="group/markup mt-5 border-t border-line">
+				<summary class="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-xs font-medium text-subtle transition-colors select-none hover:text-fg sm:px-6 [&::-webkit-details-marker]:hidden">
+					<svg viewBox="0 0 24 24" class="size-3.5 transition-transform group-open/markup:rotate-90" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="m9 18 6-6-6-6" />
+					</svg>
+					Markup
+					<span class="font-normal text-subtle/80">classes removed</span>
+				</summary>
+				<div class="max-h-[28rem] overflow-auto border-t border-line bg-canvas/70 px-5 py-4 text-[12px] leading-5 sm:px-6">
+					<Code code={code} lang="html" theme="vesper" />
+				</div>
+			</details>
+		) : (
+			<div class="h-5" />
+		)
+	}
+</section>

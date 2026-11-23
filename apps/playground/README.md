@@ -1,54 +1,54 @@
-# Astro Starter Kit: Basics
+# Playground
 
-```sh
-npm create astro@latest -- --template basics
+A test bench for the Lucid Client packages, built with Astro and Tailwind.
+Each page is a set of scenarios: every scenario says what it covers, lists what
+correct behaviour looks like, and shows the markup it uses. Actions, effects,
+consent changes and library warnings appear in the activity log.
+
+## Running it
+
+From the repository root:
+
+```bash
+npm run dev
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+This rebuilds the packages in watch mode and serves the playground at
+`http://localhost:4321`. The playground imports each package's `dist` output,
+so a package change shows up once its rebuild finishes.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
+## Structure
 
 ```text
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   └── Card.astro
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
+src/
+├── nav.ts                  Sidebar groups and pages, also used by the overview
+├── layouts/Playground.astro
+├── components/
+│   ├── Scenario.astro      A scenario card: description, gap, demo, expectations, markup
+│   ├── AttributeReadout.astro  Live view of an element's attributes
+│   ├── LogPanel.astro      The activity log
+│   └── Sidebar.astro, NavLinks.astro, Brand.astro
+├── lib/
+│   ├── log.ts              createLogger(), and mirroring of library console output
+│   ├── catalyst.ts         startCatalyst(), which starts a page's stores in debug mode
+│   ├── markup.ts           Formats a scenario's markup for its Markup panel
+│   └── text.ts             `backticks` to <code> for scenario copy
+├── pages/                  One page per package or Catalyst feature
+└── scripts/                The script for each page
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Adding a scenario
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+1. Add a `<Scenario>` to the page. `expect` describes correct behaviour, even
+   when a package doesn't do it yet.
+2. If the scenario exposes a package bug or missing feature, describe it with
+   the `gap` prop. It shows as an amber callout until the package is fixed.
+3. Put the stores or setup in the page's script under `src/scripts/`. Catalyst
+   pages start only their own stores with `startCatalyst({ stores })`.
+4. Log anything worth seeing with `createLogger("name")`.
 
-Any static assets, like images, can be placed in the `public/` directory.
+The Markup panel leaves out `class` attributes and any `pg-*` element, so wrap
+playground-only helpers, such as readouts and test controls, in a `pg-*`
+element.
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+A new page also needs an entry in `src/nav.ts`.

@@ -1,0 +1,118 @@
+---
+interface Props {
+	/** A selector for the element whose attributes are shown. */
+	target: string;
+	/** Attribute names to leave out. `class` is always left out. */
+	exclude?: string[];
+	label?: string;
+}
+
+const { target, exclude = [], label = "Live attributes" } = Astro.props;
+---
+
+<pg-readout class="block space-y-1.5">
+	<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">
+		{label}
+	</p>
+	<pre
+		class="readout min-h-10"
+		data-attribute-readout={target}
+		data-attribute-exclude={exclude.join(" ")}></pre>
+</pg-readout>
+
+<script>
+	// Shows an element's attributes as they change. Added or changed attributes
+	// are highlighted, and removed ones stay struck through until the next change.
+	const render = (
+		output: HTMLElement,
+		element: Element,
+		exclude: Set<string>,
+		previous: Map<string, string> | null,
+	) => {
+		const current = new Map<string, string>();
+		for (const attribute of element.attributes) {
+			if (exclude.has(attribute.name)) continue;
+			current.set(attribute.name, attribute.value);
+		}
+
+		const lines: HTMLElement[] = [];
+		const open = document.createElement("span");
+		open.className = "text-subtle";
+		open.textContent = `<${element.localName}`;
+		lines.push(open);
+
+		for (const [name, value] of current) {
+			const line = document.createElement("span");
+			const changed = previous !== null && previous.get(name) !== value;
+			line.className = changed
+				? "rounded-sm bg-accent/15 text-accent transition-colors"
+				: "text-muted";
+			line.textContent = value === "" ? `  ${name}` : `  ${name}="${value}"`;
+			lines.push(line);
+		}
+		for (const [name, value] of previous ?? []) {
+			if (current.has(name)) continue;
+			const line = document.createElement("span");
+			line.className = "text-rose-300/80 line-through";
+			line.textContent = value === "" ? `  ${name}` : `  ${name}="${value}"`;
+			lines.push(line);
+		}
+
+		const close = document.createElement("span");
+		close.className = "text-subtle";
+		close.textContent = ">";
+		lines.push(close);
+
+		output.replaceChildren(
+			...lines.flatMap((line, index) =>
+				index === 0 ? [line] : [document.createTextNode("\n"), line],
+			),
+		);
+		return current;
+	};
+
+	const setup = () => {
+		for (const output of document.querySelectorAll<HTMLElement>(
+			"[data-attribute-readout]",
+		)) {
+			const selector = output.dataset.attributeReadout ?? "";
+			const element = selector ? document.querySelector(selector) : null;
+			if (!element) {
+				output.textContent = `No element matches ${selector}`;
+				continue;
+			}
+			const exclude = new Set(
+				["class", ...(output.dataset.attributeExclude ?? "").split(" ")].filter(
+					Boolean,
+				),
+			);
+
+			let previous = render(output, element, exclude, null);
+			// Batches the attributes changed by one update into one render.
+			let scheduled = false;
+			new MutationObserver(() => {
+				if (scheduled) return;
+				scheduled = true;
+				queueMicrotask(() => {
+					scheduled = false;
+					previous = render(output, element, exclude, previous);
+				});
+			}).observe(element, { attributes: true });
+		}
+	};
+
+	// The baseline is taken once every page script has run, so attributes the
+	// libraries write while starting aren't shown as changes. Module scripts run
+	// before DOMContentLoaded.
+	let started = false;
+	const start = () => {
+		if (started) return;
+		started = true;
+		setup();
+	};
+	if (document.readyState === "complete") start();
+	else {
+		document.addEventListener("DOMContentLoaded", start, { once: true });
+		window.addEventListener("load", start, { once: true });
+	}
+</script>
