@@ -20,6 +20,24 @@ const SPECIFIERS = [
 	"scrollto",
 ];
 
+/**
+ * Sets an element's text. When it already holds a single text node, that node
+ * is updated, or left alone when the text is the same, rather than replaced.
+ */
+const setText = (element: Element, text: string) => {
+	const first = element.firstChild;
+	if (
+		first &&
+		first === element.lastChild &&
+		first.nodeType === Node.TEXT_NODE
+	) {
+		const node = first as Text;
+		if (node.data !== text) node.data = text;
+		return;
+	}
+	if (first || text) element.textContent = text;
+};
+
 const isFocusable = (element: Element): element is HTMLElement | SVGElement =>
 	"focus" in element && typeof element.focus === "function";
 
@@ -51,7 +69,7 @@ const updateDom = (element: Element, specifier: string, value: unknown) => {
 			if (value === true) element.scrollIntoView({ behavior: "smooth" });
 			return;
 		default:
-			element.textContent = toText(value);
+			setText(element, toText(value));
 	}
 };
 

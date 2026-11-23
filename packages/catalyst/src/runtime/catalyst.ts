@@ -5,6 +5,7 @@ const Catalyst: CatalystRuntime = {
 	options: DEFAULT_OPTIONS,
 	started: false,
 	reactions: new Map(),
+	reactionAttributes: new Map(),
 	stores: new Map(),
 	storesByElement: new Map(),
 	storeDefinitions: new Map(),

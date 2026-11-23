@@ -1,6 +1,6 @@
-import { createEffect } from "solid-js";
+import { createEffect, runWithOwner } from "solid-js";
 import { stringifyState } from "../../helpers.js";
-import { createOwnedRoot, runEffectCallback } from "../../runtime/reactive.js";
+import { runEffectCallback } from "../../runtime/reactive.js";
 import type { RuntimeStore } from "../../runtime/types.js";
 import { stateKeyToAttribute } from "./state-attribute.js";
 
@@ -9,13 +9,15 @@ type AttributeValue = { empty: boolean; text: string };
 /**
  * Writes a state value to its `data-state--*` attribute whenever it changes.
  * The value is serialised while tracking, so changing nested data, such as
- * pushing to an array, updates the attribute too.
+ * pushing to an array, updates the attribute too. The effect belongs to the
+ * store, so it lasts until the store is destroyed.
  */
 const registerStateAttribute = (store: RuntimeStore, key: string) => {
-	if (store.stateAttributeDisposes.has(key) || store.computed.has(key)) return;
+	if (store.stateAttributes.has(key) || store.computed.has(key)) return;
+	store.stateAttributes.add(key);
 
 	const attributeName = stateKeyToAttribute(key);
-	const dispose = createOwnedRoot((disposeRoot) => {
+	runWithOwner(store.owner, () => {
 		createEffect(
 			(): AttributeValue => {
 				const value = store.raw[key];
@@ -34,10 +36,7 @@ const registerStateAttribute = (store: RuntimeStore, key: string) => {
 					store.element.setAttribute(attributeName, value.text);
 				}),
 		);
-		return disposeRoot;
 	});
-
-	store.stateAttributeDisposes.set(key, dispose);
 };
 
 export default registerStateAttribute;

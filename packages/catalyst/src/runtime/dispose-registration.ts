@@ -7,9 +7,17 @@ const getRegistrationScope = (registration: DirectiveRegistration) => {
 	return reference.scope;
 };
 
+/**
+ * Indexes a directive by the store scope it references, so it can follow that
+ * store when it is created, refreshed or destroyed. Directives inside their
+ * store's element are disposed and set up again with it, so only those outside
+ * it, or waiting for it, are indexed.
+ */
 export const indexRegistration = (registration: DirectiveRegistration) => {
 	const scope = getRegistrationScope(registration);
 	if (!scope) return;
+	const store = registration.scopeStore;
+	if (store?.element.contains(registration.directive.element)) return;
 	let dependents = Catalyst.scopeDependents.get(scope);
 	if (!dependents) {
 		dependents = new Set();

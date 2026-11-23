@@ -2,11 +2,13 @@ import { startStore } from "../core/store/index.js";
 import type { Directive, ReactionPhase, SyncOptions } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import collectDirectives from "./collect-directives.js";
+import collectElements from "./collect-elements.js";
 import collectStores from "./collect-stores.js";
 import disposeStaleDirectives from "./dispose-stale-directives.js";
 import initialiseDirective from "./initialise-directive.js";
 import { warn } from "./log.js";
 import { flushUpdates } from "./reactive.js";
+import { noteSync } from "./released.js";
 import type { RuntimeStore } from "./types.js";
 
 const isWithin = (target: Element, element: Element) =>
@@ -47,10 +49,15 @@ const initialisePhase = (
 /** Synchronises a subtree without flushing; used by reactions mid-update. */
 export const syncTarget = (target: Element, options?: SyncOptions) => {
 	if (!Catalyst.started) return;
+	noteSync();
 
-	disposeStaleDirectives(target, options);
-	const stores = collectStores(target, options);
-	const directives = collectDirectives(target, options);
+	let elements = collectElements(target, options);
+	// A disposed directive's cleanup may have changed the markup.
+	if (disposeStaleDirectives(elements)) {
+		elements = collectElements(target, options);
+	}
+	const stores = collectStores(elements);
+	const directives = collectDirectives(elements);
 	const dependents = new Set(collectScopeDependents(target, stores));
 	directives.push(...dependents);
 

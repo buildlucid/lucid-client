@@ -4,35 +4,13 @@ import type {
 	MemberReference,
 	StoreMemberReference,
 } from "../types/index.js";
-import Catalyst from "./catalyst.js";
-import { getLoopContext, type LoopContext } from "./loop-context.js";
+import type { LoopContext } from "./loop-context.js";
 
 const LOOP_REFERENCE_KEYS: LoopMemberReferenceKey[] = [
 	"item",
 	"index",
 	"indexOne",
 ];
-
-/**
- * Returns the scope of the nearest `data-store` ancestor. When that element is
- * a duplicate of a scope another element already owns, its directives are
- * left unscoped instead of silently binding to the other instance.
- */
-const getNearestStoreScope = (element: Element) => {
-	const attributeName = `${Catalyst.options.attributes.prefix}${Catalyst.options.attributes.store}`;
-	let current: Element | null = element;
-	while (current) {
-		if (current.hasAttribute(attributeName)) {
-			const scope = current.getAttribute(attributeName) || null;
-			if (!scope) return null;
-			const store = Catalyst.stores.get(scope);
-			if (store && store.element !== current) return null;
-			return scope;
-		}
-		current = current.parentElement;
-	}
-	return null;
-};
 
 const resolveLoopReference = (
 	reference: StoreMemberReference,
@@ -62,13 +40,18 @@ const resolveLoopReference = (
 	};
 };
 
+/**
+ * Resolves a parsed reference for its element: `$item` and `$index` refer to
+ * the element's loop item, actions inside a loop receive that item, and
+ * references without a scope belong to the nearest store, `scope`.
+ */
 const resolveDirectiveReference = (
 	reference: MemberReference | null,
-	element: Element,
+	loopContext: LoopContext | undefined,
+	scope: string | null,
 ): MemberReference | null => {
 	if (!reference || reference.type === "loop") return reference;
 
-	const loopContext = getLoopContext(element);
 	// Actions inside a loop receive the item their element was rendered for.
 	const withLoop: StoreMemberReference =
 		loopContext && reference.type === "action"
@@ -81,7 +64,6 @@ const resolveDirectiveReference = (
 		if (loopReference) return loopReference;
 	}
 
-	const scope = getNearestStoreScope(element);
 	return scope ? { ...withLoop, scope } : withLoop;
 };
 

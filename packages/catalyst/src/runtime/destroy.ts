@@ -1,3 +1,4 @@
+import { disconnectStateObserver } from "../core/state/index.js";
 import { destroyStore } from "../core/store/index.js";
 import Catalyst from "./catalyst.js";
 import DEFAULT_OPTIONS from "./constants.js";
@@ -30,6 +31,7 @@ const destroy = () => {
 		}
 
 		attempt(disposeRuntimeOwner);
+		disconnectStateObserver();
 	} finally {
 		Catalyst.removalObserver = undefined;
 		Catalyst.registrations.clear();

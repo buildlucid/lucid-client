@@ -1,4 +1,7 @@
-export { default as createStateObserver } from "./create-state-observer.js";
+export {
+	disconnectStateObserver,
+	observeStateAttributes,
+} from "./create-state-observer.js";
 export { default as createStateView } from "./create-state-view.js";
 export { default as registerStateAttribute } from "./register-state-attribute.js";
 export {

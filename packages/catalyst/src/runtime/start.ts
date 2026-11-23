@@ -63,6 +63,13 @@ const start = (options?: CatalystStartOptions) => {
 		registerReaction(reaction);
 	}
 
+	Catalyst.reactionAttributes = new Map(
+		Array.from(Catalyst.reactions.values(), (reaction) => [
+			`${Catalyst.options.attributes.prefix}${reaction.attribute}`,
+			reaction,
+		]),
+	);
+
 	createRuntimeOwner();
 	Catalyst.started = true;
 	// Observe before the first sync so removals made while it runs are seen.

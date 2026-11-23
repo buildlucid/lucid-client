@@ -39,11 +39,12 @@ const resolveReference = (reference: MemberReference, args: unknown[] = []) => {
 	}
 
 	if (reference.type === "state") {
-		if (!(reference.key in store.state)) {
-			if (__DEV__)
-				warn(
-					`Cannot find state "${reference.key}" on store "${reference.scope}".`,
-				);
+		// Reading missing state returns `undefined` either way, and the check
+		// would subscribe every binding to the store's keys.
+		if (__DEV__ && !(reference.key in store.state)) {
+			warn(
+				`Cannot find state "${reference.key}" on store "${reference.scope}".`,
+			);
 			return undefined;
 		}
 

@@ -16,18 +16,15 @@ const destroyStore = (store: RuntimeStore) => {
 	if (store.destroyed) return;
 	store.destroyed = true;
 
-	store.stateObserver?.disconnect();
 	const cleanup = store.cleanup;
 	store.cleanup = undefined;
 	if (cleanup) runStoreCleanup(store, cleanup);
 
-	for (const dispose of store.stateAttributeDisposes.values()) attempt(dispose);
-	store.stateAttributeDisposes.clear();
 	for (const entry of store.persisted.values()) {
 		if (entry.dispose) attempt(entry.dispose);
 	}
 	store.persisted.clear();
-	// Disposes the store's computed values and effects.
+	// Disposes the store's computed values, effects and state attribute effects.
 	attempt(store.disposeRoot);
 
 	if (Catalyst.stores.get(store.key) === store) {

@@ -7,6 +7,7 @@ import registerStateAttribute from "./register-state-attribute.js";
 import {
 	attributeToStateKey,
 	coerceStateString,
+	getStatePrefix,
 	stateKeyToAttribute,
 } from "./state-attribute.js";
 
@@ -44,15 +45,17 @@ export const readStateAttributes = (
 ) => {
 	const state: StoreState = { ...defaults };
 	const keys: string[] = [];
-	for (const attribute of Array.from(element.attributes)) {
-		const key = attributeToStateKey(attribute.name);
+	const prefix = getStatePrefix();
+	for (const name of element.getAttributeNames()) {
+		if (!name.startsWith(prefix)) continue;
+		const key = attributeToStateKey(name);
 		if (!key) continue;
-		if (__DEV__)
-			warnOnCaseMismatch(storeKey, Object.keys(defaults), key, attribute.name);
+		if (__DEV__) warnOnCaseMismatch(storeKey, Object.keys(defaults), key, name);
+		const value = element.getAttribute(name) ?? "";
 		state[key] =
 			key in defaults
-				? coerceStateString(attribute.value, defaults[key])
-				: parseStateString(attribute.value);
+				? coerceStateString(value, defaults[key])
+				: parseStateString(value);
 		keys.push(key);
 	}
 	return { state, keys };
@@ -66,7 +69,7 @@ export const readStateAttributes = (
 const syncStateAttributes = (store: RuntimeStore) => {
 	for (const attribute of Array.from(store.element.attributes)) {
 		const key = attributeToStateKey(attribute.name);
-		if (!key || store.stateAttributeDisposes.has(key)) continue;
+		if (!key || store.stateAttributes.has(key)) continue;
 		if (store.computed.has(key)) continue;
 		if (__DEV__)
 			warnOnCaseMismatch(

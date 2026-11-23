@@ -1,4 +1,5 @@
 import disposeSubtree from "./dispose-subtree.js";
+import { takeReleased } from "./released.js";
 
 const registerRemovalObserver = () => {
 	const observer = new MutationObserver((mutations) => {
@@ -7,6 +8,7 @@ const registerRemovalObserver = () => {
 				if (!(node instanceof Element)) continue;
 				// Moved nodes are reconnected by the time the observer runs.
 				if (node.isConnected) continue;
+				if (takeReleased(node)) continue;
 				disposeSubtree(node);
 			}
 		}

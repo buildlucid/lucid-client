@@ -1,17 +1,16 @@
 import { syncStateAttributes } from "../core/state/index.js";
 import { destroyStore, initialiseStore } from "../core/store/index.js";
-import type { SyncOptions } from "../types/index.js";
 import Catalyst from "./catalyst.js";
-import collectElements from "./collect-elements.js";
 import disposeSubtree from "./dispose-subtree.js";
 import { warn } from "./log.js";
 import type { RuntimeStore } from "./types.js";
 
-const collectStores = (target: Element, options?: SyncOptions) => {
+/** Creates stores for new `data-store` elements among `elements`. */
+const collectStores = (elements: Element[]) => {
 	const stores: RuntimeStore[] = [];
 	const storeAttribute = `${Catalyst.options.attributes.prefix}${Catalyst.options.attributes.store}`;
 
-	for (const element of collectElements(target, options)) {
+	for (const element of elements) {
 		const elementStore = Catalyst.storesByElement.get(element);
 		const key = element.getAttribute(storeAttribute);
 

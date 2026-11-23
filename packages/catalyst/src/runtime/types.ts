@@ -65,9 +65,9 @@ export type RuntimeStore = {
 	refElements: Map<string, Element | Element[]>;
 	/** The store's reactive owner, which store effects are created under. */
 	owner: Owner | null;
-	stateAttributeDisposes: Map<string, () => void>;
+	/** State keys kept in sync with a `data-state--*` attribute. */
+	stateAttributes: Set<string>;
 	internalStateWrites: Map<string, string>;
-	stateObserver?: MutationObserver;
 	/** The state values saved to storage, by state key. */
 	persisted: Map<string, PersistEntry>;
 	disposeRoot: () => void;
@@ -86,6 +86,8 @@ export type CatalystRuntime = {
 	startOptions?: CatalystStartOptions;
 	started: boolean;
 	reactions: Map<string, Reaction>;
+	/** Registered reactions by full attribute name, such as `data-bind`. Built by `start`. */
+	reactionAttributes: Map<string, Reaction>;
 	stores: Map<string, RuntimeStore>;
 	storesByElement: Map<Element, RuntimeStore>;
 	storeDefinitions: Map<string, AnyStoreDefinition>;

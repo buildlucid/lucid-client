@@ -12,8 +12,8 @@ import { unwrapPersisted } from "../persist/persisted.js";
 import { createRefs } from "../refs/index.js";
 import createState from "../state/create-state.js";
 import {
-	createStateObserver,
 	createStateView,
+	observeStateAttributes,
 	readStateAttributes,
 	registerStateAttribute,
 } from "../state/index.js";
@@ -28,6 +28,19 @@ type Defaults = {
 };
 
 const noDefaults = (): Defaults => ({ state: {}, persist: new Map() });
+
+const isPlainValue = (value: unknown) =>
+	value === null || (typeof value !== "object" && typeof value !== "function");
+
+/**
+ * Copies a state object. State that only holds strings, numbers and other
+ * plain values, the common case, is copied with a spread rather than
+ * `structuredClone`.
+ */
+const copyState = (state: StoreState): StoreState =>
+	Object.values(state).every(isPlainValue)
+		? { ...state }
+		: structuredClone(state);
 
 /**
  * A plain state object is copied for every store so a refreshed store starts
@@ -50,7 +63,7 @@ const resolveDefaults = (
 		if (isStateObject(value)) {
 			const unwrapped = unwrapPersisted(value);
 			persist = unwrapped.options;
-			value = isFactory ? unwrapped.values : structuredClone(unwrapped.values);
+			value = isFactory ? unwrapped.values : copyState(unwrapped.values);
 		} else if (!isFactory) {
 			value = structuredClone(value);
 		}
@@ -180,7 +193,7 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 			refs: createRefs(refElements),
 			refElements,
 			owner: getOwner(),
-			stateAttributeDisposes: new Map(),
+			stateAttributes: new Set(),
 			internalStateWrites: new Map(),
 			persisted: new Map(),
 			disposeRoot,
@@ -193,12 +206,12 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 		persistence?.register(nextStore, persistEntries);
 		if (definition) applyActions(nextStore, definition);
 
-		nextStore.stateObserver = createStateObserver(nextStore);
 		return nextStore;
 	});
 
 	Catalyst.stores.set(key, store);
 	Catalyst.storesByElement.set(element, store);
+	observeStateAttributes(store);
 	if (__DEV__) debug(`Store created for scope "${key}".`);
 	return store;
 };

@@ -1,5 +1,6 @@
 import { createSignal } from "solid-js";
 import { getLoopContext, setLoopContext } from "../../runtime/loop-context.js";
+import { markReleased } from "../../runtime/released.js";
 import type { LoopContext, Reaction } from "../../types/index.js";
 import createResolvedEffect from "../utils/create-resolved-effect.js";
 import { readItems } from "../utils/read-value.js";
@@ -107,8 +108,11 @@ const loopReaction: Reaction = {
 			};
 		};
 
+		// Removed items are disposed here, so they are marked to stop the removal
+		// observer disposing them again.
 		const removeEntry = (entry: LoopEntry) => {
 			context.disposeSubtree(entry.root);
+			markReleased(entry.root);
 			for (const node of entry.nodes) node.remove();
 		};
 
@@ -120,7 +124,10 @@ const loopReaction: Reaction = {
 			if (entries.length === 0) return;
 			context.disposeSubtree(element, { childrenOnly: true });
 			let nodeCount = 0;
-			for (const entry of entries) nodeCount += entry.nodes.length;
+			for (const entry of entries) {
+				markReleased(entry.root);
+				nodeCount += entry.nodes.length;
+			}
 			if (element.childNodes.length === nodeCount + 1) {
 				element.replaceChildren(template);
 			} else {

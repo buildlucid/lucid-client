@@ -93,11 +93,13 @@ export const writeAttribute = (
 		return;
 	}
 	if (typeof value === "boolean" && !keepsFalseValue(name)) {
-		if (value) element.setAttribute(name, "");
-		else element.removeAttribute(name);
+		if (!value) element.removeAttribute(name);
+		else if (!element.hasAttribute(name)) element.setAttribute(name, "");
 		return;
 	}
-	element.setAttribute(name, stringifyState(value));
+	// Writing the same value would still queue a mutation and restyle.
+	const text = stringifyState(value);
+	if (element.getAttribute(name) !== text) element.setAttribute(name, text);
 };
 
 const bindReaction: Reaction = {

@@ -1,10 +1,13 @@
-import type { SyncOptions } from "../types/index.js";
 import Catalyst from "./catalyst.js";
-import collectElements from "./collect-elements.js";
 import disposeRegistration from "./dispose-registration.js";
 
-const disposeStaleDirectives = (target: Element, options?: SyncOptions) => {
-	for (const element of collectElements(target, options)) {
+/**
+ * Disposes directives whose attribute changed or was removed since they were
+ * set up. Returns whether any were disposed.
+ */
+const disposeStaleDirectives = (elements: Element[]) => {
+	let disposed = false;
+	for (const element of elements) {
 		const registrations = Catalyst.registrations.get(element);
 		if (!registrations) continue;
 
@@ -14,9 +17,11 @@ const disposeStaleDirectives = (target: Element, options?: SyncOptions) => {
 				registration.directive.value
 			) {
 				disposeRegistration(registration);
+				disposed = true;
 			}
 		}
 	}
+	return disposed;
 };
 
 export default disposeStaleDirectives;

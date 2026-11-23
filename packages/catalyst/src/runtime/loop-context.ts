@@ -31,6 +31,10 @@ export const setLoopContext = (element: Element, context: LoopContext) => {
 	loopContexts.set(element, context);
 };
 
+/** The loop item rendered at this element, not at an ancestor. */
+export const getElementLoopContext = (element: Element) =>
+	loopContexts.get(element);
+
 export const getLoopContext = (element: Element) => {
 	let current: Element | null = element;
 	while (current) {

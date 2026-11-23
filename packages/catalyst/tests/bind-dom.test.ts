@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import Catalyst, { defineStore } from "../src/index.js";
+import Catalyst, { defineStore, flush } from "../src/index.js";
 import { bind, dom, loop } from "../src/reactions.js";
+import Runtime from "../src/runtime/catalyst.js";
 import { catalystWarnings, getStore, setStoreState, settle } from "./utils.js";
 
 describe("bind reaction", () => {
@@ -160,5 +161,72 @@ describe("dom reaction", () => {
 		getStore("address")?.actions.pickTexas?.();
 		await settle();
 		expect(select?.value).toBe("tx");
+	});
+});
+
+describe("server-rendered markup", () => {
+	it("isn't written again when it already matches state", async () => {
+		document.body.innerHTML = `
+			<div data-store="card" data-state--likes="3">
+				<button aria-expanded="false" data-bind--aria-expanded="$open">Card</button>
+				<p hidden data-bind--hidden="$closed">Details</p>
+				<span data-dom--text="$likes">3</span>
+			</div>
+		`;
+		const card = defineStore({
+			state: { open: false, likes: 0 },
+			computed: ({ state }) => ({ closed: () => !state.open }),
+		});
+		const records: MutationRecord[] = [];
+		const observer = new MutationObserver((items) => records.push(...items));
+		observer.observe(document.body, {
+			attributes: true,
+			characterData: true,
+			childList: true,
+			subtree: true,
+		});
+
+		Catalyst.start({ stores: { card }, reactions: [bind, dom] });
+		await settle();
+		records.push(...observer.takeRecords());
+		observer.disconnect();
+
+		expect(records).toEqual([]);
+
+		setStoreState("card", "likes", 4);
+		setStoreState("card", "open", true);
+		await settle();
+		expect(document.querySelector("span")?.textContent).toBe("4");
+		expect(document.querySelector("p")?.hasAttribute("hidden")).toBe(false);
+		expect(
+			document.querySelector("button")?.getAttribute("aria-expanded"),
+		).toBe("true");
+	});
+});
+
+describe("removed loop items", () => {
+	it("are disposed as before when other code sets them up again straight away", async () => {
+		document.body.innerHTML = `
+			<ul data-store="list" data-loop="$items">
+				<template><li data-dom--text="$item"></li></template>
+			</ul>
+		`;
+		const list = defineStore({ state: { items: ["a"] } });
+		Catalyst.start({ stores: { list }, reactions: [dom, loop] });
+		const item = document.querySelector("li") as HTMLLIElement;
+
+		getStore("list")?.setState((state) => {
+			state.items = [];
+		});
+		flush();
+		expect(item.isConnected).toBe(false);
+		expect(Runtime.registrations.has(item)).toBe(false);
+
+		// Set up again while detached, before the removal observer runs.
+		Catalyst.sync(item);
+		expect(Runtime.registrations.has(item)).toBe(true);
+		await settle();
+
+		expect(Runtime.registrations.has(item)).toBe(false);
 	});
 });
