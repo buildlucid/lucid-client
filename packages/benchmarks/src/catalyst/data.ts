@@ -91,6 +91,8 @@ export const buildCards = (count: number): Card[] =>
 		likes: (index * 7) % 13,
 	}));
 
-/** What the search page filters its rows by. */
-export const matchesQuery = (row: Row, query: string) =>
-	row.label.includes(query.trim());
+/** The rows whose label contains the query. Every search page filters with it. */
+export const filterRows = <T extends Row>(rows: T[], query: string) => {
+	const text = query.trim();
+	return rows.filter((row) => row.label.includes(text));
+};

@@ -49,3 +49,26 @@ export const difference = (expected: string, actual: string) => {
 	const start = Math.max(0, index - 80);
 	return `expected …${expected.slice(start, index + 80)}…\n     got …${actual.slice(start, index + 80)}…`;
 };
+
+declare global {
+	interface Window {
+		benchmarkElements?: Element[];
+	}
+}
+
+/** Remembers the elements inside `selector`, for `countReplacedElements`. */
+export const rememberElements = (page: Page, selector: string) =>
+	page.evaluate((root) => {
+		window.benchmarkElements = Array.from(
+			document.querySelector(root)?.querySelectorAll("*") ?? [],
+		);
+	}, selector);
+
+/** How many remembered elements are no longer inside `selector`. */
+export const countReplacedElements = (page: Page, selector: string) =>
+	page.evaluate((root) => {
+		const container = document.querySelector(root);
+		return (window.benchmarkElements ?? []).filter(
+			(element) => !container?.contains(element),
+		).length;
+	}, selector);

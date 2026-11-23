@@ -31,10 +31,7 @@ createApp({
 	select(id: number) {
 		this.selected = id;
 	},
-	remove(id: number) {
-		this.rows.splice(
-			this.rows.findIndex((row) => row.id === id),
-			1,
-		);
+	remove(index: number) {
+		this.rows.splice(index, 1);
 	},
 }).mount("#app");

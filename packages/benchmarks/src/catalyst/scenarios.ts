@@ -56,17 +56,19 @@ export const scenarios: Scenario[] = [
 		warmup: [run, { click: "#update" }],
 		setup: [run],
 		timed: { click: "#update" },
+		keepsElements: true,
 	},
 	{
 		id: "select-row",
 		name: "Select row",
 		description:
-			"Highlights the row that was clicked in a table of 1,000, by binding each row's class.",
+			"Highlights the row that was clicked in a table of 1,000, and stops highlighting the row selected before it, by binding each row's class.",
 		features: ["Bindings", "Loop items in actions"],
 		page: "rows",
 		warmup: [run, row(5, "select")],
-		setup: [run],
+		setup: [run, row(5, "select")],
 		timed: row(2, "select"),
+		keepsElements: true,
 	},
 	{
 		id: "swap-rows",
@@ -77,6 +79,7 @@ export const scenarios: Scenario[] = [
 		warmup: [run, { click: "#swap" }],
 		setup: [run],
 		timed: { click: "#swap" },
+		keepsElements: true,
 	},
 	{
 		id: "remove-row",
@@ -98,6 +101,7 @@ export const scenarios: Scenario[] = [
 		warmup: [run, { click: "#add" }],
 		setup: [run],
 		timed: { click: "#add" },
+		keepsElements: true,
 	},
 	{
 		id: "clear-rows",

@@ -4,6 +4,7 @@
  * node src/run.ts catalyst                   build the pages, check every library's output, benchmark them all and write the results
  * node src/run.ts catalyst --check           only check that every library renders the same DOM as the first
  * node src/run.ts catalyst --library alpine  check and benchmark the suite's library and Alpine, without writing the results
+ * node src/run.ts catalyst --scenario swap-rows  only check and benchmark one scenario, without writing the results
  * node src/run.ts catalyst --samples 5       take fewer samples, for a quick look
  * node src/run.ts catalyst --throttle 4      slow the CPU down 4 times, as on a mid-range phone
  *
@@ -14,7 +15,12 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { launch, open } from "./browser.ts";
 import { build, root } from "./build.ts";
-import { difference, snapshot } from "./compare.ts";
+import {
+	countReplacedElements,
+	difference,
+	rememberElements,
+	snapshot,
+} from "./compare.ts";
 import {
 	describeEnvironment,
 	gitCommit,
@@ -38,6 +44,7 @@ const { values: args, positionals } = parseArgs({
 	options: {
 		check: { type: "boolean", default: false },
 		library: { type: "string", multiple: true },
+		scenario: { type: "string", multiple: true },
 		samples: { type: "string", default: "15" },
 		throttle: { type: "string", default: "1" },
 	},
@@ -48,7 +55,21 @@ const throttle = Number(args.throttle);
 const suiteId = positionals[0];
 if (!suiteId) throw new Error("Name a suite to run, such as `catalyst`.");
 
-const suite: Suite = (await import(`./${suiteId}/index.ts`)).default;
+const loaded: Suite = (await import(`./${suiteId}/index.ts`)).default;
+const unknownScenarios = args.scenario?.filter(
+	(id) => !loaded.scenarios.some((scenario) => scenario.id === id),
+);
+if (unknownScenarios?.length) {
+	throw new Error(`Unknown scenario: ${unknownScenarios.join(", ")}`);
+}
+const suite: Suite = args.scenario
+	? {
+			...loaded,
+			scenarios: loaded.scenarios.filter((scenario) =>
+				args.scenario?.includes(scenario.id),
+			),
+		}
+	: loaded;
 const unknown = args.library?.filter(
 	(id) => !suite.libraries.some((library) => library.id === id),
 );
@@ -97,7 +118,21 @@ const check = async () => {
 			try {
 				const session = await prepare(library, scenario);
 				try {
+					if (scenario.keepsElements) {
+						await rememberElements(session.page, suite.root);
+					}
 					await perform(session.page, scenario.timed);
+					if (scenario.keepsElements) {
+						const replaced = await countReplacedElements(
+							session.page,
+							suite.root,
+						);
+						if (replaced > 0) {
+							problems.push(
+								`${label}: rendered ${replaced} elements again instead of keeping them.`,
+							);
+						}
+					}
 					for (const step of scenario.check ?? []) {
 						await perform(session.page, step);
 					}
@@ -275,8 +310,8 @@ try {
 			})),
 		);
 
-		if (args.library) {
-			console.log("\nNot writing results, because only some libraries ran.");
+		if (args.library || args.scenario) {
+			console.log("\nNot writing results, because only part of the suite ran.");
 		} else {
 			await mkdir(join(root, "results"), { recursive: true });
 			await writeFile(

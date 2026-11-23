@@ -26,6 +26,12 @@ export type Scenario = {
 	 * works as well as renders, such as clicking a button it set up.
 	 */
 	check?: Step[];
+	/**
+	 * The timed step must keep every element that was rendered before it, as a
+	 * keyed update does, rather than render them again. The output check
+	 * confirms it.
+	 */
+	keepsElements?: boolean;
 };
 
 export type Library = {

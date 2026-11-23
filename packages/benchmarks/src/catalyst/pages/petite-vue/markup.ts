@@ -8,7 +8,8 @@ const app = document.querySelector("#app")!;
 let mounted: ReturnType<typeof createApp> | undefined;
 
 // petite-vue only sets up markup it mounts, so new markup is mounted as its
-// own app, and unmounted before it is removed.
+// own app, with the page's `v-scope` element as its root, and unmounted before
+// it is removed.
 defineHarness({
 	insert: () => {
 		app.innerHTML = html;
@@ -16,6 +17,7 @@ defineHarness({
 	},
 	clear: () => {
 		mounted?.unmount();
+		mounted = undefined;
 		app.innerHTML = "";
 	},
 });

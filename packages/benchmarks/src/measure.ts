@@ -14,33 +14,40 @@ type StepOptions = { step: Step; timed: boolean };
  * every library renders the same DOM, so painting it costs the same.
  */
 const runStep = async ({ step, timed }: StepOptions) => {
-	const settle = () =>
-		new Promise<void>((resolve) => {
-			const channel = new MessageChannel();
-			channel.port1.onmessage = () => resolve();
-			channel.port2.postMessage(null);
-		});
 	const find = <T extends Element>(selector: string) => {
 		const element = document.querySelector<T>(selector);
 		if (!element) throw new Error(`Nothing matches "${selector}"`);
 		return element;
 	};
 
-	if (timed) (globalThis as { gc?: () => void }).gc?.();
-
-	const start = performance.now();
+	// Everything the step needs is looked up before the clock starts.
+	let trigger: () => void;
 	if ("click" in step) {
-		find<HTMLElement>(step.click).click();
+		const element = find<HTMLElement>(step.click);
+		trigger = () => element.click();
 	} else if ("call" in step) {
 		const call = window.harness?.[step.call];
 		if (!call) throw new Error(`The page has no "${step.call}" function`);
-		call();
+		trigger = call;
 	} else {
 		const field = find<HTMLInputElement>(step.input);
-		field.value = step.value;
-		field.dispatchEvent(new Event("input", { bubbles: true }));
+		const { value } = step;
+		trigger = () => {
+			field.value = value;
+			field.dispatchEvent(new Event("input", { bubbles: true }));
+		};
 	}
-	await settle();
+	const channel = new MessageChannel();
+	const settled = new Promise<void>((resolve) => {
+		channel.port1.onmessage = () => resolve();
+	});
+
+	if (timed) (globalThis as { gc?: () => void }).gc?.();
+
+	const start = performance.now();
+	trigger();
+	channel.port2.postMessage(null);
+	await settled;
 	void document.body.offsetHeight;
 	const duration = performance.now() - start;
 

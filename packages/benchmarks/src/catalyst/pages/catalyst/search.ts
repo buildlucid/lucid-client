@@ -1,6 +1,6 @@
 import Catalyst, { defineStore } from "@lucidclient/catalyst";
 import { dom, loop, model } from "@lucidclient/catalyst/reactions";
-import { buildRows, matchesQuery, ROW_COUNT } from "../../data.ts";
+import { buildRows, filterRows, ROW_COUNT } from "../../data.ts";
 
 const search = defineStore({
 	state: {
@@ -8,8 +8,7 @@ const search = defineStore({
 		items: buildRows(ROW_COUNT),
 	},
 	computed: ({ state }) => ({
-		matches: () =>
-			state.items.filter((item) => matchesQuery(item, state.query)),
+		matches: () => filterRows(state.items, state.query),
 	}),
 });
 

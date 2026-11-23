@@ -25,6 +25,7 @@ While working on one library, run the runner directly from this package:
 ```bash
 node src/run.ts catalyst --check                # only check every library renders the same DOM as Catalyst
 node src/run.ts catalyst --library alpine       # benchmark Catalyst and Alpine, without writing results
+node src/run.ts catalyst --scenario swap-rows    # check and benchmark one scenario, without writing results
 node src/run.ts catalyst --samples 3            # take fewer samples, for a quick look
 node src/run.ts catalyst --throttle 4           # slow the CPU down 4 times, as on a mid-range phone
 ```

@@ -3,6 +3,11 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>Rows · Alpine.js</title>
+		<style>
+			.danger {
+				background: #fde2e2;
+			}
+		</style>
 	</head>
 	<body>
 		<main id="app" x-data="rows">
@@ -15,8 +20,8 @@
 			</div>
 			<table>
 				<tbody>
-					<template x-for="row in rows" :key="row.id">
-						<tr :class="{ danger: selected === row.id }">
+					<template x-for="(row, index) in rows" :key="row.id">
+						<tr :class="selected === row.id ? 'danger' : ''">
 							<td x-text="row.id"></td>
 							<td>
 								<button
@@ -26,7 +31,7 @@
 								></button>
 							</td>
 							<td>
-								<button class="remove" @click="remove(row.id)">Remove</button>
+								<button class="remove" @click="remove(index)">Remove</button>
 							</td>
 						</tr>
 					</template>
