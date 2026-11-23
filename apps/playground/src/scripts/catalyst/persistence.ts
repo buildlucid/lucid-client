@@ -1,4 +1,9 @@
-import Catalyst, { defineStore, persisted } from "@lucidclient/catalyst";
+import Catalyst, { defineStore } from "@lucidclient/catalyst";
+import {
+	clearPersisted,
+	persisted,
+	persistence,
+} from "@lucidclient/catalyst/persistence";
 import { startCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
@@ -89,6 +94,7 @@ const tabs = defineStore({
 });
 
 startCatalyst({
+	persistence: persistence(),
 	stores: {
 		prefs,
 		helpPanel: disclosure,
@@ -167,13 +173,13 @@ for (const button of document.querySelectorAll<HTMLButtonElement>(
 }
 
 document.querySelector("[data-clear-prefs]")?.addEventListener("click", () => {
-	Catalyst.clearPersisted("prefs");
-	controlsLog.info('Ran Catalyst.clearPersisted("prefs")');
+	clearPersisted("prefs");
+	controlsLog.info('Ran clearPersisted("prefs")');
 });
 
 document.querySelector("[data-clear-all]")?.addEventListener("click", () => {
-	Catalyst.clearPersisted();
-	controlsLog.info("Ran Catalyst.clearPersisted()");
+	clearPersisted();
+	controlsLog.info("Ran clearPersisted()");
 });
 
 document.querySelector("[data-reload]")?.addEventListener("click", () => {

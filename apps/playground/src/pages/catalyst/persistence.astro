@@ -9,7 +9,9 @@ import Playground from "../../layouts/Playground.astro";
 		<p>
 			State wrapped in <code>persisted()</code>, or listed in a
 			<code>data-persist</code> attribute, is saved to storage and restored when
-			the page loads again. The readouts show what is saved under the
+			the page loads again, once <code>persistence()</code> from
+			<code>@lucidclient/catalyst/persistence</code> is passed to
+			<code>Catalyst.start</code>. The readouts show what is saved under the
 			<code>catalyst:</code> prefix.
 		</p>
 		<p>
@@ -152,7 +154,7 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="clear"
 		title="Clearing saved values"
-		description="`Catalyst.clearPersisted(scope)` removes one running store's saved values, and `Catalyst.clearPersisted()` removes every running store's."
+		description="`clearPersisted(scope)` from `@lucidclient/catalyst/persistence` removes one running store's saved values, and `clearPersisted()` removes every running store's."
 		expect={[
 			"`Clear prefs` removes only the `catalyst:prefs:*` entries, and the preferences above keep their current values.",
 			"Changing a preference after clearing saves it again.",
