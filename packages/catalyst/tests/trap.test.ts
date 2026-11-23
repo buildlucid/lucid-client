@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { defineStore } from "../src/index.js";
 import { bind, trap } from "../src/reactions.js";
 import { setStoreState, settle } from "./utils.js";
@@ -59,17 +59,11 @@ describe("trap reaction", () => {
 		Catalyst.start({ stores: { shown }, reactions: [trap, bind] });
 		document.querySelector<HTMLElement>("#opener")?.focus();
 
+		// Records whether the dialog was still hidden when focus arrived.
 		const hiddenWhenFocused: boolean[] = [];
 		const dialog = document.querySelector("#dialog");
-		const focus = HTMLElement.prototype.focus;
-		vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (
-			this: HTMLElement,
-			options?: FocusOptions,
-		) {
-			if (dialog?.contains(this)) {
-				hiddenWhenFocused.push(dialog.hasAttribute("hidden"));
-			}
-			focus.call(this, options);
+		dialog?.addEventListener("focusin", () => {
+			hiddenWhenFocused.push(dialog.hasAttribute("hidden"));
 		});
 
 		await setState("shown", "open", true);

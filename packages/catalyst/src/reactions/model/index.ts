@@ -65,7 +65,8 @@ const getTarget = (
 						return;
 					}
 					if (reference.path.length === 0) state[reference.key] = value;
-					else written = assignPath(state[reference.key], reference.path, value);
+					else
+						written = assignPath(state[reference.key], reference.path, value);
 				});
 				if (!declared) {
 					context.warn(

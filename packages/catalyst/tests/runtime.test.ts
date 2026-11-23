@@ -197,7 +197,10 @@ describe("runtime robustness", () => {
 		const cleanups: string[] = [];
 		const injected = defineStore({
 			state: { label: "" },
-			init: ({ state }) => () => cleanups.push(state.label),
+			init:
+				({ state }) =>
+				() =>
+					cleanups.push(state.label),
 		});
 		Catalyst.start({ stores: { injected }, reactions: [dom] });
 		const slot = document.querySelector("#slot");
