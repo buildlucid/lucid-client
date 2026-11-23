@@ -53,7 +53,10 @@ const start = (options?: CatalystStartOptions) => {
 
 	registerStores(options?.stores);
 	for (const reaction of [...CORE_REACTIONS, ...(options?.reactions ?? [])]) {
-		if (!Catalyst.reactions.has(reaction.name)) registerReaction(reaction);
+		// A restart passes the reactions it already registered. Any other
+		// reaction reusing a name or attribute is refused with a warning.
+		if (Catalyst.reactions.get(reaction.name) === reaction) continue;
+		registerReaction(reaction);
 	}
 
 	createRuntimeOwner();

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import Catalyst, { defineStore } from "../src/index.js";
 import { bind, dom, events } from "../src/reactions.js";
 import type { Reaction } from "../src/types/index.js";
-import { setStoreState, settle } from "./utils.js";
+import { catalystWarnings, setStoreState, settle } from "./utils.js";
 
 describe("reaction lifecycle", () => {
 	it("initialises dynamic bindings once and disposes removed events", async () => {
@@ -154,5 +154,26 @@ describe("reaction lifecycle", () => {
 		await settle();
 
 		expect(document.querySelector("span")?.textContent).toBe("ready");
+	});
+
+	it("warns when a different reaction reuses a registered name", () => {
+		document.body.innerHTML = `<div data-store="names"></div>`;
+		const impostor: Reaction = {
+			name: "bind",
+			attribute: "other-bind",
+			setup: () => undefined,
+		};
+
+		Catalyst.start({ reactions: [bind, impostor] });
+
+		expect(catalystWarnings()).toContainEqual(
+			expect.stringContaining('A reaction named "bind" is already registered.'),
+		);
+
+		// Restarting with the reactions already registered doesn't warn.
+		Catalyst.destroy();
+		const before = catalystWarnings().length;
+		Catalyst.start({ reactions: [bind] });
+		expect(catalystWarnings()).toHaveLength(before);
 	});
 });
