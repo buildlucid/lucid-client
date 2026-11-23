@@ -8,6 +8,7 @@ import resolveDirectiveReference from "./resolve-directive-reference.js";
 /** First-party reactions, whose names match their attributes. */
 const FIRST_PARTY_REACTIONS = [
 	"bind",
+	"css",
 	"dom",
 	"events",
 	"loop",

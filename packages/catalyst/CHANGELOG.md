@@ -18,6 +18,7 @@
 - `flush`, `untrack` and `snapshot` are exported from `solid-js`.
 - `start`, `sync` and `refresh` apply bindings before they return, and `start` waits for `DOMContentLoaded` when it runs before `<body>` exists.
 - Added the `model` reaction for two-way binding of form fields. Text, number, checkbox, radio and select fields are supported, checkboxes can be bound to an array, values keep the type of their state, state follows a native form reset, and `$item.field` inside a loop writes to the store the loop renders.
+- Added the `css` reaction. `data-css--{name}` sets the `--{name}` custom property from state, a computed value, an action or a loop value. Booleans are written as `true` and `false`, `null`, `undefined` and empty strings remove the property, and the element's earlier inline value comes back when the directive is disposed.
 - Added `data-dom--checked`, which sets a checkbox or radio's `checked` property rather than its default.
 - `data-dom--value` selects every matching option of a `<select multiple>` from an array, and applies a select's value again when its options change, such as when a loop renders them.
 - Actions called from inside a loop item receive a `LoopItem` with its `item`, `index`, `indexOne` and `parent`: after the `Event` for events, and as the only argument for actions that provide a value.

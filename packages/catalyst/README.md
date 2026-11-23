@@ -51,9 +51,9 @@ with `$name`, actions are called with `@name`, and elements are registered as
 refs with `#name`.
 
 Reactions are registered explicitly, so an application only includes the
-behavior it uses. Catalyst exports `bind`, `dom`, `events`, `loop`, `model` and
-`trap` from `@lucidclient/catalyst/reactions`. Refs and store effects are part of the
-core and need no reaction.
+behavior it uses. Catalyst exports `bind`, `css`, `dom`, `events`, `loop`,
+`model` and `trap` from `@lucidclient/catalyst/reactions`. Refs and store effects
+are part of the core and need no reaction.
 
 `start` waits for `DOMContentLoaded` when it runs before `<body>` exists, and
 returns with every binding applied.
@@ -468,6 +468,48 @@ with their correct casing.
 field's defaults and stop applying once someone edits the field. Use
 `data-dom--checked`, `data-dom--value` or `data-model` to set what a field
 shows.
+
+### CSS variables
+
+`data-css--{name}` reactively sets the `--{name}` custom property on the element
+from state, a computed value, an action response or a loop value, so state can
+drive styles that stay in your stylesheets.
+
+```html
+<div data-store="player" data-css--progress="$percent">
+    <div class="bar"></div>
+    <ul data-loop="$tracks">
+        <template>
+            <li data-css--index="$index" data-dom--text="$item.title"></li>
+        </template>
+    </ul>
+</div>
+```
+
+```css
+.bar {
+    width: calc(var(--progress) * 1%);
+}
+li {
+    animation-delay: calc(var(--index) * 50ms);
+}
+```
+
+Strings and numbers are written as they are, so add units in CSS with `calc()`.
+Booleans are written as `true` and `false`, which style queries such as
+`@container style(--open: true)` can match. `null`, `undefined` and an empty
+string remove the property, so `var(--name, fallback)` uses its fallback. Objects
+and arrays have no CSS value, so they remove the property and log a warning.
+
+HTML lowercases attribute names, so use lowercase kebab-case custom property
+names: `data-css--accentColor` sets `--accentcolor`, not `--accentColor`. Names
+can't contain `.`.
+
+Other inline styles are left alone. When the directive is disposed, for example
+because its attribute was removed before a `sync`, the property goes back to the
+inline value the element had before, such as a server-rendered
+`style="--progress: 30%"`, or is removed. `data-bind--style` replaces the whole
+`style` attribute, including these properties, so don't use both on one element.
 
 ### DOM
 
