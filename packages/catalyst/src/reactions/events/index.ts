@@ -2,7 +2,7 @@ import type { Reaction, MemberReference } from "../../types/index.js";
 
 type EventRegistration = {
 	count: number;
-	abortController: AbortController;
+	listener: (event: Event) => void;
 };
 
 const eventRegistrations = new WeakMap<
@@ -94,13 +94,10 @@ const eventsReaction: Reaction = {
 		if (registration) {
 			registration.count += 1;
 		} else {
-			const abortController = new AbortController();
-			config.target.addEventListener(
-				config.eventName,
-				(event) => callAction(reference, event, context.resolve),
-				{ signal: abortController.signal },
-			);
-			registration = { count: 1, abortController };
+			const listener = (event: Event) =>
+				callAction(reference, event, context.resolve);
+			config.target.addEventListener(config.eventName, listener);
+			registration = { count: 1, listener };
 			registrations.set(registrationKey, registration);
 		}
 
@@ -108,7 +105,7 @@ const eventsReaction: Reaction = {
 		return () => {
 			owned.count -= 1;
 			if (owned.count > 0) return;
-			owned.abortController.abort();
+			config.target.removeEventListener(config.eventName, owned.listener);
 			if (registrations.get(registrationKey) === owned) {
 				registrations.delete(registrationKey);
 			}

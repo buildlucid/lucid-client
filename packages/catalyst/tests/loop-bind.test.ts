@@ -391,6 +391,97 @@ describe("loop updates", () => {
 		]);
 	});
 
+	it("moves only the items that change place", async () => {
+		document.body.innerHTML = `
+			<ul data-store="list" data-loop="$items">
+				<template><li data-dom--text="$item"></li></template>
+			</ul>
+		`;
+		const list = defineStore({
+			state: { items: [] as string[] },
+		});
+		Catalyst.start({ stores: { list }, reactions: [loop, dom] });
+		const store = getStore("list");
+		const write = async (items: string[]) => {
+			store?.setState((state) => {
+				state.items = items;
+			});
+			await settle();
+		};
+		const moved: Node[] = [];
+		const observer = new MutationObserver((records) => {
+			for (const record of records) moved.push(...record.removedNodes);
+		});
+
+		await write(["a", "b", "c", "d", "e"]);
+		const elements = new Map(
+			Array.from(document.querySelectorAll("li"), (item) => [
+				item.textContent,
+				item,
+			]),
+		);
+		observer.observe(document.querySelector("ul")!, { childList: true });
+
+		await write(["a", "d", "c", "b", "e"]);
+		observer
+			.takeRecords()
+			.forEach((record) => moved.push(...record.removedNodes));
+		const items = Array.from(document.querySelectorAll("li"));
+		expect(items.map((item) => item.textContent)).toEqual([
+			"a",
+			"d",
+			"c",
+			"b",
+			"e",
+		]);
+		expect(items).toEqual(
+			["a", "d", "c", "b", "e"].map((key) => elements.get(key)),
+		);
+		expect(moved.filter((node) => node instanceof Element)).toHaveLength(2);
+		observer.disconnect();
+	});
+
+	it("keeps each item's markup through reorders, inserts and removals", async () => {
+		document.body.innerHTML = `
+			<ul data-store="list" data-loop="$items">
+				<template><li data-bind--data-index="$index" data-dom--text="$item"></li></template>
+			</ul>
+		`;
+		const list = defineStore({ state: { items: [] as string[] } });
+		Catalyst.start({ stores: { list }, reactions: [loop, bind, dom] });
+		const store = getStore("list");
+		const seen = new Map<string, Element>();
+		const orders = [
+			["a", "b", "c", "d", "e", "f"],
+			["f", "e", "d", "c", "b", "a"],
+			["b", "x", "d", "a", "y"],
+			["y", "a", "d", "x", "b", "z", "c"],
+			["c"],
+			["z", "c", "a", "b"],
+			[],
+			["a", "b"],
+		];
+
+		for (const order of orders) {
+			store?.setState((state) => {
+				state.items = order;
+			});
+			await settle();
+			const items = Array.from(document.querySelectorAll("li"));
+			expect(items.map((item) => item.textContent)).toEqual(order);
+			expect(items.map((item) => item.getAttribute("data-index"))).toEqual(
+				order.map((_, index) => String(index)),
+			);
+			for (const item of items) {
+				const key = item.textContent ?? "";
+				const previous = seen.get(key);
+				if (previous?.isConnected === false) seen.delete(key);
+				else if (previous) expect(item).toBe(previous);
+				seen.set(key, item);
+			}
+		}
+	});
+
 	it("updates when items are changed in place", async () => {
 		document.body.innerHTML = `
 			<div data-store="mutable">
