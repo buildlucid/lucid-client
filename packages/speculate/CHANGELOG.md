@@ -1,5 +1,14 @@
 # @lucidclient/speculate
 
+## v1.1.3 (unreleased)
+
+## Patch Changes
+
+- `Speculator` now uses the target element for hover and click intent, so markup inside a target, such as a `<span>` label, no longer passes the inner element to `getCacheKey`, `fetch` and `onClick`.
+- Moving the pointer off a target before `hoverDelay` cancels its prefetch.
+- `hoverDelay` now defaults to 200ms, as documented. It was 100ms.
+- Results with an error are no longer cached, so the next intent fetches again. Calls made while a fetch is in flight still share it.
+
 ## v1.1.2
 
 ## Patch Changes

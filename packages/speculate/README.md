@@ -122,6 +122,13 @@ const paginator = new Speculator({
 
 Note for additional DOM event handlers other than `onClick` you can register these yourself and fetch the prefetched data via the `prefetch` public method. You may want to do this to handle `enter` and `space` `keydown` events for instance.
 
+#### Intent and Caching
+
+- Hovering a target element for `hoverDelay` (200ms by default) prefetches its data. Leaving the element before the delay cancels it.
+- Clicking a target element prefetches its data if it isn't cached, then calls `onClick` with the result.
+- The element passed to `getCacheKey`, `fetch` and `onClick`'s result is always the target element, even when the pointer is over markup inside it, such as a `<span>` label.
+- Calls made while a fetch is in flight share it. Successful results are cached until they are older than `staleTime`, while results with an `error`, including a `fetch` that throws, are not kept, so the next intent fetches again.
+
 #### Configuration Options
 
 To see the available config, checkout the `SpeculatorConfig` type [here](https://github.com/ProtoDigitalUK/lucid_client/blob/master/packages/speculate/src/types.d.ts).

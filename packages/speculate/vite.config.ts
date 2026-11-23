@@ -15,6 +15,10 @@ export default defineConfig({
 			neverBundle: true,
 		},
 	},
+	test: {
+		environment: "happy-dom",
+		include: ["tests/**/*.test.ts"],
+	},
 	run: {
 		tasks: {
 			build: {

@@ -25,10 +25,14 @@ class Speculator<T, D> {
 	}
 	/**
 	 * Registers all required events
+	 * - Handlers use the trigger the listener is registered on, so markup inside a trigger works
 	 */
 	private registerEvents() {
 		for (const target of this.normaliseTargets(this.config.elements)) {
-			target.addEventListener("mouseover", this.mouseOverEventHandler, {
+			target.addEventListener("mouseenter", this.mouseEnterEventHandler, {
+				signal: this.abortController.signal,
+			});
+			target.addEventListener("mouseleave", this.mouseLeaveEventHandler, {
 				signal: this.abortController.signal,
 			});
 			target.addEventListener("click", this.clickEventHandler, {
@@ -37,34 +41,46 @@ class Speculator<T, D> {
 		}
 	}
 	/**
-	 * The target mouseover event handler
+	 * Cancels the pending hover prefetch, if there is one
 	 */
-	private mouseOverEventHandler = (e: Event) => {
+	private cancelIntent() {
+		if (!this.intentDebounce) return;
+		clearTimeout(this.intentDebounce.timeout);
+		this.intentDebounce = null;
+	}
+	/**
+	 * Starts the hover delay for a trigger. Prefetches once the pointer has stayed on it for the delay
+	 */
+	private mouseEnterEventHandler = (e: Event) => {
 		if (!validConnection()) return;
-		const target = e.target as Element;
-		const cacheKey = this.getCacheKey(target);
-		if (!cacheKey) return;
+		const target = e.currentTarget;
+		if (!(target instanceof Element)) return;
+		if (!this.getCacheKey(target)) return;
 
-		if (this.intentDebounce && this.intentDebounce.target !== target) {
-			clearTimeout(this.intentDebounce.timeout);
-			this.intentDebounce = null;
-		}
-
-		if (!this.intentDebounce) {
-			this.intentDebounce = {
-				target,
-				timeout: setTimeout(() => {
-					this.prefetch(target);
-					this.intentDebounce = null;
-				}, this.hoverDelay),
-			};
-		}
+		this.cancelIntent();
+		this.intentDebounce = {
+			target,
+			timeout: setTimeout(() => {
+				this.intentDebounce = null;
+				void this.prefetch(target);
+			}, this.hoverDelay),
+		};
+	};
+	/**
+	 * Leaving a trigger before the hover delay cancels its prefetch
+	 */
+	private mouseLeaveEventHandler = (e: Event) => {
+		if (this.intentDebounce?.target === e.currentTarget) this.cancelIntent();
 	};
 	/**
 	 * The target click event handler
 	 */
 	private clickEventHandler = async (e: Event) => {
-		const result = await this.prefetch(e.target as Element);
+		// currentTarget is only set while the event is dispatched, so it is read before awaiting.
+		const target = e.currentTarget;
+		if (!(target instanceof Element)) return;
+		this.cancelIntent();
+		const result = await this.prefetch(target);
 		if (this.config.onClick) this.config.onClick(e, result);
 	};
 	/**
@@ -187,7 +203,7 @@ class Speculator<T, D> {
 	 * Hover delay w/ config
 	 */
 	private get hoverDelay() {
-		return this.config.hoverDelay ?? 100;
+		return this.config.hoverDelay ?? 200;
 	}
 
 	// ----------------
@@ -199,10 +215,7 @@ class Speculator<T, D> {
 	public destroy() {
 		this.abortController.abort();
 		this.clearCache();
-		if (this.intentDebounce) {
-			clearTimeout(this.intentDebounce.timeout);
-			this.intentDebounce = null;
-		}
+		this.cancelIntent();
 	}
 	/**
 	 * Refreshes the Speculator instance
@@ -246,9 +259,14 @@ class Speculator<T, D> {
 		//* cache and manage cache size
 		if (cacheKey) {
 			this.manageCacheSize();
-			this.cache.set(cacheKey, {
-				timestamp: Date.now(),
-				promise,
+			const entry = { timestamp: Date.now(), promise };
+			this.cache.set(cacheKey, entry);
+
+			//* calls made while the fetch is in flight share it, but an error isn't kept, so the next intent fetches again
+			void promise.then((result) => {
+				if (result.error && this.cache.get(cacheKey) === entry) {
+					this.cache.delete(cacheKey);
+				}
 			});
 		}
 

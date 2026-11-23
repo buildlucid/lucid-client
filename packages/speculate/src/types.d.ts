@@ -58,6 +58,7 @@ export type SpeculatorConfig<T, D> = {
 	optimistic?: OptimisticPrefetchStrategy | OptimisticPrefetchStrategy[];
 	/**
 	 * Callback that fetches the data for an element when user intent is determined
+	 * - The element is always the target element, even when the event came from markup inside it
 	 * @returns Promise that resolves with either data or an error
 	 */
 	fetch: (element: Element) => IntentResponse<T, D>;
@@ -67,6 +68,7 @@ export type SpeculatorConfig<T, D> = {
 	onClick?: (e: Event, result: IntentResult<T, D>) => void;
 	/**
 	 * Cache configuration to control data freshness and memory usage
+	 * - Results with an error are not kept, so the next intent fetches again
 	 */
 	cache?: {
 		/**
@@ -88,7 +90,7 @@ export type SpeculatorConfig<T, D> = {
 	getCacheKey?: (element: Element) => string | undefined | null;
 	/**
 	 * Delay before prefetching on hover (in milliseconds).
-	 * Helps avoid unnecessary loads during quick mouse movements.
+	 * Helps avoid unnecessary loads during quick mouse movements. Leaving the element before the delay cancels the prefetch.
 	 * @default 200
 	 */
 	hoverDelay?: number;
