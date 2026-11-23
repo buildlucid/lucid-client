@@ -11,12 +11,12 @@ A carousel for your own markup and styles, built on CSS scroll snapping. The tra
 - Attribute Driven: Set it up with `data-carousel--*` attributes, and style it with the state attributes the library writes.
 - Markers: Dots, numbers or thumbnails, from a `<template>` or your own links.
 - Infinite Looping: Loops without cloning slides, so there are no duplicate ids or form fields.
-- Mouse Drag: Drag the track with a mouse. Touch already works natively.
+- Mouse Drag: Drag the track with a mouse, from its own import. Touch already works natively.
 - Accessible Autoplay: Pauses on hover and out of view, stops on focus, and respects reduced motion.
 - Accessibility: Adds roles, labels, `aria-current`, a live status and optional `inert`.
 - Right to Left and Vertical: Follows your CSS.
 - Dynamic Markup: Slides added or removed are picked up automatically.
-- Catalyst: An optional Catalyst store, imported separately.
+- Development Warnings: Markup mistakes are pointed out while you develop, and left out of production builds.
 
 ## Getting Started
 
@@ -90,7 +90,7 @@ The library ships no CSS. This is the minimum you need:
 ```
 
 - Size slides with `flex-basis`. For three in view with a `1rem` gap, use `calc((100% - 2rem) / 3)`.
-- `scroll-snap-align` can be `start`, `center` or `end`. `scroll-padding` and `scroll-margin` are respected.
+- Give every slide the same `scroll-snap-align`: `start`, `center` or `end`. The track's `scroll-padding` is respected.
 - Add `scroll-behavior: smooth` to the track for smooth buttons and markers. Wrap it in `prefers-reduced-motion: no-preference`.
 - Use `scroll-snap-type: y mandatory` and a fixed height for a vertical carousel.
 
@@ -123,7 +123,7 @@ Add these to the `data-carousel` element.
 | --- | --- |
 | `data-carousel--loop` | Loops forever. See [Looping](#looping). |
 | `data-carousel--rewind` | `next` on the last page goes back to the first, and `prev` on the first goes to the last. |
-| `data-carousel--drag` | Lets a mouse drag the track. |
+| `data-carousel--drag` | Lets a mouse drag the track. See [Mouse Drag](#mouse-drag). |
 | `data-carousel--autoplay` | Moves on every 5 seconds. Set a value in milliseconds to change it, such as `"3000"`. |
 | `data-carousel--inert` | Makes slides out of view `inert`. See [Inert slides](#inert-slides). |
 
@@ -188,7 +188,16 @@ Links like these still work without JavaScript. With it, they scroll the track w
 
 ### Mouse Drag
 
-`data-carousel--drag` lets a mouse drag the track. On release it settles on the nearest page, or moves on one after a quick flick. Clicks on links and buttons inside slides still work, and form fields are left alone.
+`data-carousel--drag` lets a mouse drag the track. Dragging is its own import, so carousels without it don't load it. Pass it to `init`:
+
+```typescript
+import carousel from "@lucidclient/carousel";
+import drag from "@lucidclient/carousel/drag";
+
+carousel.init({ drag });
+```
+
+On release it settles on the nearest page, or moves on one after a quick flick. Clicks on links and buttons inside slides still work, and form fields are left alone.
 
 These styles show the drag cursor:
 
@@ -237,7 +246,7 @@ document.addEventListener("carousel-change", (event) => {
 
 | Method | Description |
 | --- | --- |
-| `init(options?)` | Sets up every `data-carousel` element. Calling it again starts over. |
+| `init(options?)` | Sets up every `data-carousel` element. Calling it again starts over. Takes `labels` and `drag`. |
 | `refresh()` | Picks up new carousels, controls, markers and option changes, and removes carousels that left the page. |
 | `destroy()` | Removes every carousel's listeners, and every attribute and style the library added. |
 | `get(target)` | Returns the carousel for an element inside it, or for the id of the carousel or its track. |
@@ -254,7 +263,7 @@ document.addEventListener("carousel-change", (event) => {
 | `refresh()` | Re-reads this carousel's markup. |
 | `destroy()` | Destroys this carousel. |
 
-Slides added or removed are picked up automatically. For anything else that changes after `init`, call `refresh()`.
+Slides added or removed are picked up automatically, and the slide in view stays in view. For anything else that changes after `init`, such as options, controls or markers, call `refresh()`.
 
 ### Events
 
@@ -262,11 +271,13 @@ Slides added or removed are picked up automatically. For anything else that chan
 
 ### Labels
 
-Translate or reword the text the library writes for screen readers:
+Translate or reword the text the library writes for screen readers. `init` sets the labels for every carousel:
 
 ```typescript
 carousel.init({
   labels: {
+    carouselRole: "carrousel",
+    slideRole: "diapositive",
     slide: "{n} sur {count}",
     marker: "Aller à la diapositive {n}",
     status: "Diapositive {n} sur {count}",
@@ -276,68 +287,29 @@ carousel.init({
 });
 ```
 
+A carousel can set its own with `data-carousel--label-{name}` attributes, with the names in kebab case:
+
+```html
+<section
+  data-carousel
+  aria-label="Team photos"
+  data-carousel--label-status="Photo {n} of {count}"
+  data-carousel--label-slide-role="photo"
+>
+```
+
 | Label | Default | Used for |
 | --- | --- | --- |
+| `carouselRole` | `carousel` | The carousel's `aria-roledescription`. |
+| `slideRole` | `slide` | The `aria-roledescription` of `div`, `span` and custom element slides. |
 | `slide` | `{n} of {count}` | Slides without a label. |
 | `marker` | `Go to slide {n}` | Template markers without a label. |
 | `status` | `Slide {n} of {count}` | The status announcement. |
 | `play`, `pause` | `Start automatic slide show`, `Stop automatic slide show` | Autoplay buttons without text. |
 
-## Catalyst
+### Development Build
 
-`@lucidclient/carousel/catalyst` exports `carouselStore`, a [Catalyst](https://github.com/ProtoDigitalUK/lucid_client/tree/master/packages/catalyst) store that follows a carousel. Use it to read and control the carousel from any markup inside the store. It needs `@lucidclient/catalyst` 0.6 or later.
-
-```typescript
-import Catalyst from "@lucidclient/catalyst";
-import { bind, dom, events, loop } from "@lucidclient/catalyst/reactions";
-import carousel from "@lucidclient/carousel";
-import { carouselStore } from "@lucidclient/carousel/catalyst";
-
-carousel.init();
-
-Catalyst.start({
-  stores: { gallery: carouselStore },
-  reactions: [bind, dom, events, loop],
-});
-```
-
-```html
-<div data-store="gallery">
-  <section data-carousel data-ref="#carousel" aria-label="Destinations">
-    <div data-carousel--track class="carousel-track">…</div>
-  </section>
-
-  <button data-events--click="@prev" data-bind--disabled="$atStart">Previous</button>
-  <span data-dom--text="$indexOne"></span> / <span data-dom--text="$count"></span>
-  <button data-events--click="@next" data-bind--disabled="$atEnd">Next</button>
-
-  <ol data-loop="$pages">
-    <template>
-      <li>
-        <button
-          data-events--click="@goTo"
-          data-bind--aria-current="@isCurrent"
-          data-dom--text="$indexOne"
-        ></button>
-      </li>
-    </template>
-  </ol>
-</div>
-```
-
-| Reference | Description |
-| --- | --- |
-| `$index`, `$indexOne` | The current page, from 0 and from 1. |
-| `$count`, `$atStart`, `$atEnd`, `$scrollable`, `$playing` | The carousel's state. |
-| `$pages` | The page indexes, `[0, 1, 2, …]`, for `data-loop`. |
-| `@next`, `@prev`, `@play`, `@pause`, `@toggle` | Call the matching methods. |
-| `@goTo` | Scrolls to a page: a number, or the current loop item. |
-| `@isCurrent` | Whether the current loop item is the current page. |
-
-- Put `data-ref="#carousel"` on the `data-carousel` element.
-- `carousel.init()` can run before or after `Catalyst.start()`.
-- If you add the ref later, call `Catalyst.sync()` and then `carousel.refresh()`.
-- Each store scope follows its own carousel.
+The library warns about markup it can't work with, such as a carousel without a name, an autoplaying carousel without a stop control, or looping without room to loop. Warnings only log in the development build, which bundlers such as Vite and webpack pick through the `development` export condition while you develop. Production builds leave them out.
 
 ## Browser Support
 

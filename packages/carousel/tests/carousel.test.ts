@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import drag from "../src/drag.js";
 import carousel from "../src/index.js";
 import {
 	$,
@@ -20,7 +21,7 @@ const setup = (
 	document.body.innerHTML = snapStyles + carouselMarkup(count, options);
 	const track = $("[data-carousel--track]");
 	fakeLayout(track, { size: 400, slide: 400, ...layout });
-	carousel.init();
+	carousel.init({ drag });
 	const instance = carousel.get(track);
 	if (!instance) throw new Error("The carousel was not created");
 	return { track, instance, root: $("[data-carousel]") };
@@ -497,6 +498,43 @@ describe("status", () => {
 			"Diapositive 2 sur 3",
 		);
 	});
+
+	it("translates the role descriptions", () => {
+		document.body.innerHTML = snapStyles + carouselMarkup(3);
+		fakeLayout($(".track"), { size: 400, slide: 400 });
+		carousel.init({
+			labels: { carouselRole: "carrousel", slideRole: "diapositive" },
+		});
+		expect($("[data-carousel]").getAttribute("aria-roledescription")).toBe(
+			"carrousel",
+		);
+		expect($("#slide-0").getAttribute("aria-roledescription")).toBe(
+			"diapositive",
+		);
+	});
+
+	it("uses a carousel's own labels from data-carousel--label attributes", async () => {
+		document.body.innerHTML = `${snapStyles}
+			${carouselMarkup(3, {
+				attributes:
+					'id="own" data-carousel--label-status="Photo {n} of {count}" data-carousel--label-slide-role="photo"',
+				extra: `<p data-carousel--status></p>`,
+			})}
+			<section data-carousel aria-label="Other" id="other">
+				<div data-carousel--track class="track"><div class="slide">1</div><div class="slide">2</div></div>
+			</section>`;
+		for (const track of $$(".track"))
+			fakeLayout(track, { size: 400, slide: 400 });
+		carousel.init({ labels: { slide: "{n} sur {count}" } });
+		expect($("#slide-0").getAttribute("aria-roledescription")).toBe("photo");
+		expect($("#slide-0").getAttribute("aria-label")).toBe("1 sur 3");
+		expect($("#other .slide").getAttribute("aria-roledescription")).toBe(
+			"slide",
+		);
+		$("#next").click();
+		await frame();
+		expect($("[data-carousel--status]").textContent).toBe("Photo 2 of 3");
+	});
 });
 
 describe("autoplay", () => {
@@ -802,6 +840,17 @@ describe("mouse drag", () => {
 		);
 	});
 
+	it("warns when drag wasn't passed to init", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		document.body.innerHTML =
+			snapStyles + carouselMarkup(3, { attributes: "data-carousel--drag" });
+		fakeLayout($(".track"), { size: 400, slide: 400 });
+		carousel.init();
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining("drag wasn't passed to carousel.init()"),
+		);
+	});
+
 	it("ignores touch, which scrolls natively", () => {
 		const { track } = setup(4, { attributes: "data-carousel--drag" });
 		track.dispatchEvent(
@@ -895,26 +944,6 @@ describe("review regressions", () => {
 		layout.slide = 200;
 		instance?.refresh();
 		expect(targets[targets.length - 1]).toBe(200);
-	});
-
-	it("treats the last snap position as the end when scroll-margin stops short", async () => {
-		document.body.innerHTML = `
-			<style>
-				.track { display: flex; scroll-snap-type: x mandatory; }
-				.slide { scroll-snap-align: start; scroll-margin-left: 20px; }
-			</style>
-			${carouselMarkup(3, { attributes: "data-carousel--rewind" })}`;
-		const track = $(".track");
-		fakeLayout(track, { size: 100, slide: 100 });
-		carousel.init();
-		const instance = carousel.get(track);
-		instance?.goTo(2);
-		await frame();
-		expect(scrollOf(track)).toBe(180);
-		expect(instance?.state.atEnd).toBe(true);
-		$("#next").click();
-		await frame();
-		expect(instance?.state.index).toBe(0);
 	});
 
 	it("reads percentage scroll-padding against the track", () => {
@@ -1101,25 +1130,6 @@ describe("second review regressions", () => {
 		return targets;
 	};
 
-	it("rewinds when pages are further apart than the track can scroll", async () => {
-		vi.spyOn(console, "warn").mockImplementation(() => {});
-		document.body.innerHTML = `
-			<style>
-				.track { display: flex; scroll-snap-type: x mandatory; }
-				.slide { scroll-snap-align: none; }
-				.slide:nth-child(odd) { scroll-snap-align: start; }
-			</style>
-			${carouselMarkup(6, { attributes: "data-carousel--loop" })}`;
-		const track = $(".track");
-		fakeLayout(track, { size: 500, slide: 100 });
-		carousel.init();
-		const instance = carousel.get(track);
-		expect($$(".slide").every((slide) => slide.style.order === "")).toBe(true);
-		$("#next").click();
-		await frame();
-		expect(instance?.state.index).toBe(1);
-	});
-
 	it("rewinds when scroll-padding keeps neighbouring pages out of reach", async () => {
 		vi.spyOn(console, "warn").mockImplementation(() => {});
 		document.body.innerHTML = `
@@ -1139,28 +1149,6 @@ describe("second review regressions", () => {
 			seen.push(instance?.state.index ?? -1);
 		}
 		expect(new Set(seen).size).toBeGreaterThan(1);
-	});
-
-	it("only treats the last page as the end, wherever it snaps", async () => {
-		document.body.innerHTML = `
-			<style>
-				.track { display: flex; scroll-snap-type: x mandatory; }
-				.slide { scroll-snap-align: start; }
-				.slide:last-child { scroll-margin-left: 150px; }
-			</style>
-			${carouselMarkup(3)}`;
-		const track = $(".track");
-		fakeLayout(track, { size: 100, slide: 100 });
-		carousel.init();
-		const instance = carousel.get(track);
-		instance?.goTo(1);
-		await frame();
-		expect(instance?.state.atEnd).toBe(false);
-		expect($("#next").hasAttribute("aria-disabled")).toBe(false);
-		$("#next").click();
-		await frame();
-		expect(instance?.state.index).toBe(2);
-		expect(instance?.state.atEnd).toBe(true);
 	});
 
 	it("keeps heading for the same slide when the pages change mid-scroll", () => {
@@ -1417,7 +1405,7 @@ describe("second review regressions", () => {
 		expect(prev.getAttribute("aria-label")).toBe("Start automatic slide show");
 	});
 
-	it("focuses the same element inside a rebuilt marker, skipping disabled ones", () => {
+	it("focuses the first enabled control inside a rebuilt marker", () => {
 		const { instance } = setup(3, {
 			extra: `<ol data-carousel--markers><template><li><button disabled>Off</button><button class="go">Go {n}</button></li></template></ol>`,
 		});

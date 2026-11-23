@@ -16,7 +16,7 @@ export type HeldStyles = {
 
 /**
  * Inline styles set on the track for a moment, such as turning snapping off
- * while the library scrolls it, then put back exactly as they were
+ * while the library reorders the slides, then put back exactly as they were
  */
 export const createHeldStyles = (track: HTMLElement): HeldStyles => {
 	const held = new Map<string, { value: string; priority: string }>();
@@ -63,11 +63,12 @@ export const physicalScroll = (ctx: Context) =>
 /** Scrolls straight to a position, ignoring `scroll-behavior` */
 export const jump = (ctx: Context, value: number) => {
 	if (ctx.destroyed) return;
-	const { held, layout, track } = ctx;
-	const instant = held.hold("scroll-behavior", "auto");
-	if (layout.vertical) track.scrollTop = value;
-	else track.scrollLeft = layout.rtl ? -value : value;
-	if (instant) held.release("scroll-behavior");
+	const { layout, track } = ctx;
+	track.scrollTo(
+		layout.vertical
+			? { top: value, behavior: "instant" }
+			: { left: layout.rtl ? -value : value, behavior: "instant" },
+	);
 };
 
 /** Scrolls to a position, smoothly when the track's CSS asks for it */
@@ -89,32 +90,13 @@ export const targetPage = (ctx: Context) => {
 // ----------------------------------------------------------------
 // Snapping
 
-/** Turns snapping off while the library scrolls the track, so browsers that snap mid-scroll can't stop it early */
+/** Turns snapping off while the library reorders or drags the slides, so the browser doesn't snap mid-way */
 export const suspendSnap = (ctx: Context) => {
-	cancelAnimationFrame(ctx.resumeFrame);
-	ctx.resumeFrame = 0;
 	ctx.held.hold("scroll-snap-type", "none");
 };
 
-/**
- * Turns snapping back on once nothing is moving the track. With `delayed`,
- * such as after a loop rotation, it waits two frames so the browser doesn't
- * snap mid-jump.
- */
-export const resumeSnap = (ctx: Context, delayed: boolean) => {
-	const restore = () => {
-		ctx.resumeFrame = 0;
-		if (ctx.targetSlide !== null || ctx.drag?.dragging) return;
-		ctx.held.release("scroll-snap-type");
-	};
-
-	cancelAnimationFrame(ctx.resumeFrame);
-	ctx.resumeFrame = 0;
-	if (!ctx.held.isHeld("scroll-snap-type")) return;
-
-	if (!delayed) restore();
-	else
-		ctx.resumeFrame = requestAnimationFrame(() => {
-			ctx.resumeFrame = requestAnimationFrame(restore);
-		});
+/** Turns snapping back on once nothing is moving the track */
+export const resumeSnap = (ctx: Context) => {
+	if (ctx.targetSlide !== null || ctx.drag?.dragging) return;
+	ctx.held.release("scroll-snap-type");
 };

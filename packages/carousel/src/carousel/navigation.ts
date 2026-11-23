@@ -47,7 +47,6 @@ export const go = (
 	ctx.targetSlide = ctx.slides[targetSlide ?? -1] ?? null;
 	ctx.targetPosition = to;
 
-	suspendSnap(ctx);
 	if (Math.abs(to - position(ctx)) < 1) {
 		// A scroll still heading elsewhere is replaced by one that stays here.
 		if (moving) scrollTo(ctx, to);

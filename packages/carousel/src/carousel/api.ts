@@ -1,5 +1,4 @@
 import C from "../constants.js";
-import S from "../state.js";
 import type { Carousel } from "../types.js";
 import { prefersReducedMotion } from "./autoplay.js";
 import type { Context } from "./context.js";
@@ -97,10 +96,7 @@ export const createApi = (
 				ctx.subscribers.delete(listener);
 			};
 		},
-		refresh: live(() => {
-			refresh(ctx);
-			for (const listener of S.listeners) listener("refresh", api);
-		}),
+		refresh: live(() => refresh(ctx)),
 		destroy: live(() => {
 			teardown(ctx);
 			onDestroy(api);

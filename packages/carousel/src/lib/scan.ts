@@ -6,14 +6,9 @@ import controlledRoot from "./controlled-root.js";
 
 const A = C.attributes;
 
-const notify = (type: "create" | "destroy", carousel: Carousel) => {
-	for (const listener of S.listeners) listener(type, carousel);
-};
-
 /** Removes a destroyed carousel from the registry */
 export const forget = (carousel: Carousel) => {
 	S.instances.delete(carousel.element);
-	notify("destroy", carousel);
 };
 
 /** The elements matching `selector`, in page order, grouped by the carousel each operates */
@@ -55,7 +50,6 @@ const scan = () => {
 	}
 	for (const instance of created) instance.measure();
 	for (const instance of created) instance.start();
-	for (const instance of created) notify("create", instance.api);
 };
 
 export default scan;

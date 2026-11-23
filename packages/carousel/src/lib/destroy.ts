@@ -7,7 +7,6 @@ const destroy = () => {
 	for (const instance of Array.from(S.instances.values())) {
 		instance.teardown();
 		S.instances.delete(instance.api.element);
-		for (const listener of S.listeners) listener("destroy", instance.api);
 	}
 	S.abortController.abort();
 	S.initialised = false;

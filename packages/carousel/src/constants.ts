@@ -15,6 +15,8 @@ export default {
 		autoplay: "data-carousel--autoplay",
 		drag: "data-carousel--drag",
 		inert: "data-carousel--inert",
+		/** The prefix of the per carousel labels, such as `data-carousel--label-status` */
+		label: "data-carousel--label",
 		// State, written by the library
 		ready: "data-carousel--ready",
 		index: "data-carousel--index",
@@ -48,6 +50,8 @@ export default {
 	/** Milliseconds without a scroll event before a scroll counts as finished, when `scrollend` can't be relied on */
 	settleDelay: 200,
 	labels: {
+		carouselRole: "carousel",
+		slideRole: "slide",
 		slide: "{n} of {count}",
 		marker: "Go to slide {n}",
 		status: "Slide {n} of {count}",

@@ -1,6 +1,5 @@
 import C from "../constants.js";
 import format from "../lib/format.js";
-import S from "../state.js";
 import type { CarouselChange, CarouselState } from "../types.js";
 import { isAutoplayAction } from "./autoplay.js";
 import type { Context } from "./context.js";
@@ -146,19 +145,14 @@ const renderControls = (ctx: Context) => {
 			continue;
 		}
 
-		// A control changed to another action loses what the library wrote for the old one.
-		if (rec.added(control, "aria-disabled"))
-			rec.attr(control, "aria-disabled", null);
-		if (!isAutoplayAction(action)) {
-			if (rec.added(control, "aria-label"))
-				rec.attr(control, "aria-label", null);
-			continue;
-		}
-
-		if (hasOwnName(ctx, control)) continue;
+		if (!isAutoplayAction(action) || hasOwnName(ctx, control)) continue;
 		const playing =
 			action === C.actions.toggle ? state.playing : action === C.actions.pause;
-		rec.attr(control, "aria-label", playing ? S.labels.pause : S.labels.play);
+		rec.attr(
+			control,
+			"aria-label",
+			playing ? ctx.labels.pause : ctx.labels.play,
+		);
 	}
 };
 
@@ -186,7 +180,7 @@ export const announce = (ctx: Context) => {
 	ctx.announced = state.index;
 	if (ctx.fromAutoplay || state.count === 0) return;
 
-	const text = format(S.labels.status, state.index + 1, state.count);
+	const text = format(ctx.labels.status, state.index + 1, state.count);
 	for (const status of ctx.statuses) {
 		if (!statusNodes.has(status))
 			statusNodes.set(status, Array.from(status.childNodes));
@@ -194,23 +188,18 @@ export const announce = (ctx: Context) => {
 	}
 };
 
-/** With `data-carousel--inert`, makes slides out of view inert, except one holding focus */
+/**
+ * With `data-carousel--inert`, makes slides out of view inert, except one
+ * holding focus. Inert the markup set itself is left alone.
+ */
 export const applyInert = (ctx: Context) => {
 	const { config, rec } = ctx;
-	// Without the option, the slides are only visited once more after it is turned off, to take back what it added.
-	if (!config.inert && !ctx.inertApplied) return;
-	ctx.inertApplied = config.inert;
-
+	if (!config.inert) return;
 	const focused = document.activeElement;
 	for (const slide of ctx.slides) {
-		const added = rec.added(slide, "inert");
-		// Inert the markup set itself is left alone.
-		if (slide.hasAttribute("inert") && !added) continue;
-		if (!config.inert && !added) continue;
+		if (slide.hasAttribute("inert") && !rec.added(slide, "inert")) continue;
 		const hide =
-			config.inert &&
-			!slide.hasAttribute(A.visible) &&
-			!(focused && slide.contains(focused));
+			!slide.hasAttribute(A.visible) && !(focused && slide.contains(focused));
 		rec.attr(slide, "inert", hide ? "" : null);
 	}
 };

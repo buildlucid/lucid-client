@@ -11,17 +11,13 @@ import registerListeners from "./listeners.js";
 import { centreCurrent } from "./loop.js";
 import {
 	checkAutoplayControl,
-	handOver,
 	readConfig,
+	readLabels,
 	readMarkup,
 	rescan,
+	resetMarkup,
 } from "./markup.js";
-import {
-	applyLayout,
-	createResizeObserver,
-	measureLayout,
-	onResize,
-} from "./measure.js";
+import { applyLayout, measureLayout, onResize } from "./measure.js";
 import { step } from "./navigation.js";
 import createRecorder from "./recorder.js";
 import { applyInert, setState, update } from "./render.js";
@@ -43,13 +39,14 @@ const createContext = (root: HTMLElement, track: HTMLElement): Context => {
 			() => setState(ctx, { ...ctx.state, playing: ctx.autoplay.on }),
 		),
 		drag: null,
-		resize: createResizeObserver((entries) => onResize(ctx, entries)),
+		resize: new ResizeObserver((entries) => onResize(ctx, entries)),
 		mutation: new MutationObserver(() => {
 			if (!ctx.destroyed) rescan(ctx);
 		}),
 		subscribers: new Set(),
 
 		config: readConfig(root),
+		labels: readLabels(root),
 		slides: [],
 		controls: [],
 		markers: [],
@@ -66,7 +63,6 @@ const createContext = (root: HTMLElement, track: HTMLElement): Context => {
 		state: emptyState(),
 		slideFlags: [],
 		announced: 0,
-		inertApplied: false,
 		started: false,
 		destroyed: false,
 		warnings: new Set(),
@@ -82,7 +78,6 @@ const createContext = (root: HTMLElement, track: HTMLElement): Context => {
 
 		settleTimer: undefined,
 		measureFrame: 0,
-		resumeFrame: 0,
 	};
 	ctx.mutation.observe(track, { childList: true });
 	return ctx;
@@ -101,7 +96,7 @@ const start = (ctx: Context) => {
 
 	if (ctx.looping && centreCurrent(ctx) !== 0) {
 		update(ctx);
-		resumeSnap(ctx, true);
+		resumeSnap(ctx);
 	}
 
 	ctx.announced = ctx.state.index;
@@ -126,10 +121,11 @@ const createCarousel = (
 ): Instance | null => {
 	const track = owned(root, `[${C.attributes.track}]`)[0];
 	if (!track) {
-		log(
-			"warn",
-			"A data-carousel element has no data-carousel--track element, so it was skipped.",
-		);
+		if (__DEV__)
+			log(
+				"warn",
+				"A data-carousel element has no data-carousel--track element, so it was skipped.",
+			);
 		return null;
 	}
 
@@ -142,7 +138,7 @@ const createCarousel = (
 		api,
 		handle: (element, event) => handle(ctx, element, event),
 		teardown: () => teardown(ctx),
-		release: (element) => handOver(ctx, element),
+		reset: () => resetMarkup(ctx),
 		measure: () => {
 			if (!ctx.destroyed) measureLayout(ctx);
 		},

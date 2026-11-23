@@ -62,7 +62,7 @@ export const settle = (ctx: Context, force: boolean) => {
 		recentred = centreCurrent(ctx) !== 0;
 		if (recentred) update(ctx);
 	}
-	resumeSnap(ctx, recentred);
+	resumeSnap(ctx);
 
 	ctx.scrolling = false;
 	rememberSnapped(ctx);
@@ -78,5 +78,5 @@ export const interrupt = (ctx: Context) => {
 	if (ctx.targetSlide === null) return;
 	ctx.targetSlide = null;
 	ctx.fromAutoplay = false;
-	resumeSnap(ctx, false);
+	resumeSnap(ctx);
 };

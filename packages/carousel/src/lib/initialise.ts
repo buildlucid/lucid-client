@@ -1,3 +1,4 @@
+import type { Context } from "../carousel/context.js";
 import C from "../constants.js";
 import S from "../state.js";
 import type { Options } from "../types.js";
@@ -12,6 +13,7 @@ const initialise = (options?: Options) => {
 	if (S.initialised) lib.destroy();
 
 	S.labels = { ...C.labels, ...options?.labels };
+	S.drag = options?.drag as ((ctx: Context) => void) | undefined;
 	S.abortController = new AbortController();
 	S.initialised = true;
 	lib.registerEvents();

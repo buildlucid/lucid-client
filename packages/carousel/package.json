@@ -13,28 +13,25 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js",
+			"import": {
+				"development": "./dist/dev/index.js",
+				"default": "./dist/index.js"
+			},
 			"require": "./dist/index.cjs"
 		},
-		"./catalyst": {
-			"types": "./dist/catalyst.d.ts",
-			"import": "./dist/catalyst.js",
-			"require": "./dist/catalyst.cjs"
+		"./drag": {
+			"types": "./dist/drag.d.ts",
+			"import": {
+				"development": "./dist/dev/drag.js",
+				"default": "./dist/drag.js"
+			},
+			"require": "./dist/drag.cjs"
 		}
 	},
 	"scripts": {
 		"dev": "vp pack --watch"
 	},
-	"peerDependencies": {
-		"@lucidclient/catalyst": "^0.6.0"
-	},
-	"peerDependenciesMeta": {
-		"@lucidclient/catalyst": {
-			"optional": true
-		}
-	},
 	"devDependencies": {
-		"@lucidclient/catalyst": "*",
 		"happy-dom": "^20.11.1",
 		"playwright": "1.65.1",
 		"vite-plus": "1.7.0",

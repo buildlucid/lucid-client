@@ -59,7 +59,7 @@ export const measureLayout = (ctx: Context) => {
 		if (canLoop) measure(ctx, false, suspended);
 	}
 
-	if (config.loop && !looping && ctx.layout.max > 1)
+	if (__DEV__ && config.loop && !looping && ctx.layout.max > 1)
 		warnOnce(
 			ctx,
 			"Looping needs 3 or more slides in a flex or grid track, with room to scroll at least one slide, so this carousel rewinds at its ends instead.",
@@ -91,7 +91,7 @@ const restoreSnapped = (ctx: Context) => {
 	const page = layout.pages[layout.slidePage[slide] ?? -1];
 	const to = clamp(page?.position ?? 0, 0, layout.max);
 	if (Math.abs(to - position(ctx)) > 1) jump(ctx, to);
-	resumeSnap(ctx, true);
+	resumeSnap(ctx);
 };
 
 /**
@@ -122,15 +122,17 @@ export const applyLayout = (
 
 /**
  * Measures the track again, and keeps a navigation in progress heading for
- * its page. With `silent`, the state is left for the caller to update.
+ * its page
+ * - With `silent`, the state is left for the caller to update
+ * - With `restore`, the slide that was in view is put back even when nothing changed size
  */
-export const remeasure = (ctx: Context, silent = false) => {
+export const remeasure = (ctx: Context, silent = false, restore = false) => {
 	cancelAnimationFrame(ctx.measureFrame);
 	ctx.measureFrame = 0;
 	if (ctx.destroyed) return;
 	const before = ctx.layout;
 	measureLayout(ctx);
-	applyLayout(ctx, silent, resized(before, ctx.layout));
+	applyLayout(ctx, silent, restore || resized(before, ctx.layout));
 };
 
 /**
@@ -145,12 +147,6 @@ export const measureIfResized = (ctx: Context) => {
 	if (client !== layout.client || Math.max(0, size - client) !== layout.max)
 		remeasure(ctx, true);
 };
-
-/** A `ResizeObserver`, or one that does nothing in browsers without it */
-export const createResizeObserver = (callback: ResizeObserverCallback) =>
-	typeof ResizeObserver === "function"
-		? new ResizeObserver(callback)
-		: ({ observe() {}, disconnect() {} } as unknown as ResizeObserver);
 
 /** Measures again in the next frame when the track or a slide changed size since it was last measured */
 export const onResize = (ctx: Context, entries: ResizeObserverEntry[]) => {

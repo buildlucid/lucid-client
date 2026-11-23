@@ -1,3 +1,4 @@
+import type { Context } from "./carousel/context.js";
 import C from "./constants.js";
 import type { Carousel, CarouselState, Labels } from "./types.js";
 
@@ -8,8 +9,8 @@ export type Instance = {
 	handle: (element: Element, event: Event) => void;
 	/** Destroys the carousel without telling the registry, for destroying every carousel at once */
 	teardown: () => void;
-	/** Hands a control or marker over to another carousel */
-	release: (element: HTMLElement) => void;
+	/** Puts the markup back as it was rendered, keeping the listeners, so it can be read again */
+	reset: () => void;
 	/** Measures a new carousel, once every carousel starting with it has set its attributes */
 	measure: () => void;
 	/** Writes a new carousel's state, once every carousel starting with it has measured */
@@ -26,19 +27,13 @@ export const emptyState = (): CarouselState => ({
 	playing: false,
 });
 
-/** `refresh` runs for every carousel that is refreshed, so listeners can check it again */
-export type RegistryListener = (
-	type: "create" | "refresh" | "destroy",
-	carousel: Carousel,
-) => void;
-
 const S: {
 	labels: Labels;
 	instances: Map<HTMLElement, Instance>;
 	abortController: AbortController;
 	initialised: boolean;
-	/** Told whenever a carousel is created or destroyed, such as by the Catalyst store. Kept across init and destroy. */
-	listeners: Set<RegistryListener>;
+	/** Mouse dragging, when `init` was given it */
+	drag: ((ctx: Context) => void) | undefined;
 	/** Counts the ids generated for tracks without one */
 	ids: number;
 } = {
@@ -46,7 +41,7 @@ const S: {
 	instances: new Map(),
 	abortController: new AbortController(),
 	initialised: false,
-	listeners: new Set(),
+	drag: undefined,
 	ids: 0,
 };
 

@@ -5,7 +5,7 @@ import log from "../lib/log.js";
  * the pages they snap to. Nothing here changes the page.
  */
 
-export type Align = "start" | "center" | "end" | "none";
+export type Align = "start" | "center" | "end";
 
 /** Which way the track scrolls */
 export type Axis = { vertical: boolean; rtl: boolean };
@@ -36,10 +36,9 @@ export type Layout = Axis & {
 	sizes: Map<Element, string>;
 	padStart: number;
 	padEnd: number;
+	/** The slides' `scroll-snap-align`, read from the first slide */
+	align: Align;
 	boxes: Box[];
-	aligns: Align[];
-	/** Each slide's scroll-margin, at its start and end */
-	margins: Array<[number, number]>;
 	/** Each slide's own margin, at its start and end, which moves with it when slides are reordered. Only measured for looping. */
 	outer: Array<[number, number]>;
 	pages: Page[];
@@ -59,9 +58,8 @@ export const emptyLayout = (): Layout => ({
 	sizes: new Map(),
 	padStart: 0,
 	padEnd: 0,
+	align: "start",
 	boxes: [],
-	aligns: [],
-	margins: [],
 	outer: [],
 	pages: [],
 	slidePage: [],
@@ -86,29 +84,18 @@ export const readScroll = (track: HTMLElement, { vertical, rtl }: Axis) => {
 };
 
 /**
- * The scroll position that snaps a slide, following `scroll-snap-align`,
- * `scroll-margin` and the track's `scroll-padding`. `start` is where the slide
- * starts, which looping can plan before the slides move.
+ * The scroll position that snaps a slide, following `scroll-snap-align` and
+ * the track's `scroll-padding`. `start` is where the slide starts, which
+ * looping can plan before the slides move.
  */
 export const snapPosition = (layout: Layout, slide: number, start: number) => {
 	const box = layout.boxes[slide];
-	const margin = layout.margins[slide];
-	if (!box || !margin) return 0;
-
-	const areaStart = start - margin[0];
-	const areaEnd = start + box.size + margin[1];
-	const { client, padStart, padEnd } = layout;
-
-	switch (layout.aligns[slide]) {
-		case "end":
-			return areaEnd - client + padEnd;
-		case "center":
-			return (
-				(areaStart + areaEnd) / 2 - padStart - (client - padStart - padEnd) / 2
-			);
-		default:
-			return areaStart - padStart;
-	}
+	if (!box) return 0;
+	const { align, client, padStart, padEnd } = layout;
+	if (align === "end") return start + box.size - client + padEnd;
+	if (align === "center")
+		return start + box.size / 2 - padStart - (client - padStart - padEnd) / 2;
+	return start - padStart;
 };
 
 /** The page whose position is nearest a scroll position */
@@ -138,9 +125,9 @@ const px = (value: string | undefined, basis = 0) => {
 /** A style's lengths at the start and end of the scroll axis, such as `margin-left` and `margin-right` for a left to right track */
 const edges = (
 	style: CSSStyleDeclaration,
-	property: "margin" | "scrollMargin" | "scrollPadding",
+	property: "margin" | "scrollPadding",
 	{ vertical, rtl }: Axis,
-	basis = 0,
+	basis: number,
 ): [number, number] => {
 	const [start, end] = vertical
 		? (["Top", "Bottom"] as const)
@@ -157,44 +144,25 @@ const edges = (
  * Reads `scroll-snap-align` for the scroll axis. Its first value is for the
  * block axis and its second, when given, for the inline axis.
  */
-const readAlign = (value: string, vertical: boolean): Align => {
+const readAlign = (value: string, vertical: boolean): Align | null => {
 	const parts = value.trim().split(/\s+/);
 	const part = vertical ? parts[0] : (parts[1] ?? parts[0]);
-	return part === "start" || part === "center" || part === "end"
-		? part
-		: "none";
+	return part === "start" || part === "center" || part === "end" ? part : null;
 };
 
 /**
- * Whether the track scrolls vertically: from `scroll-snap-type`, or for `both`
- * and `none`, from the axis that overflows
- */
-const isVertical = (style: CSSStyleDeclaration, track: HTMLElement) => {
-	const type = style.scrollSnapType || "";
-	if (/\b(y|block)\b/.test(type)) return true;
-	if (/\b(x|inline)\b/.test(type)) return false;
-	return (
-		track.scrollHeight - track.clientHeight > 1 &&
-		track.scrollWidth - track.clientWidth <= 1
-	);
-};
-
-/**
- * Groups slides into pages, the positions the carousel snaps to
- * - Without looping, positions are clamped to what the track can reach, so the
- *   slides at the end that can't snap on their own share the last page
- * - Slides that don't snap belong to the page of the snapping slide before them
+ * Groups slides into pages, the positions the carousel snaps to. Without
+ * looping, positions are clamped to what the track can reach, so the slides
+ * at the end that can't snap on their own share the last page.
  */
 const buildPages = (layout: Layout, loop: boolean) => {
 	const pages: Page[] = [];
 	const slidePage: number[] = [];
-	const { aligns, boxes, max } = layout;
 	let furthest = Number.NEGATIVE_INFINITY;
 
-	aligns.forEach((align, slide) => {
-		if (align === "none") return;
-		const raw = snapPosition(layout, slide, boxes[slide]?.start ?? 0);
-		const position = loop ? raw : clamp(raw, 0, max);
+	layout.boxes.forEach((box, slide) => {
+		const raw = snapPosition(layout, slide, box.start);
+		const position = loop ? raw : clamp(raw, 0, layout.max);
 
 		// Positions usually grow from slide to slide, so a slide past every page so far starts a new one without searching them.
 		const existing =
@@ -210,18 +178,6 @@ const buildPages = (layout: Layout, loop: boolean) => {
 		}
 		slidePage[slide] = pages.length;
 		pages.push({ position, slide, slides: [slide] });
-	});
-
-	let previous = loop ? pages.length - 1 : 0;
-	aligns.forEach((align, slide) => {
-		if (align !== "none") {
-			previous = slidePage[slide] ?? previous;
-			return;
-		}
-		if (pages.length === 0) return;
-		slidePage[slide] = previous;
-		const page = pages[previous];
-		if (page) page.slides = [...page.slides, slide].sort((a, b) => a - b);
 	});
 
 	return { pages, slidePage };
@@ -274,7 +230,9 @@ export const measureTrack = (
 ): Layout => {
 	const style = getComputedStyle(track);
 	const vertical =
-		snapSuspended && previous ? previous.vertical : isVertical(style, track);
+		snapSuspended && previous
+			? previous.vertical
+			: /\b(y|block)\b/.test(style.scrollSnapType);
 	const rtl = !vertical && style.direction === "rtl";
 	const axis = { vertical, rtl };
 
@@ -283,6 +241,20 @@ export const measureTrack = (
 	const max = Math.max(0, scrollSize - client);
 	const scroll = readScroll(track, axis);
 	const [padStart, padEnd] = edges(style, "scrollPadding", axis, client);
+
+	let align = slides[0]
+		? readAlign(getComputedStyle(slides[0]).scrollSnapAlign || "", vertical)
+		: "start";
+	if (!align) {
+		if (__DEV__ && !warnedAlign) {
+			warnedAlign = true;
+			log(
+				"warn",
+				"The first slide has no scroll-snap-align, so the slides are treated as start aligned. Add the CSS from the README so the track snaps.",
+			);
+		}
+		align = "start";
+	}
 
 	// The edges of the track's padding box, which scroll positions are measured from.
 	const rect = track.getBoundingClientRect();
@@ -295,14 +267,10 @@ export const measureTrack = (
 	]);
 
 	const boxes: Box[] = [];
-	const aligns: Align[] = [];
-	const margins: Array<[number, number]> = [];
 	const outer: Array<[number, number]> = [];
-
 	for (const slide of slides) {
 		const box = slide.getBoundingClientRect();
 		sizes.set(slide, sizeKey(box.width, box.height));
-
 		const start = vertical
 			? box.top - innerStart
 			: rtl
@@ -312,22 +280,8 @@ export const measureTrack = (
 			start: start + scroll,
 			size: vertical ? box.height : box.width,
 		});
-
-		const slideStyle = getComputedStyle(slide);
-		aligns.push(readAlign(slideStyle.scrollSnapAlign || "", vertical));
-		margins.push(edges(slideStyle, "scrollMargin", axis));
-		if (loop) outer.push(edges(slideStyle, "margin", axis, client));
-	}
-
-	if (aligns.length > 0 && !aligns.some((align) => align !== "none")) {
-		if (!warnedAlign) {
-			warnedAlign = true;
-			log(
-				"warn",
-				"No slide has a scroll-snap-align, so every slide is treated as start aligned. Add the CSS from the README so the track snaps.",
-			);
-		}
-		aligns.fill("start");
+		if (loop)
+			outer.push(edges(getComputedStyle(slide), "margin", axis, client));
 	}
 
 	const { origin, gap } = loop
@@ -343,9 +297,8 @@ export const measureTrack = (
 		sizes,
 		padStart,
 		padEnd,
+		align,
 		boxes,
-		aligns,
-		margins,
 		outer,
 		pages: [],
 		slidePage: [],

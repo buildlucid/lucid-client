@@ -4,6 +4,7 @@ export type {
 	Carousel,
 	CarouselChange,
 	CarouselState,
+	Drag,
 	Labels,
 	Options,
 } from "./types.js";

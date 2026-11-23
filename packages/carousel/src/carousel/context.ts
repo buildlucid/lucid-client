@@ -1,5 +1,5 @@
 import log from "../lib/log.js";
-import type { CarouselState } from "../types.js";
+import type { CarouselState, Labels } from "../types.js";
 import type { Autoplay } from "./autoplay.js";
 import type { Drag } from "./drag.js";
 import type { Layout } from "./layout.js";
@@ -53,6 +53,8 @@ export type Context = {
 	// What the markup holds
 
 	config: Config;
+	/** The labels passed to `init`, with the carousel's own `data-carousel--label-{name}` attributes */
+	labels: Labels;
 	slides: HTMLElement[];
 	controls: HTMLElement[];
 	/** Every marker: the author's own, then the generated ones */
@@ -81,8 +83,6 @@ export type Context = {
 	slideFlags: number[];
 	/** The page the status elements last announced */
 	announced: number;
-	/** Whether `data-carousel--inert` applied when the slides were last made inert */
-	inertApplied: boolean;
 	/** Events wait until the carousel has started, so loading on a later page doesn't count as a change */
 	started: boolean;
 	destroyed: boolean;
@@ -114,10 +114,9 @@ export type Context = {
 
 	settleTimer: ReturnType<typeof setTimeout> | undefined;
 	measureFrame: number;
-	resumeFrame: number;
 };
 
-/** Logs a warning, once per carousel */
+/** Logs a warning, once per carousel. Only call it inside `if (__DEV__)`. */
 export const warnOnce = (ctx: Context, message: string) => {
 	if (ctx.warnings.has(message)) return;
 	ctx.warnings.add(message);

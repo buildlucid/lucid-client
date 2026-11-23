@@ -144,8 +144,11 @@ const registerDrag = (
 			}
 			event.preventDefault();
 			// Physical scroll values follow the pointer the same way in either direction.
-			if (vertical) track.scrollTop = press.top - dy;
-			else track.scrollLeft = press.left - dx;
+			track.scrollTo(
+				vertical
+					? { top: press.top - dy, behavior: "instant" }
+					: { left: press.left - dx, behavior: "instant" },
+			);
 			const shift = hooks.move();
 			if (shift !== 0) {
 				// A loop rotation moved the scroll position without the pointer moving, so the samples move with it.
@@ -225,7 +228,6 @@ export const setUpDrag = (ctx: Context) => {
 			from = ctx.state.index;
 			interrupt(ctx);
 			suspendSnap(ctx);
-			held.hold("scroll-behavior", "auto");
 			held.hold("user-select", "none");
 			held.hold("-webkit-user-select", "none");
 			rec.attr(root, A.dragging, "");
@@ -246,7 +248,6 @@ export const setUpDrag = (ctx: Context) => {
 		end: (physicalVelocity) => {
 			const velocity = ctx.layout.rtl ? -physicalVelocity : physicalVelocity;
 			rec.attr(root, A.dragging, null);
-			held.release("scroll-behavior");
 			held.release("user-select");
 			held.release("-webkit-user-select");
 			update(ctx);
@@ -258,7 +259,7 @@ export const setUpDrag = (ctx: Context) => {
 			if (target === from && Math.abs(velocity) > FLICK_SPEED)
 				target = from + Math.sign(velocity);
 			go(ctx, target, "user", ctx.looping ? Math.sign(velocity) : 0);
-			if (ctx.targetSlide === null) resumeSnap(ctx, false);
+			if (ctx.targetSlide === null) resumeSnap(ctx);
 		},
 	});
 };

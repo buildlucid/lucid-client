@@ -1,7 +1,6 @@
 import C from "../constants.js";
 import format from "../lib/format.js";
 import owned from "../lib/owned.js";
-import S from "../state.js";
 import type { Context } from "./context.js";
 import { clamp, type Page } from "./layout.js";
 
@@ -9,14 +8,8 @@ const A = C.attributes;
 const FOCUSABLE =
 	'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** Focus to pass from a generated marker to its replacement */
-type Refocus = {
-	markers: HTMLElement[];
-	/** The slide the focused marker scrolled to */
-	slide: number;
-	/** Where the focused element was inside the marker */
-	path: number[];
-};
+/** Focus to pass from a generated marker to its replacement: the new markers, and the slide the focused one scrolled to */
+type Refocus = { markers: HTMLElement[]; slide: number };
 
 // ----------------------------------------------------------------
 // Markers the author wrote
@@ -191,7 +184,7 @@ const renderContainer = (
 		container,
 		template,
 		pages,
-		S.labels.marker,
+		ctx.labels.marker,
 		ctx.track.id,
 	);
 	markers.forEach((marker, page) => {
@@ -199,46 +192,16 @@ const renderContainer = (
 	});
 	generated.set(container, { key, markers });
 
-	if (!focused || focusedSlide === undefined || !active) return null;
-	return { markers, slide: focusedSlide, path: pathTo(focused, active) };
+	return focusedSlide === undefined ? null : { markers, slide: focusedSlide };
 };
 
-/** The child indexes from an element down to one of its descendants */
-const pathTo = (from: Element, to: Element) => {
-	const path: number[] = [];
-	for (
-		let node: Element | null = to;
-		node && node !== from;
-		node = node.parentElement
-	) {
-		const parent: Element | null = node.parentElement;
-		if (!parent) break;
-		path.unshift(Array.prototype.indexOf.call(parent.children, node));
-	}
-	return path;
-};
-
-/**
- * Focuses the replacement of a rebuilt marker for the same page: the element
- * at the same place inside it, or else its first focusable element
- */
-const passFocus = (ctx: Context, { markers, slide, path }: Refocus) => {
+/** Focuses the replacement of a rebuilt marker for the same page, or the first element it can inside it */
+const passFocus = (ctx: Context, { markers, slide }: Refocus) => {
 	const page =
 		ctx.layout.slidePage[clamp(slide, 0, ctx.slides.length - 1)] ?? 0;
 	const marker = markers[Math.min(page, markers.length - 1)];
-	if (!marker) return;
-
-	let target: Element | undefined = marker;
-	for (const index of path) target = target?.children[index];
-
-	const candidates = [
-		target,
-		marker,
-		...Array.from(marker.querySelectorAll(FOCUSABLE)),
-	];
-	for (const candidate of candidates) {
-		if (!(candidate instanceof HTMLElement)) continue;
-		candidate.focus({ preventScroll: true });
-		if (ctx.destroyed || document.activeElement === candidate) return;
-	}
+	const target = marker?.matches(FOCUSABLE)
+		? marker
+		: marker?.querySelector<HTMLElement>(FOCUSABLE);
+	target?.focus({ preventScroll: true });
 };

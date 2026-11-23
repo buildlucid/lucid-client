@@ -10,7 +10,6 @@ const teardown = (ctx: Context) => {
 	ctx.resize.disconnect();
 	ctx.autoplay.destroy();
 	cancelAnimationFrame(ctx.measureFrame);
-	cancelAnimationFrame(ctx.resumeFrame);
 	clearTimeout(ctx.settleTimer);
 
 	for (const entry of ctx.generated.values())

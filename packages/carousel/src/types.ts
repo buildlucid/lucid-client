@@ -1,4 +1,8 @@
 export type Labels = {
+	/** The carousel's `aria-roledescription`. Defaults to `"carousel"` */
+	carouselRole: string;
+	/** The `aria-roledescription` of slides that get slide semantics. Defaults to `"slide"` */
+	slideRole: string;
 	/**
 	 * The `aria-label` given to slides without a name of their own. List items are left alone, so lists keep their semantics.
 	 * - Defaults to `"{n} of {count}"`, where `{n}` is the slide number and `{count}` the number of slides
@@ -20,11 +24,18 @@ export type Labels = {
 	pause: string;
 };
 
+declare const dragBrand: unique symbol;
+
+/** Mouse dragging, imported from `@lucidclient/carousel/drag` */
+export type Drag = { readonly [dragBrand]: true };
+
 export type Options = {
 	/**
 	 * Text the library writes for assistive technology, for translating or rewording
 	 */
 	labels?: Partial<Labels>;
+	/** Mouse dragging for carousels with `data-carousel--drag`, from `@lucidclient/carousel/drag` */
+	drag?: Drag;
 };
 
 export type CarouselState = {

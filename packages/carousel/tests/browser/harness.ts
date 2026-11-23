@@ -165,7 +165,9 @@ export const open = async (
 	);
 	await page.addScriptTag({ content: await library() });
 	if (fixture.init !== false) {
-		await page.evaluate(`window.Lucid.carousel.init(${fixture.options ?? ""})`);
+		await page.evaluate(
+			`window.Lucid.carousel.init({ drag: window.Lucid.drag, ...${fixture.options ?? "{}"} })`,
+		);
 		await settle(page);
 	}
 	return { page, messages, close: () => ctx.close() };

@@ -9,13 +9,17 @@ import lib from "./index.js";
  */
 const refresh = () => {
 	if (!S.initialised) {
-		lib.log("warn", "Call init before refreshing.");
+		if (__DEV__) lib.log("warn", "Call init before refreshing.");
 		return;
 	}
+	const live = [];
 	for (const [root, instance] of Array.from(S.instances)) {
-		if (root.isConnected) instance.api.refresh();
+		if (root.isConnected) live.push(instance);
 		else instance.api.destroy();
 	}
+	// Every carousel puts its markup back before any reads it again, so a control moved to another carousel is left to that one.
+	for (const instance of live) instance.reset();
+	for (const instance of live) instance.api.refresh();
 	lib.scan();
 };
 

@@ -3,20 +3,17 @@ import controlledRoot from "../lib/controlled-root.js";
 import format from "../lib/format.js";
 import owned from "../lib/owned.js";
 import S from "../state.js";
+import type { Labels } from "../types.js";
 import {
 	type Config,
 	type Context,
 	type Operated,
 	warnOnce,
 } from "./context.js";
-import { setUpDrag } from "./drag.js";
-import { clamp } from "./layout.js";
-import { centre } from "./loop.js";
 import { isGenerated, markerTarget } from "./markers.js";
 import { remeasure } from "./measure.js";
 import type { Recorder } from "./recorder.js";
 import { applyInert, update } from "./render.js";
-import { jump, position, resumeSnap, suspendSnap } from "./scroll.js";
 
 const A = C.attributes;
 
@@ -42,6 +39,17 @@ export const readConfig = (root: HTMLElement): Config => {
 		inert: flag(root, A.inert),
 		autoplay,
 	};
+};
+
+/** The labels passed to `init`, with any the carousel sets with `data-carousel--label-{name}` */
+export const readLabels = (root: HTMLElement): Labels => {
+	const labels = { ...S.labels };
+	for (const key of Object.keys(labels) as Array<keyof Labels>) {
+		const name = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+		const value = root.getAttribute(`${A.label}-${name}`);
+		if (value !== null) labels[key] = value;
+	}
+	return labels;
 };
 
 /** Slides are the track's element children, other than templates, scripts and styles */
@@ -95,11 +103,15 @@ const setButtonType = (rec: Recorder, element: HTMLElement) => {
 };
 
 const describeCarousel = (ctx: Context) => {
-	const { rec, root, track } = ctx;
+	const { labels, rec, root, track } = ctx;
 	if (!track.id) rec.attr(track, "id", `carousel-${++S.ids}-track`);
 	rec.fallback(root, "role", "region");
-	rec.fallback(root, "aria-roledescription", "carousel");
-	if (!root.hasAttribute("aria-label") && !root.hasAttribute("aria-labelledby"))
+	rec.fallback(root, "aria-roledescription", labels.carouselRole);
+	if (
+		__DEV__ &&
+		!root.hasAttribute("aria-label") &&
+		!root.hasAttribute("aria-labelledby")
+	)
 		warnOnce(
 			ctx,
 			'A carousel has no aria-label or aria-labelledby. Name it after its content, such as aria-label="Featured products", without the word "carousel".',
@@ -107,49 +119,25 @@ const describeCarousel = (ctx: Context) => {
 };
 
 const describeSlides = (ctx: Context) => {
-	const { rec, slides } = ctx;
+	const { labels, rec, slides } = ctx;
 	slides.forEach((slide, i) => {
-		if (!takesSlideRole(slide) && !rec.added(slide, "role")) {
-			// The slide's role changed since, so the slide semantics added with it go too.
-			for (const name of ["aria-roledescription", "aria-label"])
-				if (rec.added(slide, name)) rec.attr(slide, name, null);
-			return;
-		}
+		if (!takesSlideRole(slide)) return;
 		rec.fallback(slide, "role", "group");
-		rec.fallback(slide, "aria-roledescription", "slide");
+		rec.fallback(slide, "aria-roledescription", labels.slideRole);
 		if (!slide.hasAttribute("aria-labelledby"))
 			rec.fallback(
 				slide,
 				"aria-label",
-				format(S.labels.slide, i + 1, slides.length),
+				format(labels.slide, i + 1, slides.length),
 			);
 	});
 };
 
-/**
- * Takes on the controls and markers that operate this carousel. Ones that now
- * operate another carousel, or left the page, are handed back, and ones
- * another carousel had are handed over by it, before either writes to them.
- */
-const adoptOperated = (ctx: Context, found: Operated) => {
+/** Takes on the controls and markers that operate this carousel */
+const describeOperated = (ctx: Context, found: Operated) => {
 	const { markerSlides, rec, root, slides, track } = ctx;
-	const authored = (markers: HTMLElement[]) =>
-		markers.filter((marker) => !isGenerated(ctx, marker));
-	const previous = [...ctx.controls, ...authored(ctx.markers)];
-	const controls = found.controls;
-	const markers = authored(found.markers);
-
-	for (const element of previous)
-		if (!controls.includes(element) && !markers.includes(element))
-			rec.restore(element);
-	for (const element of [...controls, ...markers]) {
-		if (previous.includes(element)) continue;
-		for (const [other, instance] of S.instances)
-			if (other !== root) instance.release(element);
-	}
-
-	ctx.controls = controls;
-	for (const control of controls) {
+	ctx.controls = found.controls;
+	for (const control of ctx.controls) {
 		if (root.contains(control))
 			rec.fallback(control, "aria-controls", track.id);
 		setButtonType(rec, control);
@@ -160,8 +148,8 @@ const adoptOperated = (ctx: Context, found: Operated) => {
 		for (const marker of entry.markers)
 			markerSlides.set(marker, Number(marker.getAttribute(A.marker)));
 	// The generated markers join again once they are rendered for the new layout.
-	ctx.markers = markers;
-	markers.forEach((marker, order) => {
+	ctx.markers = found.markers.filter((marker) => !isGenerated(ctx, marker));
+	ctx.markers.forEach((marker, order) => {
 		markerSlides.set(marker, markerTarget(marker, order, slides));
 		if (root.contains(marker) && !(marker instanceof HTMLAnchorElement))
 			rec.fallback(marker, "aria-controls", track.id);
@@ -179,7 +167,7 @@ const describeStatuses = (ctx: Context) => {
 
 /** Warns when autoplay has no control to stop it, as WCAG requires one */
 export const checkAutoplayControl = (ctx: Context) => {
-	if (ctx.config.autoplay === null) return;
+	if (!__DEV__ || ctx.config.autoplay === null) return;
 	const stoppable = ctx.controls.some((control) => {
 		const action = control.getAttribute(A.action);
 		return action === C.actions.toggle || action === C.actions.pause;
@@ -195,75 +183,51 @@ export const checkAutoplayControl = (ctx: Context) => {
 // Scanning
 
 /**
- * Reads the options, slides, controls, markers and status elements, and adds
- * the attributes they leave out, without measuring. Returns the slide that
- * was in view, so the caller can keep it in place when the slides changed.
+ * Reads the options, labels, slides, controls, markers and status elements,
+ * and adds the attributes they leave out, without measuring
  * - `found` is passed when the controls and markers were already found, for carousels starting together
  */
 export const readMarkup = (ctx: Context, found = findOperated(ctx.root)) => {
 	ctx.config = readConfig(ctx.root);
-	if (ctx.config.drag) setUpDrag(ctx);
-
-	// The slide in view stays where it is when slides are added or removed. Its offset is
-	// measured from the last update, as the browser may have scrolled the track since.
-	const { layout } = ctx;
-	const anchor = ctx.slides[layout.pages[ctx.state.index]?.slide ?? -1];
-	const anchorBox = anchor
-		? layout.boxes[ctx.slides.indexOf(anchor)]
-		: undefined;
-	const anchorOffset = anchorBox ? anchorBox.start - ctx.lastScroll : 0;
-
-	const slides = readSlides(ctx.track);
-	const changed =
-		slides.length !== ctx.slides.length ||
-		slides.some((slide, i) => slide !== ctx.slides[i]);
-	for (const slide of ctx.slides)
-		if (!slides.includes(slide)) ctx.rec.restore(slide);
-	ctx.slides = slides;
+	ctx.labels = readLabels(ctx.root);
+	if (ctx.config.drag) {
+		if (S.drag) S.drag(ctx);
+		else if (__DEV__)
+			warnOnce(
+				ctx,
+				'A carousel has data-carousel--drag, but drag wasn\'t passed to carousel.init(). Import it from "@lucidclient/carousel/drag".',
+			);
+	}
+	ctx.slides = readSlides(ctx.track);
+	ctx.slideFlags = [];
 
 	describeCarousel(ctx);
 	describeSlides(ctx);
-	adoptOperated(ctx, found);
+	describeOperated(ctx, found);
 	describeStatuses(ctx);
 
 	ctx.resize.disconnect();
 	ctx.resize.observe(ctx.track);
-	for (const slide of slides) ctx.resize.observe(slide);
-	if (changed) ctx.slideFlags = [];
+	for (const slide of ctx.slides) ctx.resize.observe(slide);
+};
 
-	return { changed, anchor, anchorOffset };
+/** Puts the markup back as it was rendered, keeping the listeners, so it can be read again */
+export const resetMarkup = (ctx: Context) => {
+	ctx.rec.restore();
+	ctx.rotation = 0;
+	ctx.rotated = false;
 };
 
 /**
- * Reads the markup again and measures, keeping the slide in view where it
- * was. Runs when slides are added or removed, and on refresh.
+ * Reads the markup again from how it was rendered, measures, and puts the
+ * slide that was in view back. Runs when slides are added or removed, and on
+ * refresh.
  */
 export const rescan = (ctx: Context) => {
-	const { changed, anchor, anchorOffset } = readMarkup(ctx);
-	remeasure(ctx, true);
-
-	const index = anchor ? ctx.slides.indexOf(anchor) : -1;
-	const box = ctx.layout.boxes[index];
-	if (changed && box && ctx.targetSlide === null) {
-		const target = clamp(box.start - anchorOffset, 0, ctx.layout.max);
-		if (ctx.looping) {
-			suspendSnap(ctx);
-			jump(ctx, target);
-			centre(ctx, index);
-			resumeSnap(ctx, true);
-		} else if (Math.abs(target - position(ctx)) > 1) jump(ctx, target);
-	}
-
+	resetMarkup(ctx);
+	readMarkup(ctx);
+	remeasure(ctx, true, true);
 	update(ctx, true);
 	applyInert(ctx);
 	checkAutoplayControl(ctx);
-};
-
-/** Hands a control or marker over to another carousel, putting back what this one wrote to it */
-export const handOver = (ctx: Context, element: HTMLElement) => {
-	if (!ctx.controls.includes(element) && !ctx.markers.includes(element)) return;
-	ctx.controls = ctx.controls.filter((control) => control !== element);
-	ctx.markers = ctx.markers.filter((marker) => marker !== element);
-	ctx.markerSlides.delete(element);
-	ctx.rec.restore(element);
 };

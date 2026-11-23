@@ -69,7 +69,6 @@ const createAutoplay = (
 			},
 			{ signal: abort.signal },
 		);
-		if (typeof IntersectionObserver !== "function") return;
 		visibility = new IntersectionObserver((entries) => {
 			const entry = entries[entries.length - 1];
 			if (!entry) return;
