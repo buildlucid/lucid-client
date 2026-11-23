@@ -104,9 +104,10 @@ const startEffects = (
 
 		for (const [name, value] of Object.entries(values)) {
 			if (!isStoreEffect(value)) {
-				warn(
-					`The effect "${name}" on store "${store.key}" must be created with effect(compute, callback).`,
-				);
+				if (__DEV__)
+					warn(
+						`The effect "${name}" on store "${store.key}" must be created with effect(compute, callback).`,
+					);
 				continue;
 			}
 			runStoreEffect(store, name, value);

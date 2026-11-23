@@ -150,15 +150,17 @@ const trapReaction: Reaction = {
 	attribute: "trap",
 	setup: (directive, context) => {
 		if (!(directive.element instanceof HTMLElement)) {
-			context.warn(
-				`The "${directive.attributeName}" directive requires an HTML element.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires an HTML element.`,
+				);
 			return;
 		}
 		if (directive.reference?.type === "identifier") {
-			context.warn(
-				`The "${directive.attributeName}" directive requires state or an action.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires state or an action.`,
+				);
 			return;
 		}
 

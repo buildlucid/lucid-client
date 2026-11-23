@@ -41,7 +41,7 @@ const destroy = () => {
 		Catalyst.startOptions = undefined;
 		Catalyst.options = DEFAULT_OPTIONS;
 	}
-	debug("Library destroyed.");
+	if (__DEV__) debug("Library destroyed.");
 };
 
 export default destroy;

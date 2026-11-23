@@ -26,9 +26,10 @@ export const warnOnCaseMismatch = (
 		(stateKey) => stateKey !== key && stateKey.toLowerCase() === key,
 	);
 	if (!match) return;
-	warn(
-		`The "${attributeName}" attribute on store "${storeKey}" does not match the "${match}" state. Use "${stateKeyToAttribute(match)}" instead.`,
-	);
+	if (__DEV__)
+		warn(
+			`The "${attributeName}" attribute on store "${storeKey}" does not match the "${match}" state. Use "${stateKeyToAttribute(match)}" instead.`,
+		);
 };
 
 /**
@@ -46,7 +47,8 @@ export const readStateAttributes = (
 	for (const attribute of Array.from(element.attributes)) {
 		const key = attributeToStateKey(attribute.name);
 		if (!key) continue;
-		warnOnCaseMismatch(storeKey, Object.keys(defaults), key, attribute.name);
+		if (__DEV__)
+			warnOnCaseMismatch(storeKey, Object.keys(defaults), key, attribute.name);
 		state[key] =
 			key in defaults
 				? coerceStateString(attribute.value, defaults[key])
@@ -66,12 +68,13 @@ const syncStateAttributes = (store: RuntimeStore) => {
 		const key = attributeToStateKey(attribute.name);
 		if (!key || store.stateAttributeDisposes.has(key)) continue;
 		if (store.computed.has(key)) continue;
-		warnOnCaseMismatch(
-			store.key,
-			Object.keys(store.state),
-			key,
-			attribute.name,
-		);
+		if (__DEV__)
+			warnOnCaseMismatch(
+				store.key,
+				Object.keys(store.state),
+				key,
+				attribute.name,
+			);
 
 		const exists = key in store.raw;
 		const current = store.raw[key];

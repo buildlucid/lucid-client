@@ -26,21 +26,24 @@ const resolveReference = (reference: MemberReference, args: unknown[] = []) => {
 	}
 
 	if (!reference.scope) {
-		warn(`Cannot infer a store for the reference "${reference.raw}".`);
+		if (__DEV__)
+			warn(`Cannot infer a store for the reference "${reference.raw}".`);
 		return undefined;
 	}
 
 	const store = Catalyst.stores.get(reference.scope);
 	if (!store) {
-		warn(`Cannot find a store with the scope "${reference.scope}".`);
+		if (__DEV__)
+			warn(`Cannot find a store with the scope "${reference.scope}".`);
 		return undefined;
 	}
 
 	if (reference.type === "state") {
 		if (!(reference.key in store.state)) {
-			warn(
-				`Cannot find state "${reference.key}" on store "${reference.scope}".`,
-			);
+			if (__DEV__)
+				warn(
+					`Cannot find state "${reference.key}" on store "${reference.scope}".`,
+				);
 			return undefined;
 		}
 
@@ -53,9 +56,10 @@ const resolveReference = (reference: MemberReference, args: unknown[] = []) => {
 	if (reference.type === "action") {
 		const action = store.actions[reference.key];
 		if (!action) {
-			warn(
-				`Cannot find action "${reference.key}" on store "${reference.scope}".`,
-			);
+			if (__DEV__)
+				warn(
+					`Cannot find action "${reference.key}" on store "${reference.scope}".`,
+				);
 			return undefined;
 		}
 		return reference.loop

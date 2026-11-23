@@ -62,9 +62,10 @@ const createResolvedEffect = (
 ) => {
 	const reference: MemberReference | null = directive.reference;
 	if (!reference) {
-		context.warn(
-			`The "${directive.attributeName}" directive requires a state or action reference.`,
-		);
+		if (__DEV__)
+			context.warn(
+				`The "${directive.attributeName}" directive requires a state or action reference.`,
+			);
 		return;
 	}
 

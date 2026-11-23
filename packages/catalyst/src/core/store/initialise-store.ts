@@ -9,11 +9,6 @@ import type {
 	StoreState,
 } from "../../types/index.js";
 import { unwrapPersisted } from "../persist/persisted.js";
-import resolvePersistence from "../persist/resolve-persistence.js";
-import {
-	registerPersistence,
-	restorePersistedState,
-} from "../persist/store-persistence.js";
 import { createRefs } from "../refs/index.js";
 import {
 	createStateObserver,
@@ -69,8 +64,32 @@ const resolveDefaults = (
 	}
 
 	if (isStateObject(value)) return { state: value, persist };
-	warn(`The state for store "${key}" must be an object.`);
+	if (__DEV__) warn(`The state for store "${key}" must be an object.`);
 	return noDefaults();
+};
+
+/**
+ * Warns when a store asks for persisted state while persistence isn't enabled.
+ * Its values still work, they just aren't saved.
+ */
+const warnPersistenceDisabled = (
+	element: Element,
+	key: string,
+	requested: Map<string, PersistOptions>,
+) => {
+	const { prefix, persist, specifierSeparator } = Catalyst.options.attributes;
+	const attribute = `${prefix}${persist}`;
+	const marked =
+		requested.size > 0 ||
+		Array.from(element.attributes).some(
+			({ name }) =>
+				name === attribute ||
+				name.startsWith(`${attribute}${specifierSeparator}`),
+		);
+	if (!marked) return;
+	warn(
+		`Store "${key}" persists state, but persistence isn't enabled, so it won't be saved. Pass persistence() from "@lucidclient/catalyst/persistence" to Catalyst.start.`,
+	);
 };
 
 const applyComputed = (store: RuntimeStore, definition: AnyStoreDefinition) => {
@@ -86,15 +105,17 @@ const applyComputed = (store: RuntimeStore, definition: AnyStoreDefinition) => {
 
 	for (const [name, compute] of Object.entries(values)) {
 		if (typeof compute !== "function") {
-			warn(
-				`The computed value "${name}" on store "${store.key}" must be a function.`,
-			);
+			if (__DEV__)
+				warn(
+					`The computed value "${name}" on store "${store.key}" must be a function.`,
+				);
 			continue;
 		}
 		if (name in store.raw) {
-			warn(
-				`The computed value "${name}" on store "${store.key}" has the same name as a state value, which it hides.`,
-			);
+			if (__DEV__)
+				warn(
+					`The computed value "${name}" on store "${store.key}" has the same name as a state value, which it hides.`,
+				);
 		}
 		try {
 			const memo: Accessor<unknown> = createMemo(() => compute());
@@ -134,13 +155,12 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 		// while this root is being set up is not allowed.
 		const defaults = resolveDefaults(key, definition);
 		const initial = readStateAttributes(element, key, defaults.state);
-		const persistence = resolvePersistence(
-			element,
-			key,
-			defaults.persist,
-			initial.state,
-		);
-		restorePersistedState(key, persistence, initial.state);
+		const persistence = Catalyst.persistence;
+		const persistEntries =
+			persistence?.restore(element, key, defaults.persist, initial.state) ?? [];
+		if (__DEV__ && !persistence) {
+			warnPersistenceDisabled(element, key, defaults.persist);
+		}
 		const [raw, setState] = createStore<StoreState>(initial.state);
 		const computed = new Map<string, Accessor<unknown>>();
 		const refElements = new Map<string, Element | Element[]>();
@@ -169,7 +189,7 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 		for (const stateKey of initial.keys) {
 			registerStateAttribute(nextStore, stateKey);
 		}
-		registerPersistence(nextStore, persistence);
+		persistence?.register(nextStore, persistEntries);
 		if (definition) applyActions(nextStore, definition);
 
 		nextStore.stateObserver = createStateObserver(nextStore);
@@ -178,7 +198,7 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 
 	Catalyst.stores.set(key, store);
 	Catalyst.storesByElement.set(element, store);
-	debug(`Store created for scope "${key}".`);
+	if (__DEV__) debug(`Store created for scope "${key}".`);
 	return store;
 };
 

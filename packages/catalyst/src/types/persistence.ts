@@ -1,11 +1,14 @@
+import type { PersistEntry, RuntimeStore } from "../runtime/types.js";
+import type { StoreState } from "./store.js";
+
 declare const persistedBrand: unique symbol;
 
 /** Options for a state value marked with `persisted()`. */
 export type PersistOptions = {
 	/**
 	 * Where the value is saved: `"local"`, `"session"` or the name of an adapter
-	 * registered with `Catalyst.start({ persistence: { adapters } })`. Defaults
-	 * to `persistence.storage`, which is `"local"` unless it is configured.
+	 * registered with `persistence({ adapters })`. Defaults to the `storage`
+	 * option of `persistence()`, which is `"local"` unless it is configured.
 	 */
 	storage?: string;
 	/**
@@ -20,8 +23,8 @@ export type PersistOptions = {
 	 */
 	validate?: (value: unknown) => boolean;
 	/**
-	 * Applies changes saved by other tabs. Defaults to `persistence.sync`, which
-	 * is `false` unless it is configured.
+	 * Applies changes saved by other tabs. Defaults to the `sync` option of
+	 * `persistence()`, which is `false` unless it is configured.
 	 */
 	sync?: boolean;
 };
@@ -61,6 +64,7 @@ export type StorageAdapter = {
 	subscribe?: (key: string, onChange: (value: unknown) => void) => () => void;
 };
 
+/** Options for `persistence()`. */
 export type CatalystPersistenceOptions = {
 	/** Prepended to every storage entry's name. Defaults to `"catalyst:"`. */
 	prefix?: string;
@@ -78,4 +82,24 @@ export type CatalystPersistenceOptions = {
 	 * can be replaced.
 	 */
 	adapters?: Record<string, StorageAdapter>;
+};
+
+/**
+ * Saves and restores state values. Create it with `persistence()` from
+ * `@lucidclient/catalyst/persistence` and pass it to `Catalyst.start`, so pages
+ * that don't persist state don't include it.
+ */
+export type Persistence = {
+	/**
+	 * Applies stored values to a new store's starting state, before the store
+	 * exists, and returns the values the store saves.
+	 */
+	restore: (
+		element: Element,
+		storeKey: string,
+		requested: Map<string, PersistOptions>,
+		state: StoreState,
+	) => PersistEntry[];
+	/** Saves a new store's values whenever they change. */
+	register: (store: RuntimeStore, entries: PersistEntry[]) => void;
 };

@@ -33,26 +33,32 @@ const cssReaction: Reaction = {
 	setup: (directive, context) => {
 		const { element, specifier, attributeName } = directive;
 		if (!specifier) {
-			context.warn("CSS directives require a custom property name specifier.");
+			if (__DEV__)
+				context.warn(
+					"CSS directives require a custom property name specifier.",
+				);
 			return;
 		}
 		// Reserved for modifiers, and not valid in an unescaped CSS name.
 		if (specifier.includes(".")) {
-			context.warn(
-				`The "${attributeName}" directive's custom property name can't contain ".".`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${attributeName}" directive's custom property name can't contain ".".`,
+				);
 			return;
 		}
 		if (directive.reference?.type === "identifier") {
-			context.warn(
-				`The "${attributeName}" directive requires state or an action.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${attributeName}" directive requires state or an action.`,
+				);
 			return;
 		}
 		if (!hasInlineStyle(element)) {
-			context.warn(
-				`The "${attributeName}" directive requires an element with inline styles.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${attributeName}" directive requires an element with inline styles.`,
+				);
 			return;
 		}
 
@@ -66,9 +72,10 @@ const cssReaction: Reaction = {
 		createResolvedEffect(directive, context, (value) => {
 			const next = toPropertyValue(value);
 			if (next === undefined) {
-				context.warn(
-					`The "${attributeName}" directive must resolve to a string, number or boolean.`,
-				);
+				if (__DEV__)
+					context.warn(
+						`The "${attributeName}" directive must resolve to a string, number or boolean.`,
+					);
 			}
 			if (next) style.setProperty(property, next);
 			else style.removeProperty(property);

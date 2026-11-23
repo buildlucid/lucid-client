@@ -16,7 +16,7 @@ let pendingStart = false;
 
 const start = (options?: CatalystStartOptions) => {
 	if (Catalyst.started) {
-		warn("Catalyst has already been started.");
+		if (__DEV__) warn("Catalyst has already been started.");
 		return;
 	}
 
@@ -50,19 +50,10 @@ const start = (options?: CatalystStartOptions) => {
 				options?.attributes?.specifierSeparator ??
 				DEFAULT_OPTIONS.attributes.specifierSeparator,
 		},
-		persistence: {
-			prefix:
-				options?.persistence?.prefix ?? DEFAULT_OPTIONS.persistence.prefix,
-			storage:
-				options?.persistence?.storage ?? DEFAULT_OPTIONS.persistence.storage,
-			sync: options?.persistence?.sync ?? DEFAULT_OPTIONS.persistence.sync,
-			adapters: {
-				...DEFAULT_OPTIONS.persistence.adapters,
-				...options?.persistence?.adapters,
-			},
-		},
 	};
 	Catalyst.startOptions = options;
+	// Kept across restarts, like registered stores and reactions.
+	if (options?.persistence) Catalyst.persistence = options.persistence;
 
 	registerStores(options?.stores);
 	for (const reaction of [...CORE_REACTIONS, ...(options?.reactions ?? [])]) {
@@ -78,7 +69,7 @@ const start = (options?: CatalystStartOptions) => {
 	Catalyst.removalObserver = registerRemovalObserver();
 	syncTarget(document.body);
 	flushUpdates();
-	debug("Library started.");
+	if (__DEV__) debug("Library started.");
 };
 
 export default start;

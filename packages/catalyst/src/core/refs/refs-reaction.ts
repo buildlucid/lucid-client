@@ -12,21 +12,26 @@ const refsReaction: Reaction = {
 	setup: (directive, context) => {
 		const reference = directive.reference;
 		if (!reference || reference.type !== "identifier") {
-			context.warn(
-				`The "${directive.attributeName}" directive requires a #ref name.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires a #ref name.`,
+				);
 			return;
 		}
 		if (!reference.scope) {
-			context.warn(
-				`Cannot infer a store for the reference "${reference.raw}".`,
-			);
+			if (__DEV__)
+				context.warn(
+					`Cannot infer a store for the reference "${reference.raw}".`,
+				);
 			return;
 		}
 
 		const store = Catalyst.stores.get(reference.scope);
 		if (!store) {
-			context.warn(`Cannot find a store with the scope "${reference.scope}".`);
+			if (__DEV__)
+				context.warn(
+					`Cannot find a store with the scope "${reference.scope}".`,
+				);
 			return;
 		}
 
@@ -54,9 +59,10 @@ const refsReaction: Reaction = {
 
 		const existing = refs.get(key);
 		if (existing && existing !== directive.element) {
-			context.warn(
-				`The ref "${key}" is already registered on store "${reference.scope}".`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The ref "${key}" is already registered on store "${reference.scope}".`,
+				);
 			return;
 		}
 

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
-import Catalyst, { defineStore, persisted } from "../src/index.js";
+import Catalyst, { defineStore } from "../src/index.js";
+import { clearPersisted, persisted, persistence } from "../src/persistence.js";
 import { dom } from "../src/reactions.js";
 import type { StorageAdapter } from "../src/types/index.js";
 import { catalystWarnings, getStore, setStoreState, settle } from "./utils.js";
@@ -65,7 +66,11 @@ describe("persisted state", () => {
 			},
 		});
 
-		Catalyst.start({ stores: { prefs }, reactions: [dom] });
+		Catalyst.start({
+			persistence: persistence(),
+			stores: { prefs },
+			reactions: [dom],
+		});
 		expect(document.querySelector("span")?.textContent).toBe("dark");
 		expect(seen).toEqual(["init:dark", "effect:dark"]);
 		await settle();
@@ -78,7 +83,7 @@ describe("persisted state", () => {
 			state: { theme: persisted("light"), busy: false },
 		});
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		await settle();
 		expect(localStorage.length).toBe(0);
 
@@ -100,7 +105,7 @@ describe("persisted state", () => {
 			},
 		});
 
-		Catalyst.start({ stores: { visits } });
+		Catalyst.start({ persistence: persistence(), stores: { visits } });
 		await settle();
 		expect(stored("catalyst:visits:count")).toBe(1);
 	});
@@ -117,7 +122,7 @@ describe("persisted state", () => {
 			}),
 		});
 
-		Catalyst.start({ stores: { list } });
+		Catalyst.start({ persistence: persistence(), stores: { list } });
 		getStore("list")?.actions.add?.("one");
 		await settle();
 		getStore("list")?.actions.add?.("two");
@@ -132,7 +137,7 @@ describe("persisted state", () => {
 		`;
 		const prefs = defineStore({ state: { theme: persisted("light") } });
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		await settle();
 		expect(getStore("prefs")?.state.theme).toBe("dark");
 		expect(
@@ -154,7 +159,7 @@ describe("persisted state", () => {
 			></div>
 		`;
 
-		Catalyst.start();
+		Catalyst.start({ persistence: persistence() });
 		await settle();
 		const store = getStore("markup");
 		expect(store?.state.sidebarOpen).toBe(false);
@@ -178,6 +183,7 @@ describe("persisted state", () => {
 		});
 
 		Catalyst.start({
+			persistence: persistence(),
 			stores: { loginDialog: dialog, signupDialog: dialog },
 		});
 		for (const scope of ["loginDialog", "signupDialog"]) {
@@ -200,7 +206,7 @@ describe("persisted state", () => {
 			state: { theme: persisted("light", { storage: "local" }) },
 		});
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		setStoreState("prefs", "theme", "dark");
 		await settle();
 		expect(stored("catalyst:prefs:theme", sessionStorage)).toBe("dark");
@@ -228,7 +234,7 @@ describe("persisted state", () => {
 			},
 		});
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		await settle();
 		const state = getStore("prefs")?.state;
 		expect(state?.open).toBe(false);
@@ -248,7 +254,10 @@ describe("persisted state", () => {
 			state: () => ({ items: persisted([] as string[]) }),
 		});
 
-		Catalyst.start({ stores: { a: list, b: list } });
+		Catalyst.start({
+			persistence: persistence(),
+			stores: { a: list, b: list },
+		});
 		await settle();
 		expect(getStore("a")?.state.items).toEqual(["saved"]);
 		expect(getStore("b")?.state.items).toEqual([]);
@@ -262,7 +271,7 @@ describe("persisted state", () => {
 
 		Catalyst.start({
 			stores: { header },
-			persistence: { prefix: "site:" },
+			persistence: persistence({ prefix: "site:" }),
 		});
 		setStoreState("header", "theme", "dark");
 		await settle();
@@ -283,7 +292,10 @@ describe("persisted state", () => {
 
 		Catalyst.start({
 			stores: { prefs },
-			persistence: { storage: "memory", adapters: { memory: adapter } },
+			persistence: persistence({
+				storage: "memory",
+				adapters: { memory: adapter },
+			}),
 		});
 		expect(getStore("prefs")?.state.theme).toBe("dark");
 
@@ -300,7 +312,7 @@ describe("persisted state", () => {
 			state: { note: persisted("" as string | undefined) },
 		});
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		setStoreState("prefs", "note", undefined);
 		await settle();
 		expect(localStorage.getItem("catalyst:prefs:note")).toBeNull();
@@ -322,7 +334,9 @@ describe("persisted state", () => {
 
 		Catalyst.start({
 			stores: { prefs },
-			persistence: { adapters: { myCookie: memoryAdapter().adapter } },
+			persistence: persistence({
+				adapters: { myCookie: memoryAdapter().adapter },
+			}),
 		});
 		await settle();
 		expect(catalystWarnings()).toEqual([
@@ -352,7 +366,7 @@ describe("persisted state", () => {
 		Catalyst.start({
 			stores: { prefs },
 			reactions: [dom],
-			persistence: { adapters: { local: failing } },
+			persistence: persistence({ adapters: { local: failing } }),
 		});
 		setStoreState("prefs", "theme", "dark");
 		await settle();
@@ -369,7 +383,7 @@ describe("persisted state", () => {
 		document.body.innerHTML = `<div data-store="prefs"></div>`;
 		const prefs = defineStore({ state: { theme: persisted("light") } });
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		setStoreState("prefs", "theme", "dark");
 		await settle();
 
@@ -381,7 +395,7 @@ describe("persisted state", () => {
 		document.body.innerHTML = `<div data-store="prefs"></div>`;
 		const prefs = defineStore({ state: { theme: persisted("light") } });
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		const store = getStore("prefs");
 		Catalyst.destroy();
 		store?.setState((state) => {
@@ -392,12 +406,35 @@ describe("persisted state", () => {
 	});
 });
 
+describe("without persistence", () => {
+	it("keeps persisted values as plain state and warns that they aren't saved", async () => {
+		document.body.innerHTML = `
+			<div data-store="prefs"></div>
+			<div data-store="menu" data-state--open="false" data-persist="open"></div>
+		`;
+		const prefs = defineStore({ state: { theme: persisted("light") } });
+
+		Catalyst.start({ stores: { prefs } });
+		expect(getStore("prefs")?.state.theme).toBe("light");
+		setStoreState("prefs", "theme", "dark");
+		setStoreState("menu", "open", true);
+		await settle();
+
+		expect(getStore("prefs")?.state.theme).toBe("dark");
+		expect(localStorage.length).toBe(0);
+		expect(catalystWarnings()).toEqual([
+			'[Catalyst] Store "prefs" persists state, but persistence isn\'t enabled, so it won\'t be saved. Pass persistence() from "@lucidclient/catalyst/persistence" to Catalyst.start.',
+			'[Catalyst] Store "menu" persists state, but persistence isn\'t enabled, so it won\'t be saved. Pass persistence() from "@lucidclient/catalyst/persistence" to Catalyst.start.',
+		]);
+	});
+});
+
 describe("persisted state across tabs", () => {
 	it("ignores other tabs by default", async () => {
 		document.body.innerHTML = `<div data-store="prefs"></div>`;
 		const prefs = defineStore({ state: { theme: persisted("light") } });
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		saveElsewhere("catalyst:prefs:theme", "dark");
 		await settle();
 		expect(getStore("prefs")?.state.theme).toBe("light");
@@ -414,7 +451,11 @@ describe("persisted state across tabs", () => {
 			},
 		});
 
-		Catalyst.start({ stores: { prefs }, reactions: [dom] });
+		Catalyst.start({
+			persistence: persistence(),
+			stores: { prefs },
+			reactions: [dom],
+		});
 		saveElsewhere("catalyst:prefs:theme", "dark");
 		saveElsewhere("catalyst:prefs:open", true);
 		await settle();
@@ -433,7 +474,7 @@ describe("persisted state across tabs", () => {
 			<div data-store="prefs" data-state--count="1" data-persist="count"></div>
 		`;
 
-		Catalyst.start({ persistence: { sync: true } });
+		Catalyst.start({ persistence: persistence({ sync: true }) });
 		saveElsewhere("catalyst:prefs:count", "not a number");
 		await settle();
 		expect(getStore("prefs")?.state.count).toBe(1);
@@ -449,7 +490,7 @@ describe("persisted state across tabs", () => {
 			state: { theme: persisted("light", { sync: true }) },
 		});
 
-		Catalyst.start({ stores: { prefs } });
+		Catalyst.start({ persistence: persistence(), stores: { prefs } });
 		const store = getStore("prefs");
 		Catalyst.destroy();
 		saveElsewhere("catalyst:prefs:theme", "dark");
@@ -466,17 +507,20 @@ describe("clearPersisted", () => {
 		`;
 		const prefs = defineStore({ state: { theme: persisted("light") } });
 
-		Catalyst.start({ stores: { a: prefs, b: prefs } });
+		Catalyst.start({
+			persistence: persistence(),
+			stores: { a: prefs, b: prefs },
+		});
 		setStoreState("a", "theme", "dark");
 		setStoreState("b", "theme", "dark");
 		await settle();
 
-		Catalyst.clearPersisted("a");
+		clearPersisted("a");
 		expect(localStorage.getItem("catalyst:a:theme")).toBeNull();
 		expect(stored("catalyst:b:theme")).toBe("dark");
 		expect(getStore("a")?.state.theme).toBe("dark");
 
-		Catalyst.clearPersisted();
+		clearPersisted();
 		expect(localStorage.length).toBe(0);
 
 		setStoreState("a", "theme", "light");
@@ -486,8 +530,8 @@ describe("clearPersisted", () => {
 
 	it("warns for an unknown store", () => {
 		document.body.innerHTML = "";
-		Catalyst.start();
-		Catalyst.clearPersisted("missing");
+		Catalyst.start({ persistence: persistence() });
+		clearPersisted("missing");
 		expect(catalystWarnings()).toEqual([
 			'[Catalyst] Cannot clear persisted state for unknown store "missing".',
 		]);

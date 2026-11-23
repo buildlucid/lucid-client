@@ -1,6 +1,6 @@
-import { removeStored } from "../core/persist/persist-value.js";
-import Catalyst from "./catalyst.js";
-import { warn } from "./log.js";
+import Catalyst from "../../runtime/catalyst.js";
+import { warn } from "../../runtime/log.js";
+import { removeStored } from "./persist-value.js";
 
 /**
  * Removes the saved values of a running store, or of every running store,
@@ -9,13 +9,15 @@ import { warn } from "./log.js";
  */
 const clearPersisted = (scope?: string) => {
 	if (!Catalyst.started) {
-		warn("Catalyst must be started before persisted state can be cleared.");
+		if (__DEV__)
+			warn("Catalyst must be started before persisted state can be cleared.");
 		return;
 	}
 
 	const store = scope === undefined ? undefined : Catalyst.stores.get(scope);
 	if (scope !== undefined && !store) {
-		warn(`Cannot clear persisted state for unknown store "${scope}".`);
+		if (__DEV__)
+			warn(`Cannot clear persisted state for unknown store "${scope}".`);
 		return;
 	}
 

@@ -18,7 +18,8 @@ const collectStores = (target: Element, options?: SyncOptions) => {
 		if (elementStore && elementStore.key !== key) destroyStore(elementStore);
 		if (key === null) continue;
 		if (!key) {
-			warn(`The "${storeAttribute}" attribute requires a scope value.`);
+			if (__DEV__)
+				warn(`The "${storeAttribute}" attribute requires a scope value.`);
 			continue;
 		}
 
@@ -30,9 +31,10 @@ const collectStores = (target: Element, options?: SyncOptions) => {
 			disposeSubtree(existingStore.element);
 		} else if (existingStore) {
 			if (existingStore.element !== element) {
-				warn(
-					`The store scope "${key}" is already used by another element, so this element and its directives are skipped.`,
-				);
+				if (__DEV__)
+					warn(
+						`The store scope "${key}" is already used by another element, so this element and its directives are skipped.`,
+					);
 				continue;
 			}
 			syncStateAttributes(existingStore);

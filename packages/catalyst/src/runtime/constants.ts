@@ -1,5 +1,3 @@
-import { localAdapter, sessionAdapter } from "../core/persist/adapters.js";
-
 const DEFAULT_OPTIONS = {
 	debug: false,
 	attributes: {
@@ -9,15 +7,6 @@ const DEFAULT_OPTIONS = {
 		persist: "persist",
 		scopeSeparator: ":",
 		specifierSeparator: "--",
-	},
-	persistence: {
-		prefix: "catalyst:",
-		storage: "local",
-		sync: false,
-		adapters: {
-			local: localAdapter,
-			session: sessionAdapter,
-		},
 	},
 } as const;
 

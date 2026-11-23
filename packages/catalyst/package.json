@@ -13,18 +13,35 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js",
+			"import": {
+				"development": "./dist/dev/index.js",
+				"default": "./dist/index.js"
+			},
 			"require": "./dist/index.cjs"
 		},
 		"./reactions": {
 			"types": "./dist/reactions.d.ts",
-			"import": "./dist/reactions.js",
+			"import": {
+				"development": "./dist/dev/reactions.js",
+				"default": "./dist/reactions.js"
+			},
 			"require": "./dist/reactions.cjs"
 		},
 		"./helpers": {
 			"types": "./dist/helpers.d.ts",
-			"import": "./dist/helpers.js",
+			"import": {
+				"development": "./dist/dev/helpers.js",
+				"default": "./dist/helpers.js"
+			},
 			"require": "./dist/helpers.cjs"
+		},
+		"./persistence": {
+			"types": "./dist/persistence.d.ts",
+			"import": {
+				"development": "./dist/dev/persistence.js",
+				"default": "./dist/persistence.js"
+			},
+			"require": "./dist/persistence.cjs"
 		},
 		"./types": {
 			"types": "./dist/types/index.d.ts",

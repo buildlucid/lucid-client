@@ -105,13 +105,15 @@ const bindReaction: Reaction = {
 	attribute: "bind",
 	setup: (directive, context) => {
 		if (!directive.specifier) {
-			context.warn("Bind directives require a target attribute specifier.");
+			if (__DEV__)
+				context.warn("Bind directives require a target attribute specifier.");
 			return;
 		}
 		if (directive.reference?.type === "identifier") {
-			context.warn(
-				`The "${directive.attributeName}" directive requires state or an action.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires state or an action.`,
+				);
 			return;
 		}
 

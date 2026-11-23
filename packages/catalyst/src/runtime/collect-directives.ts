@@ -32,9 +32,10 @@ const reportUnregisteredReaction = (attributeName: string) => {
 			return;
 		}
 		Catalyst.reportedReactions.add(name);
-		warn(
-			`Found "${attributeName}" but the ${name} reaction isn't registered. Add ${name} to Catalyst.start({ reactions }).`,
-		);
+		if (__DEV__)
+			warn(
+				`Found "${attributeName}" but the ${name} reaction isn't registered. Add ${name} to Catalyst.start({ reactions }).`,
+			);
 		return;
 	}
 };
@@ -103,7 +104,7 @@ const collectDirectives = (target: Element, options?: SyncOptions) => {
 				matched = true;
 				break;
 			}
-			if (!matched && Catalyst.options.debug) {
+			if (__DEV__ && !matched && Catalyst.options.debug) {
 				reportUnregisteredReaction(attribute.name);
 			}
 		}

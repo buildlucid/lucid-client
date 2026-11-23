@@ -4,11 +4,13 @@ import { warn } from "./log.js";
 
 const registerReaction = (reaction: Reaction) => {
 	if (Catalyst.started) {
-		warn("Reactions must be registered before Catalyst.start() is called.");
+		if (__DEV__)
+			warn("Reactions must be registered before Catalyst.start() is called.");
 		return;
 	}
 	if (Catalyst.reactions.has(reaction.name)) {
-		warn(`A reaction named "${reaction.name}" is already registered.`);
+		if (__DEV__)
+			warn(`A reaction named "${reaction.name}" is already registered.`);
 		return;
 	}
 	if (
@@ -16,7 +18,8 @@ const registerReaction = (reaction: Reaction) => {
 			(existing) => existing.attribute === reaction.attribute,
 		)
 	) {
-		warn(`A reaction already uses the "${reaction.attribute}" attribute.`);
+		if (__DEV__)
+			warn(`A reaction already uses the "${reaction.attribute}" attribute.`);
 		return;
 	}
 

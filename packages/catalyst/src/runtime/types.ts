@@ -6,6 +6,7 @@ import type {
 	Reaction,
 	StoreActions,
 	StoreCleanup,
+	Persistence,
 	StorageAdapter,
 	StoreRefs,
 	StoreState,
@@ -20,12 +21,6 @@ export type ResolvedCatalystOptions = {
 		persist: string;
 		scopeSeparator: string;
 		specifierSeparator: string;
-	};
-	persistence: {
-		prefix: string;
-		storage: string;
-		sync: boolean;
-		adapters: Record<string, StorageAdapter>;
 	};
 };
 
@@ -98,5 +93,7 @@ export type CatalystRuntime = {
 	scopeDependents: Map<string, Set<DirectiveRegistration>>;
 	/** First-party reactions already reported as missing while debugging. */
 	reportedReactions: Set<string>;
+	/** Saves and restores state, when `Catalyst.start` was given `persistence()`. */
+	persistence?: Persistence;
 	removalObserver?: MutationObserver;
 };

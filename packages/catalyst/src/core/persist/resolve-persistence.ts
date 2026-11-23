@@ -3,6 +3,7 @@ import { warn } from "../../runtime/log.js";
 import type { PersistEntry } from "../../runtime/types.js";
 import type { PersistOptions, StoreState } from "../../types/index.js";
 import { kindOf } from "./persist-value.js";
+import type { PersistenceConfig } from "./persistence.js";
 
 const getPersistAttribute = () =>
 	`${Catalyst.options.attributes.prefix}${Catalyst.options.attributes.persist}`;
@@ -61,28 +62,35 @@ const warnUnknownKey = (
 ) => {
 	const camel = toCamelCase(key);
 	if (attribute && camel !== key && camel in state) {
-		warn(
-			`The "${attribute}" value "${key}" on store "${storeKey}" does not match the "${camel}" state. Use "${camel}" instead.`,
-		);
+		if (__DEV__)
+			warn(
+				`The "${attribute}" value "${key}" on store "${storeKey}" does not match the "${camel}" state. Use "${camel}" instead.`,
+			);
 		return;
 	}
-	warn(
-		`Cannot persist "${key}" on store "${storeKey}" because it isn't a state value.`,
-	);
+	if (__DEV__)
+		warn(
+			`Cannot persist "${key}" on store "${storeKey}" because it isn't a state value.`,
+		);
 };
 
-const findAdapter = (storeKey: string, key: string, storage: string) => {
-	const adapters = Catalyst.options.persistence.adapters;
+const findAdapter = (
+	adapters: PersistenceConfig["adapters"],
+	storeKey: string,
+	key: string,
+	storage: string,
+) => {
 	if (Object.hasOwn(adapters, storage)) return adapters[storage];
 
 	const caseMatch = Object.keys(adapters).find(
 		(name) => name.toLowerCase() === storage.toLowerCase(),
 	);
-	warn(
-		caseMatch
-			? `The "${storage}" storage for "${key}" on store "${storeKey}" isn't registered. HTML lowercases attribute names, so register the "${caseMatch}" adapter under a lowercase name.`
-			: `The "${storage}" storage for "${key}" on store "${storeKey}" isn't registered. Add it to Catalyst.start({ persistence: { adapters } }).`,
-	);
+	if (__DEV__)
+		warn(
+			caseMatch
+				? `The "${storage}" storage for "${key}" on store "${storeKey}" isn't registered. HTML lowercases attribute names, so register the "${caseMatch}" adapter under a lowercase name.`
+				: `The "${storage}" storage for "${key}" on store "${storeKey}" isn't registered. Add it to persistence({ adapters }).`,
+		);
 	return undefined;
 };
 
@@ -92,33 +100,33 @@ const findAdapter = (storeKey: string, key: string, storage: string) => {
  * persist more keys and choose their storage for this store only.
  */
 const resolvePersistence = (
+	config: PersistenceConfig,
 	element: Element,
 	storeKey: string,
 	requested: Map<string, PersistOptions>,
 	state: StoreState,
 ): PersistEntry[] => {
 	const markup = readPersistAttributes(element);
-	const persistence = Catalyst.options.persistence;
 	const entries: PersistEntry[] = [];
 
 	for (const key of new Set([...requested.keys(), ...markup.keys()])) {
 		const fromMarkup = markup.get(key);
 		if (!(key in state)) {
-			warnUnknownKey(storeKey, key, fromMarkup?.attribute, state);
+			if (__DEV__) warnUnknownKey(storeKey, key, fromMarkup?.attribute, state);
 			continue;
 		}
 		const value = state[key];
 		if (!isJsonSafe(value)) {
-			warn(
-				`Cannot persist "${key}" on store "${storeKey}" because its value can't be saved as JSON.`,
-			);
+			if (__DEV__)
+				warn(
+					`Cannot persist "${key}" on store "${storeKey}" because its value can't be saved as JSON.`,
+				);
 			continue;
 		}
 
 		const options = requested.get(key) ?? {};
-		const storage =
-			fromMarkup?.storage ?? options.storage ?? persistence.storage;
-		const adapter = findAdapter(storeKey, key, storage);
+		const storage = fromMarkup?.storage ?? options.storage ?? config.storage;
+		const adapter = findAdapter(config.adapters, storeKey, key, storage);
 		if (!adapter) continue;
 
 		const json = JSON.stringify(value);
@@ -126,9 +134,9 @@ const resolvePersistence = (
 			key,
 			storage,
 			adapter,
-			storageKey: `${persistence.prefix}${options.key ?? `${storeKey}:${key}`}`,
+			storageKey: `${config.prefix}${options.key ?? `${storeKey}:${key}`}`,
 			validate: options.validate,
-			sync: options.sync ?? persistence.sync,
+			sync: options.sync ?? config.sync,
 			kind: kindOf(value),
 			fallback: json,
 			saved: json,

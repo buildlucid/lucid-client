@@ -12,6 +12,7 @@ afterEach(async () => {
 	Catalyst.destroy();
 	Runtime.reactions.clear();
 	Runtime.storeDefinitions.clear();
+	Runtime.persistence = undefined;
 	document.body.innerHTML = "";
 	document.body.removeAttribute("style");
 	try {

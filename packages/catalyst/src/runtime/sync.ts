@@ -68,7 +68,7 @@ export const syncTarget = (target: Element, options?: SyncOptions) => {
 
 const sync = (target: Element, options?: SyncOptions) => {
 	if (!Catalyst.started) {
-		warn("Catalyst must be started before it can sync.");
+		if (__DEV__) warn("Catalyst must be started before it can sync.");
 		return;
 	}
 	syncTarget(target, options);

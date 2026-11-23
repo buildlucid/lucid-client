@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from "vite-plus/test";
-import Catalyst, { defineStore, persisted } from "../src/index.js";
+import Catalyst, { defineStore } from "../src/index.js";
+import { clearPersisted, persisted, persistence } from "../src/persistence.js";
 
 /**
  * These checks run when the tests are type-checked (`vp lint`). The runtime
@@ -144,7 +145,7 @@ describe("defineStore types", () => {
 		expectTypeOf(Catalyst.start).toBeCallableWith({
 			stores: { prefs, factory },
 			attributes: { persist: "save" },
-			persistence: {
+			persistence: persistence({
 				prefix: "site:",
 				storage: "session",
 				sync: true,
@@ -155,10 +156,10 @@ describe("defineStore types", () => {
 						remove: () => {},
 					},
 				},
-			},
+			}),
 		});
-		expectTypeOf(Catalyst.clearPersisted).toBeCallableWith("prefs");
-		expectTypeOf(Catalyst.clearPersisted).toBeCallableWith();
+		expectTypeOf(clearPersisted).toBeCallableWith("prefs");
+		expectTypeOf(clearPersisted).toBeCallableWith();
 	});
 
 	it("rejects writes and wrong types", () => {

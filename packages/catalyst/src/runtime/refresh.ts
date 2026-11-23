@@ -10,14 +10,14 @@ import { syncTarget } from "./sync.js";
  */
 const refresh = (targetStore?: string) => {
 	if (!Catalyst.started) {
-		warn("Catalyst must be started before it can be refreshed.");
+		if (__DEV__) warn("Catalyst must be started before it can be refreshed.");
 		return;
 	}
 
 	if (targetStore) {
 		const store = Catalyst.stores.get(targetStore);
 		if (!store) {
-			warn(`Cannot refresh unknown store "${targetStore}".`);
+			if (__DEV__) warn(`Cannot refresh unknown store "${targetStore}".`);
 			return;
 		}
 

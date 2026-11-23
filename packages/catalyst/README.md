@@ -253,10 +253,13 @@ ways straight away. An attribute for undeclared state is picked up by the next
 ### Persisted state
 
 Wrap a state value in `persisted()` to save it to storage and restore it when
-the page loads again:
+the page loads again. Persistence is imported from its own entry point, so pages
+that don't persist state don't include it. Pass `persistence()` to `start` to
+turn it on:
 
 ```ts
-import { defineStore, persisted } from "@lucidclient/catalyst";
+import Catalyst, { defineStore } from "@lucidclient/catalyst";
+import { persisted, persistence } from "@lucidclient/catalyst/persistence";
 
 type Theme = "light" | "dark";
 
@@ -268,7 +271,15 @@ export const prefs = defineStore({
         busy: false,
     },
 });
+
+Catalyst.start({
+    stores: { prefs },
+    persistence: persistence(),
+});
 ```
+
+Without `persistence()`, persisted values still work as ordinary state, but
+aren't saved, and the development build warns.
 
 `state.theme` is typed as `Theme`, not as a wrapper. `persisted()` works on
 top-level state values, including in a state function.
@@ -318,11 +329,12 @@ theme: persisted("light" as Theme, {
 `persisted()` takes these options:
 
 - `storage`: `"local"`, `"session"` or the name of a registered adapter.
-  Defaults to `persistence.storage`.
+  Defaults to the `storage` option of `persistence()`.
 - `key`: the storage entry's name after the prefix. Defaults to `{scope}:{key}`,
   such as `catalyst:prefs:theme`, so each scope saves its own value.
 - `validate`: returns `false` to ignore a stored value.
-- `sync`: applies changes saved by other tabs. Defaults to `persistence.sync`.
+- `sync`: applies changes saved by other tabs. Defaults to the `sync` option of
+  `persistence()`.
 
 Values must be plain data that JSON can represent. A `Map`, a class instance or
 a function logs a warning and isn't persisted. When storage is blocked or full,
@@ -330,9 +342,10 @@ Catalyst warns once and the state keeps working without being saved.
 
 Persistence is decided when a store is created, so a changed `data-persist`
 attribute applies after `Catalyst.refresh(scope)`. A refreshed store restores its
-stored values again. `Catalyst.clearPersisted(scope)` removes a running store's
-saved values, or every running store's without a scope, such as when a user logs
-out. State keeps its current values and is saved again the next time it changes.
+stored values again. `clearPersisted(scope)`, from
+`@lucidclient/catalyst/persistence`, removes a running store's saved values, or
+every running store's without a scope, such as when a user logs out. State keeps
+its current values and is saved again the next time it changes.
 
 Server-rendered markup shows its own values until Catalyst starts. For a value
 that must not flash, such as a theme, save it in a cookie with an adapter so the
@@ -355,14 +368,17 @@ const memoryAdapter: StorageAdapter = {
 
 Catalyst.start({
     stores: { prefs },
-    persistence: {
+    persistence: persistence({
         prefix: "catalyst:",
         storage: "local",
         sync: false,
         adapters: { memory: memoryAdapter },
-    },
+    }),
 });
 ```
+
+`prefix`, `storage` and `sync` set the defaults for every persisted value, and
+are shown here with their default values.
 
 ```html
 <div data-store="cart" data-state--open="false" data-persist--memory="open"></div>
@@ -752,17 +768,22 @@ Catalyst.start({
         scopeSeparator: ":",
         specifierSeparator: "--",
     },
-    persistence: {
-        prefix: "catalyst:",
-        storage: "local",
-        sync: false,
-        adapters: {},
-    },
+    persistence: persistence(),
 });
 ```
 
 Reaction attribute names are owned by their reaction definitions rather than by
 core configuration.
+
+### Development and production builds
+
+Catalyst ships a development build and a production build. Bundlers that
+support the `development` export condition, such as Vite while developing, use
+the development build, and production builds use the smaller production build.
+
+Warnings, `debug` messages and `context.warn` from custom reactions only log in
+the development build. Both builds behave the same otherwise, and errors thrown
+by store code, such as an `init` that fails, are logged in both.
 
 ## Custom reactions
 

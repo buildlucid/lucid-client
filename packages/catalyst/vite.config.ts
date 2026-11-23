@@ -1,24 +1,50 @@
 import { defineConfig } from "vite-plus";
 
+const entry = [
+	"src/index.ts",
+	"src/reactions.ts",
+	"src/helpers.ts",
+	"src/persistence.ts",
+];
+
+const shared = {
+	platform: "browser",
+	target: "es2022",
+	fixedExtension: false,
+	sourcemap: true,
+	deps: {
+		neverBundle: true,
+	},
+} as const;
+
 export default defineConfig({
-	pack: {
-		entry: [
-			"src/index.ts",
-			"src/reactions.ts",
-			"src/helpers.ts",
-			"src/types/index.ts",
-		],
-		platform: "browser",
-		target: "es2022",
-		format: ["esm", "cjs"],
-		fixedExtension: false,
-		cjsDefault: false,
-		dts: true,
-		sourcemap: true,
-		minify: true,
-		deps: {
-			neverBundle: true,
+	pack: [
+		// The production build leaves out warnings and other code inside
+		// `if (__DEV__)`.
+		{
+			...shared,
+			entry: [...entry, "src/types/index.ts"],
+			format: ["esm", "cjs"],
+			cjsDefault: false,
+			dts: true,
+			minify: true,
+			define: { __DEV__: "false" },
 		},
+		// Bundlers pick the development build through the `development` export
+		// condition, as Vite does while developing.
+		{
+			...shared,
+			entry,
+			outDir: "dist/dev",
+			clean: false,
+			format: ["esm"],
+			dts: false,
+			minify: false,
+			define: { __DEV__: "true" },
+		},
+	],
+	define: {
+		__DEV__: "true",
 	},
 	resolve: {
 		conditions: ["browser"],

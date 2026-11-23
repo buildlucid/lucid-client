@@ -34,9 +34,10 @@ export const restorePersistedState = (
 		if (!acceptsStored(storeKey, entry, stored)) continue;
 		state[entry.key] = stored;
 		entry.saved = toJson(stored);
-		debug(
-			`Restored "${entry.key}" on store "${storeKey}" from ${entry.storage} storage.`,
-		);
+		if (__DEV__)
+			debug(
+				`Restored "${entry.key}" on store "${storeKey}" from ${entry.storage} storage.`,
+			);
 	}
 };
 
@@ -109,9 +110,4 @@ export const registerPersistence = (
 	entries: PersistEntry[],
 ) => {
 	for (const entry of entries) registerEntry(store, entry);
-};
-
-export const disposePersistence = (store: RuntimeStore) => {
-	for (const entry of store.persisted.values()) entry.dispose?.();
-	store.persisted.clear();
 };

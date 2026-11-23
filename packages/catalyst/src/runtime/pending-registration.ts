@@ -30,9 +30,10 @@ export const registerPending = (directive: Directive) => {
 		directive.reference && directive.reference.type !== "loop"
 			? directive.reference.scope
 			: null;
-	debug(
-		`"${directive.attributeName}" is waiting for a store with the scope "${scope}".`,
-	);
+	if (__DEV__)
+		debug(
+			`"${directive.attributeName}" is waiting for a store with the scope "${scope}".`,
+		);
 };
 
 /**

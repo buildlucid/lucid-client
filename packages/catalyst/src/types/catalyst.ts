@@ -1,4 +1,4 @@
-import type { CatalystPersistenceOptions } from "./persistence.js";
+import type { Persistence } from "./persistence.js";
 import type { Reaction } from "./reactions.js";
 import type { AnyStoreDefinition } from "./store.js";
 
@@ -19,8 +19,11 @@ export type CatalystStartOptions = {
 	stores?: CatalystStores;
 	reactions?: Reaction[];
 	attributes?: CatalystAttributeOptions;
-	/** Where `persisted()` state and `data-persist` attributes save values. */
-	persistence?: CatalystPersistenceOptions;
+	/**
+	 * Saves `persisted()` state and `data-persist` keys to storage. Create it
+	 * with `persistence()` from `@lucidclient/catalyst/persistence`.
+	 */
+	persistence?: Persistence;
 };
 
 export type CatalystAddOptions = {
@@ -33,10 +36,4 @@ export type CatalystApi = {
 	destroy: () => void;
 	refresh: (targetStore?: string) => void;
 	sync: (target: Element, options?: { childrenOnly?: boolean }) => void;
-	/**
-	 * Removes the saved values of a running store, or of every running store,
-	 * from storage. State keeps its current values, and is saved again the next
-	 * time it changes.
-	 */
-	clearPersisted: (scope?: string) => void;
 };

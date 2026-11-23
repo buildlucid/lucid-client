@@ -69,13 +69,15 @@ const getTarget = (
 						written = assignPath(state[reference.key], reference.path, value);
 				});
 				if (!declared) {
-					context.warn(
-						`The "${directive.attributeName}" directive can only write state that store "${scope}" declares, and "${reference.key}" isn't declared state.`,
-					);
+					if (__DEV__)
+						context.warn(
+							`The "${directive.attributeName}" directive can only write state that store "${scope}" declares, and "${reference.key}" isn't declared state.`,
+						);
 				} else if (!written) {
-					context.warn(
-						`The "${directive.attributeName}" directive can't write "${reference.raw}", because part of its path doesn't exist.`,
-					);
+					if (__DEV__)
+						context.warn(
+							`The "${directive.attributeName}" directive can't write "${reference.raw}", because part of its path doesn't exist.`,
+						);
 				}
 			},
 		};
@@ -220,16 +222,18 @@ const modelReaction: Reaction = {
 	setup: (directive, context) => {
 		const element = directive.element;
 		if (!isField(element)) {
-			context.warn(
-				`The "${directive.attributeName}" directive requires an input, select or textarea.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires an input, select or textarea.`,
+				);
 			return;
 		}
 		const target = getTarget(directive, context);
 		if (!target) {
-			context.warn(
-				`The "${directive.attributeName}" directive requires state, such as "$name", or a property of a loop item, such as "$item.name".`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires state, such as "$name", or a property of a loop item, such as "$item.name".`,
+				);
 			return;
 		}
 

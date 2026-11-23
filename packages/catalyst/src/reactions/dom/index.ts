@@ -60,17 +60,19 @@ const domReaction: Reaction = {
 	attribute: "dom",
 	setup: (directive, context) => {
 		if (directive.reference?.type === "identifier") {
-			context.warn(
-				`The "${directive.attributeName}" directive requires state or an action.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires state or an action.`,
+				);
 			return;
 		}
 
 		const specifier = directive.specifier || "text";
 		if (!SPECIFIERS.includes(specifier)) {
-			context.warn(
-				`The "${directive.attributeName}" directive has an unknown specifier. Use one of: ${SPECIFIERS.join(", ")}.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive has an unknown specifier. Use one of: ${SPECIFIERS.join(", ")}.`,
+				);
 			return;
 		}
 

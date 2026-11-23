@@ -25,7 +25,7 @@ const reportFailure = (
 ) => {
 	if (entry.reported) return;
 	entry.reported = true;
-	warn(message, cause);
+	if (__DEV__) warn(message, cause);
 };
 
 const describe = (storeKey: string, entry: PersistEntry) =>
@@ -43,17 +43,19 @@ export const acceptsStored = (
 ) => {
 	const kind = kindOf(value);
 	if (entry.kind !== "empty" && kind !== "empty" && kind !== entry.kind) {
-		debug(
-			`Ignored the stored ${describe(storeKey, entry)}, which is a ${kind} rather than a ${entry.kind}.`,
-		);
+		if (__DEV__)
+			debug(
+				`Ignored the stored ${describe(storeKey, entry)}, which is a ${kind} rather than a ${entry.kind}.`,
+			);
 		return false;
 	}
 	if (!entry.validate) return true;
 	try {
 		if (entry.validate(value)) return true;
-		debug(
-			`Ignored the stored ${describe(storeKey, entry)}, which validate rejected.`,
-		);
+		if (__DEV__)
+			debug(
+				`Ignored the stored ${describe(storeKey, entry)}, which validate rejected.`,
+			);
 	} catch (cause) {
 		error(
 			`The validate option for "${entry.key}" on store "${storeKey}" threw.`,
@@ -68,11 +70,12 @@ export const readStored = (storeKey: string, entry: PersistEntry) => {
 	try {
 		return entry.adapter.get(entry.storageKey);
 	} catch (cause) {
-		reportFailure(
-			entry,
-			`Could not restore ${describe(storeKey, entry)} from ${entry.storage} storage, so it starts from its default.`,
-			cause,
-		);
+		if (__DEV__)
+			reportFailure(
+				entry,
+				`Could not restore ${describe(storeKey, entry)} from ${entry.storage} storage, so it starts from its default.`,
+				cause,
+			);
 		return undefined;
 	}
 };
@@ -87,11 +90,12 @@ export const writeStored = (
 		if (value === undefined) entry.adapter.remove(entry.storageKey);
 		else entry.adapter.set(entry.storageKey, value);
 	} catch (cause) {
-		reportFailure(
-			entry,
-			`Could not save ${describe(storeKey, entry)} to ${entry.storage} storage, so it won't be restored.`,
-			cause,
-		);
+		if (__DEV__)
+			reportFailure(
+				entry,
+				`Could not save ${describe(storeKey, entry)} to ${entry.storage} storage, so it won't be restored.`,
+				cause,
+			);
 	}
 };
 
@@ -99,11 +103,12 @@ export const removeStored = (storeKey: string, entry: PersistEntry) => {
 	try {
 		entry.adapter.remove(entry.storageKey);
 	} catch (cause) {
-		reportFailure(
-			entry,
-			`Could not remove ${describe(storeKey, entry)} from ${entry.storage} storage.`,
-			cause,
-		);
+		if (__DEV__)
+			reportFailure(
+				entry,
+				`Could not remove ${describe(storeKey, entry)} from ${entry.storage} storage.`,
+				cause,
+			);
 	}
 };
 
@@ -117,11 +122,12 @@ export const subscribeStored = (
 	try {
 		return entry.adapter.subscribe(entry.storageKey, onChange);
 	} catch (cause) {
-		reportFailure(
-			entry,
-			`Could not watch ${describe(storeKey, entry)} in ${entry.storage} storage for changes from other tabs.`,
-			cause,
-		);
+		if (__DEV__)
+			reportFailure(
+				entry,
+				`Could not watch ${describe(storeKey, entry)} in ${entry.storage} storage for changes from other tabs.`,
+				cause,
+			);
 		return undefined;
 	}
 };

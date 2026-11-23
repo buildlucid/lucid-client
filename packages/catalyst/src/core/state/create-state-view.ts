@@ -20,9 +20,10 @@ const createStateView = (
 		typeof property === "string" && (computed.has(property) || property in raw);
 	const rejectWrite = (property: string | symbol) => {
 		const name = String(property);
-		warn(
-			`Cannot write "${name}" on store "${key}" directly. Use setState((state) => { state.${name} = value; }).`,
-		);
+		if (__DEV__)
+			warn(
+				`Cannot write "${name}" on store "${key}" directly. Use setState((state) => { state.${name} = value; }).`,
+			);
 		return true;
 	};
 

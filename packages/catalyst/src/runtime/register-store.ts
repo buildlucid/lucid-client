@@ -5,7 +5,7 @@ import { warn } from "./log.js";
 /** Registers a store definition. Returns `true` when it was newly added. */
 const registerStore = (key: string, definition: AnyStoreDefinition) => {
 	if (!key) {
-		warn("Stores require a scope name.");
+		if (__DEV__) warn("Stores require a scope name.");
 		return false;
 	}
 
@@ -13,7 +13,7 @@ const registerStore = (key: string, definition: AnyStoreDefinition) => {
 	// Starting again after `destroy` passes the same definitions again.
 	if (existing === definition) return false;
 	if (existing) {
-		warn(`A store is already registered for scope "${key}".`);
+		if (__DEV__) warn(`A store is already registered for scope "${key}".`);
 		return false;
 	}
 

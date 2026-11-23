@@ -58,23 +58,26 @@ const eventsReaction: Reaction = {
 	setup: (directive, context) => {
 		const reference = directive.reference;
 		if (!reference || reference.type !== "action") {
-			context.warn(
-				`The "${directive.attributeName}" directive requires an action.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires an action.`,
+				);
 			return;
 		}
 		if (!reference.scope) {
-			context.warn(
-				`Cannot infer a store for the reference "${reference.raw}".`,
-			);
+			if (__DEV__)
+				context.warn(
+					`Cannot infer a store for the reference "${reference.raw}".`,
+				);
 			return;
 		}
 
 		const config = getEventTarget(directive.element, directive.specifier);
 		if (!config) {
-			context.warn(
-				`The "${directive.attributeName}" directive requires an event specifier.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires an event specifier.`,
+				);
 			return;
 		}
 

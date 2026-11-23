@@ -25,22 +25,25 @@ const loopReaction: Reaction = {
 	attribute: "loop",
 	setup: (directive, context) => {
 		if (directive.reference?.type === "identifier") {
-			context.warn(
-				`The "${directive.attributeName}" directive requires state or an action.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires state or an action.`,
+				);
 			return;
 		}
 
 		const element = directive.element;
 		const template = getTemplate(element);
 		if (!template) {
-			context.warn(
-				`The "${directive.attributeName}" directive requires a direct template child.`,
-			);
+			if (__DEV__)
+				context.warn(
+					`The "${directive.attributeName}" directive requires a direct template child.`,
+				);
 			return;
 		}
 		if (template.content.children.length !== 1) {
-			context.warn("Loop templates must contain exactly one element child.");
+			if (__DEV__)
+				context.warn("Loop templates must contain exactly one element child.");
 			return;
 		}
 
@@ -104,9 +107,10 @@ const loopReaction: Reaction = {
 
 		const render = (value: unknown) => {
 			if (value !== null && value !== undefined && !Array.isArray(value)) {
-				context.warn(
-					`The "${directive.attributeName}" directive must resolve to an array.`,
-				);
+				if (__DEV__)
+					context.warn(
+						`The "${directive.attributeName}" directive must resolve to an array.`,
+					);
 				return;
 			}
 			const items: unknown[] = Array.isArray(value) ? value : [];
