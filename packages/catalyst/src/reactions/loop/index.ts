@@ -64,6 +64,13 @@ const getItemNodes = (template: HTMLTemplateElement) =>
 		(node) => !isFormattingWhitespace(node),
 	);
 
+/**
+ * New items set up per sync. Sharing a sync shares its lookups, but a very
+ * large one builds large temporary lookups that only a full garbage collection
+ * frees, which costs more later than the sharing saves.
+ */
+const SYNC_BATCH = 50;
+
 const getTemplate = (target: Element) =>
 	Array.from(target.children).find(
 		(element): element is HTMLTemplateElement =>
@@ -265,8 +272,12 @@ const loopReaction: Reaction = {
 
 			placeEntries(next, previous);
 			entries = next;
-			// New items are set up in one pass, which shares its lookups.
-			syncTargets(created.map((entry) => entry.root));
+			// New items are set up in batches, which share their lookups.
+			for (let index = 0; index < created.length; index += SYNC_BATCH) {
+				syncTargets(
+					created.slice(index, index + SYNC_BATCH).map((entry) => entry.root),
+				);
+			}
 		};
 
 		createResolvedEffect(directive, context, render, {
