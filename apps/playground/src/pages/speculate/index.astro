@@ -184,10 +184,9 @@ const sectionClass =
 			"Hovering a page for a moment logs `fetch() called` with the reason `hover`; clicking it afterwards logs `served from the cache` almost immediately.",
 			"Clicking a page you haven't hovered waits for the latency before `onClick` runs.",
 			"Page 1 shows its error, and the log shows `onClick` as a warning.",
-			"Clicking page 1 again should fetch again rather than reuse the failure.",
+			"Clicking page 1 again fetches again: its error isn't cached, so it leaves the cache once it settles.",
 			"The cache never holds more than `maxSize` entries; the oldest is evicted first.",
 		]}
-		gap="Error results are cached like successful ones. After page 1 fails, clicking it again returns the cached error without calling `fetch` until the entry goes stale (2 minutes by default) or the cache is cleared."
 	>
 		<div class="space-y-4" data-paginator>
 			<div class="flex flex-wrap gap-2">
@@ -282,10 +281,9 @@ const sectionClass =
 		title="Hover intent and hoverDelay"
 		description="A `Speculator` with no `hoverDelay` option. The log shows how long after the pointer arrived each fetch started."
 		expect={[
-			"Resting on a button logs a fetch after the default delay.",
-			"Passing quickly over a button and off it, onto the background, should not fetch.",
+			"Resting on a button logs a fetch about 200ms, the default `hoverDelay`, after the pointer arrived.",
+			"Passing quickly over a button and off it logs that the pointer left before the delay, and no fetch follows.",
 		]}
-		gap="`hoverDelay` defaults to 100ms in the code, while the README and the type docs say 200ms. Moving the pointer off a trigger before the delay doesn't cancel the prefetch either: only a `mouseover` on another trigger clears the timer, so a quick pass over a button still fetches."
 	>
 		<div class="flex flex-wrap items-center gap-2">
 			{
@@ -304,9 +302,9 @@ const sectionClass =
 		title="Triggers with nested markup"
 		description="These buttons wrap their label in a `<span>`. The log shows the element `getCacheKey` receives on each hover and click."
 		expect={[
-			"Hovering or clicking the label should pass the button to `getCacheKey` and `fetch`, the same as its padding.",
+			"Hovering or clicking the label passes the button to `getCacheKey` and `fetch`, the same as its padding.",
+			"Clicking the label logs `onClick received page` with the button's page, never an error.",
 		]}
-		gap="`Speculator` reads `e.target` in its `mouseover` and `click` handlers, so pointing at markup inside a trigger passes the inner `<span>` instead of the trigger. Hovering the label never prefetches (no cache key), and clicking it calls `fetch` with the `<span>`, which has no `data-nested-page`."
 	>
 		<div class="flex flex-wrap gap-2">
 			{

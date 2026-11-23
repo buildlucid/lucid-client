@@ -326,9 +326,12 @@ const createPaginator = () =>
 		getCacheKey: (element) => element.getAttribute("data-page"),
 		cache: paginatorConfig,
 		onClick: (event, result) => {
+			// onClick runs after the fetch settles, when currentTarget is no
+			// longer set, so the page is found from the clicked element.
 			const key =
 				event.target instanceof Element
-					? event.target.getAttribute("data-page")
+					? (event.target.closest("[data-page]")?.getAttribute("data-page") ??
+						null)
 					: null;
 			const click = key ? clicks.get(key) : undefined;
 			const waited = click ? Math.round(performance.now() - click.at) : 0;
@@ -503,10 +506,22 @@ for (const button of $$<HTMLButtonElement>("[data-speculator-action]")) {
 const hoverLog = createLogger("hover intent");
 const hoverButtons = $$<HTMLButtonElement>("[data-hover-page]");
 const hoverStarted = new Map<string, number>();
+const hoverFetched = new Set<string>();
 for (const button of hoverButtons) {
-	button.addEventListener("mouseover", () => {
+	button.addEventListener("mouseenter", () => {
 		const key = button.dataset.hoverPage;
-		if (key && !hoverStarted.has(key)) hoverStarted.set(key, performance.now());
+		if (key) hoverStarted.set(key, performance.now());
+	});
+	button.addEventListener("mouseleave", () => {
+		const key = button.dataset.hoverPage;
+		const started = key ? hoverStarted.get(key) : undefined;
+		if (!key || started === undefined || hoverFetched.has(key)) return;
+		const stayed = Math.round(performance.now() - started);
+		hoverLog.info(
+			stayed < 200
+				? `Left page ${key} after ${stayed}ms, before the delay, so it isn't fetched`
+				: `Left page ${key} after ${stayed}ms`,
+		);
 	});
 }
 
@@ -516,6 +531,7 @@ const hoverSpeculator = new Speculator<PageData, PageError>({
 	fetch: async (element) => {
 		const key = element.getAttribute("data-hover-page");
 		const started = key ? hoverStarted.get(key) : undefined;
+		if (key) hoverFetched.add(key);
 		hoverLog.info(
 			started === undefined
 				? `fetch() called for page ${key}`
@@ -531,6 +547,7 @@ const hoverSpeculator = new Speculator<PageData, PageError>({
 $("[data-hover-reset]")?.addEventListener("click", () => {
 	hoverSpeculator.clearCache();
 	hoverStarted.clear();
+	hoverFetched.clear();
 	hoverLog.info("Cleared the cache, so the next hover fetches again");
 });
 
