@@ -13,8 +13,10 @@ export type SpeculationTrigger = (typeof TRIGGERS)[number];
 export type TargetLink = {
 	id: number;
 	href: string;
-	/** The `rel` value, or null for the control link that isn't speculated. */
-	rel: string | null;
+	/** The attributes that configure the link, empty for the control link that isn't speculated. */
+	attributes: Record<string, string>;
+	/** The attribute as written in markup, or null for the control link. */
+	markup: string | null;
 	action: SpeculationAction | null;
 	trigger: SpeculationTrigger | null;
 	note: string;
@@ -34,7 +36,8 @@ const matrix: TargetLink[] = ACTIONS.flatMap((action, actionIndex) =>
 		return {
 			id,
 			href: `/speculate/target/${id}`,
-			rel: `${action}:${trigger}`,
+			attributes: { [`data-speculate--${action}`]: trigger },
+			markup: `data-speculate--${action}="${trigger}"`,
 			action,
 			trigger,
 			note: TRIGGER_NOTES[trigger],
@@ -48,7 +51,8 @@ export const targetLinks: TargetLink[] = [
 	{
 		id: 11,
 		href: "/speculate/target/11",
-		rel: "prefetch:visible",
+		attributes: { "data-speculate": "visible" },
+		markup: 'data-speculate="visible"',
 		action: "prefetch",
 		trigger: "visible",
 		note: "Inside a scroll container, below its fold",
@@ -56,10 +60,11 @@ export const targetLinks: TargetLink[] = [
 	{
 		id: 12,
 		href: "/speculate/target/12",
-		rel: null,
+		attributes: {},
+		markup: null,
 		action: null,
 		trigger: null,
-		note: "No rel, so it is never speculated",
+		note: "No data-speculate attribute, so it is never speculated",
 	},
 ];
 

@@ -70,14 +70,14 @@ setSupport(
 setSupport("will-run", willRun ? "Yes" : "No, see the console", willRun);
 
 // --------------------------------------------------------
-// The links table: what each rel resolves to, and whether it was speculated
+// The links table: what each link resolves to, and whether it was speculated
 
 const absolute = (href: string) => new URL(href, location.href).href;
 const linkByHref = new Map(
 	targetLinks.map((link) => [absolute(link.href), link] as const),
 );
 
-/** Mirrors Speculate's parseLinkRel fallbacks. */
+/** Mirrors Speculate's parseLinkConfig fallbacks. */
 const effectiveConfig = (link: (typeof targetLinks)[number]) => {
 	if (!link.action || !link.trigger) return "Not speculated";
 	let action: string = link.action;

@@ -27,7 +27,7 @@ const sectionClass =
 	<Fragment slot="intro">
 		<p>
 			<code>speculateLinks()</code> prefetches or prerenders links from their
-			<code>rel</code>, using Speculation Rules where the browser supports them
+			<code>data-speculate</code> attributes, using Speculation Rules where the browser supports them
 			and <code>&lt;link rel="prefetch"&gt;</code> or a low-priority
 			<code>fetch</code> where it doesn't. <code>Speculator</code> prefetches
 			data when a visitor shows intent.
@@ -71,7 +71,7 @@ const sectionClass =
 	<Scenario
 		id="links"
 		title="Every action and trigger"
-		description="One link per `rel` value. `Resolves to` is what Speculate uses in this browser after its fallbacks; `Speculated` updates when a rule, prefetch link or fetch appears for the link."
+		description="One link per action and trigger. `Resolves to` is what Speculate uses in this browser after its fallbacks; `Speculated` updates when a rule, prefetch link or fetch appears for the link."
 		expect={[
 			"With Speculation Rules, every row except the `visible` ones is speculated on load, as Speculate adds a rule and the browser applies the eagerness.",
 			"The `visible` rows stay `Waiting` until the table scrolls into view, then they are speculated.",
@@ -84,7 +84,7 @@ const sectionClass =
 				<thead class="text-xs text-subtle">
 					<tr>
 						<th class="px-1 pb-2 font-medium">Link</th>
-						<th class="px-1 pb-2 font-medium">rel</th>
+						<th class="px-1 pb-2 font-medium">Attribute</th>
 						<th class="px-1 pb-2 font-medium">Resolves to</th>
 						<th class="px-1 pb-2 font-medium">Speculated</th>
 					</tr>
@@ -94,12 +94,12 @@ const sectionClass =
 						matrix.map((link) => (
 							<tr class="border-t border-line/60">
 								<td class="px-1 py-2">
-									<a href={link.href} rel={link.rel ?? undefined}>
+									<a href={link.href} {...link.attributes}>
 										Target {link.id}
 									</a>
 									<span class="block text-xs text-subtle">{link.note}</span>
 								</td>
-								<td class="px-1 py-2 font-mono text-xs">{link.rel}</td>
+								<td class="px-1 py-2 font-mono text-xs">{link.markup}</td>
 								<td class="px-1 py-2 text-xs text-muted" data-effective={link.id} />
 								<td class={`px-1 py-2 ${statusClass}`} data-status={link.id}>
 									Waiting
@@ -115,7 +115,7 @@ const sectionClass =
 	<Scenario
 		id="visible-trigger"
 		title="The visible trigger inside a scroll container"
-		description={`Target ${scrollLink.id} uses \`${scrollLink.rel}\` and sits below the fold of a scrolling box. Target ${controlLink.id} has no \`rel\`, as a control.`}
+		description={`Target ${scrollLink.id} uses \`${scrollLink.markup}\` and sits below the fold of a scrolling box. Target ${controlLink.id} has no \`data-speculate\` attribute, as a control.`}
 		expect={[
 			`Target ${scrollLink.id} stays \`Waiting\` until the box is scrolled to it, then it is speculated.`,
 			`Target ${controlLink.id} is never speculated, and its target page reports a network load.`,
@@ -126,8 +126,8 @@ const sectionClass =
 				<p class="pt-4 text-sm text-subtle">Scroll down inside this box.</p>
 				<div class="h-56"></div>
 				<p class="pb-4 text-sm">
-					<a href={scrollLink.href} rel={scrollLink.rel ?? undefined}>Target {scrollLink.id}</a>
-					<span class="ml-2 font-mono text-xs text-subtle">{scrollLink.rel}</span>
+					<a href={scrollLink.href} {...scrollLink.attributes}>Target {scrollLink.id}</a>
+					<span class="ml-2 font-mono text-xs text-subtle">{scrollLink.markup}</span>
 				</p>
 			</div>
 			<dl class="space-y-2 text-sm sm:w-56">

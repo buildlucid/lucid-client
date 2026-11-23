@@ -16,12 +16,12 @@ const next = targetLinks.find((target) => target.id === id + 1) ?? targetLinks[0
 		<p>
 			A target page for the <a href="/speculate">Speculate</a> scenarios.
 			{
-				link?.rel ? (
+				link?.markup ? (
 					<>
-						Its link uses <code>rel="{link.rel}"</code>: {link.note.toLowerCase()}.
+						Its link uses <code>{link.markup}</code>: {link.note.toLowerCase()}.
 					</>
 				) : (
-					<>Its link has no <code>rel</code>, so it is never speculated.</>
+					<>Its link has no <code>data-speculate</code> attribute, so it is never speculated.</>
 				)
 			}
 		</p>
@@ -34,7 +34,7 @@ const next = targetLinks.find((target) => target.id === id + 1) ?? targetLinks[0
 		expect={[
 			"A `prerender` link opened after it was speculated shows `Prerendered`, with an activation time.",
 			"A `prefetch` link opened after it was speculated shows `Prefetched by Speculation Rules`, or `HTTP cache` on the fallback paths.",
-			"The link without a `rel`, or a reload, shows `Network`.",
+			"The link without a `data-speculate` attribute, or a reload, shows `Network`.",
 		]}
 		markup={false}
 	>

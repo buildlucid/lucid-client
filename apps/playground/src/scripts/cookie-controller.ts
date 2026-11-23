@@ -1,6 +1,8 @@
 import cookieController, {
 	type ConsentChange,
 } from "@lucidclient/cookie-controller";
+import { consentStore } from "@lucidclient/cookie-controller/catalyst";
+import { startCatalyst } from "../lib/catalyst";
 import { createLogger, formatData } from "../lib/log";
 
 const log = createLogger("consent");
@@ -107,6 +109,7 @@ log.info("getConsent() before init reads the cookie directly", {
 });
 init();
 renderStatus();
+startCatalyst({ stores: { consent: consentStore } });
 
 // --------------------------------------------------------
 // Method buttons
@@ -166,8 +169,8 @@ document
 		const figure = document.createElement("figure");
 		figure.className = "relative overflow-hidden rounded-md border border-line";
 		figure.innerHTML = `
-			<img data-cookie-category="marketing" data-src="/cookie/pixel.svg?added=${Date.now()}" alt="Added after init" width="320" height="120" class="peer block h-24 w-full object-cover" />
-			<figcaption class="absolute inset-0 grid place-items-center bg-raised text-xs text-subtle peer-data-[cookie-activated]:hidden">Waiting for marketing consent and refresh()</figcaption>`;
+			<img data-cookie--category="marketing" data-cookie--src="/cookie/pixel.svg?added=${Date.now()}" alt="Added after init" width="320" height="120" class="peer block h-24 w-full object-cover" />
+			<figcaption class="absolute inset-0 grid place-items-center bg-raised text-xs text-subtle peer-data-[cookie--activated]:hidden">Waiting for marketing consent and refresh()</figcaption>`;
 		list.append(figure);
 		log.info(
 			"Added a marketing image after init. Call refresh() to pick it up.",

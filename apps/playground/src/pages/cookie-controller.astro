@@ -33,7 +33,8 @@ const gatePill =
 	<Fragment slot="intro">
 		<p>
 			Cookie Controller brings no markup or styles: the banner and dialog below
-			are wired up entirely with <code>data-cookie-*</code> attributes. This
+			are wired up entirely with <code>data-cookie--*</code> attributes, and a
+			Catalyst store follows the same consent. This
 			page runs on policy version
 			<code data-consent-policy>1.0.2</code>. Every consent change is logged
 			with its full payload.
@@ -73,7 +74,7 @@ const gatePill =
 				<pre class="readout max-h-60 overflow-auto" data-consent-cookie></pre>
 			</div>
 			<div class="flex flex-wrap gap-2">
-				<button type="button" class="btn" data-cookie-action="details">Cookie settings</button>
+				<button type="button" class="btn" data-cookie--action="details">Cookie settings</button>
 				<button type="button" class="btn btn-danger" data-call="reset">Clear cookie and reload</button>
 			</div>
 		</div>
@@ -82,7 +83,7 @@ const gatePill =
 	<Scenario
 		id="banner-dialog"
 		title="Banner and details dialog"
-		description="The banner is a `data-cookie-alert` element and the settings are a native `<dialog data-cookie-details>`, which the library opens with `showModal()`. Their markup lives here so the panel below shows the wiring; they render over the page."
+		description="The banner is a `data-cookie--alert` element and the settings are a native `<dialog data-cookie--details>`, which the library opens with `showModal()`. Their markup lives here so the panel below shows the wiring; they render over the page."
 		expect={[
 			"The banner shows until you accept, reject or save. `Close` hides it for this page view only.",
 			"`Settings` opens the dialog with the toggles set to the saved choices. Essential is checked and disabled.",
@@ -93,10 +94,10 @@ const gatePill =
 		<p class="text-[13px] text-muted">
 			The banner and dialog render over the page. Open the dialog from here:
 		</p>
-		<button type="button" class="btn mt-3" data-cookie-action="details">Cookie settings</button>
+		<button type="button" class="btn mt-3" data-cookie--action="details">Cookie settings</button>
 
 		<div
-			data-cookie-alert
+			data-cookie--alert
 			hidden
 			aria-labelledby="cookie-alert-title"
 			class="fixed inset-x-4 bottom-16 z-40 lg:left-[calc(15.5rem+2rem)] xl:right-[calc(21rem+2rem)] xl:bottom-6"
@@ -104,22 +105,22 @@ const gatePill =
 			<div class="mx-auto max-w-2xl rounded-xl border border-line-strong/70 bg-panel/95 p-5 shadow-2xl shadow-black/50 backdrop-blur">
 				<div class="flex items-start justify-between gap-4">
 					<h2 id="cookie-alert-title" class="text-[15px] font-semibold">We use cookies</h2>
-					<button type="button" class="btn btn-ghost btn-sm -mt-1 -mr-2" data-cookie-action="dismiss">Close</button>
+					<button type="button" class="btn btn-ghost btn-sm -mt-1 -mr-2" data-cookie--action="dismiss">Close</button>
 				</div>
 				<p class="mt-1.5 text-[13px] leading-6 text-muted">
 					Essential cookies keep the site working. With your permission we'd also
 					use analytics and marketing cookies. Read the <a href="#banner-dialog">cookie policy</a>.
 				</p>
 				<div class="mt-4 flex flex-wrap gap-2">
-					<button type="button" class="btn btn-primary" data-cookie-action="accept">Accept all</button>
-					<button type="button" class="btn btn-primary" data-cookie-action="reject">Reject all</button>
-					<button type="button" class="btn ml-auto" data-cookie-action="details">Settings</button>
+					<button type="button" class="btn btn-primary" data-cookie--action="accept">Accept all</button>
+					<button type="button" class="btn btn-primary" data-cookie--action="reject">Reject all</button>
+					<button type="button" class="btn ml-auto" data-cookie--action="details">Settings</button>
 				</div>
 			</div>
 		</div>
 
 		<dialog
-			data-cookie-details
+			data-cookie--details
 			hidden
 			aria-labelledby="cookie-details-title"
 			class="m-auto max-h-[85dvh] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-line-strong/70 bg-panel p-0 text-fg shadow-2xl shadow-black/60 backdrop:bg-black/60 backdrop:backdrop-blur-[2px]"
@@ -129,11 +130,11 @@ const gatePill =
 					<h2 id="cookie-details-title" class="text-base font-semibold">Cookie settings</h2>
 					<p class="mt-1 text-[13px] leading-6 text-muted">Choose which optional cookies we can use. You can change this at any time.</p>
 				</div>
-				<button type="button" class="btn btn-ghost btn-sm -mr-2" data-cookie-action="dismiss" aria-label="Close without saving">Close</button>
+				<button type="button" class="btn btn-ghost btn-sm -mr-2" data-cookie--action="dismiss" aria-label="Close without saving">Close</button>
 			</div>
 			<div class="flex gap-2 px-6 pt-4">
-				<button type="button" class="btn flex-1" data-cookie-action="accept">Accept all</button>
-				<button type="button" class="btn flex-1" data-cookie-action="reject">Reject all</button>
+				<button type="button" class="btn flex-1" data-cookie--action="accept">Accept all</button>
+				<button type="button" class="btn flex-1" data-cookie--action="reject">Reject all</button>
 			</div>
 			<ul class="divide-y divide-line px-6 py-2">
 				{
@@ -151,14 +152,14 @@ const gatePill =
 								type="checkbox"
 								role="switch"
 								class="switch mt-0.5"
-								data-cookie-category={category.key}
+								data-cookie--category={category.key}
 							/>
 						</li>
 					))
 				}
 			</ul>
 			<div class="border-t border-line px-6 py-4">
-				<button type="button" class="btn btn-primary w-full" data-cookie-action="save">Save choices</button>
+				<button type="button" class="btn btn-primary w-full" data-cookie--action="save">Save choices</button>
 			</div>
 		</dialog>
 	</Scenario>
@@ -190,7 +191,7 @@ const gatePill =
 	<Scenario
 		id="category-buttons"
 		title="Category buttons"
-		description="An `accept` or `reject` action with a `data-cookie-category` attribute only updates that category, so an embed placeholder can ask for exactly what it needs."
+		description="An `accept` or `reject` action with a `data-cookie--category` attribute only updates that category, so an embed placeholder can ask for exactly what it needs."
 		expect={[
 			"`Allow marketing cookies` grants marketing only, loads the embed below and logs type `update`.",
 			"`Not now` withdraws marketing. The embed stays loaded until the page reloads.",
@@ -198,17 +199,17 @@ const gatePill =
 	>
 		<div class="relative overflow-hidden rounded-lg border border-line">
 			<iframe
-				data-cookie-category="marketing"
-				data-src="/cookie/embed.html"
+				data-cookie--category="marketing"
+				data-cookie--src="/cookie/embed.html"
 				title="Embedded content"
 				class="peer block h-44 w-full"></iframe>
-			<div class="absolute inset-0 grid place-items-center bg-raised px-6 text-center peer-data-[cookie-activated]:hidden">
+			<div class="absolute inset-0 grid place-items-center bg-raised px-6 text-center peer-data-[cookie--activated]:hidden">
 				<div>
 					<p class="text-sm font-medium">This embed needs marketing cookies</p>
 					<p class="mt-1 text-[13px] text-muted">Its <code>src</code> is held back until you allow them.</p>
 					<div class="mt-4 flex justify-center gap-2">
-						<button type="button" class="btn btn-primary btn-sm" data-cookie-action="accept" data-cookie-category="marketing">Allow marketing cookies</button>
-						<button type="button" class="btn btn-sm" data-cookie-action="reject" data-cookie-category="marketing">Not now</button>
+						<button type="button" class="btn btn-primary btn-sm" data-cookie--action="accept" data-cookie--category="marketing">Allow marketing cookies</button>
+						<button type="button" class="btn btn-sm" data-cookie--action="reject" data-cookie--category="marketing">Not now</button>
 					</div>
 				</div>
 			</div>
@@ -218,7 +219,7 @@ const gatePill =
 	<Scenario
 		id="gated-scripts"
 		title="Gated scripts"
-		description='Scripts with `type="text/plain"` and a `data-cookie-category` stay inert until their categories are consented. Each one reports back here when it runs.'
+		description='Scripts with `type="text/plain"` and a `data-cookie--category` stay inert until their categories are consented. Each one reports back here when it runs.'
 		expect={[
 			"With analytics denied, nothing has run.",
 			"Granting analytics runs the inline, module and external scripts, in that order.",
@@ -228,18 +229,18 @@ const gatePill =
 	>
 		<ul class="divide-y divide-line text-sm">
 			<li class="flex items-center justify-between py-2"><span>Analytics, inline</span><span class={gatePill} data-gate="inline">Waiting</span></li>
-			<li class="flex items-center justify-between py-2"><span>Analytics, module (<code>data-type="module"</code>)</span><span class={gatePill} data-gate="module">Waiting</span></li>
+			<li class="flex items-center justify-between py-2"><span>Analytics, module (<code>data-cookie--type="module"</code>)</span><span class={gatePill} data-gate="module">Waiting</span></li>
 			<li class="flex items-center justify-between py-2"><span>Analytics, external <code>src</code></span><span class={gatePill} data-gate="external">Waiting</span></li>
 			<li class="flex items-center justify-between py-2"><span>Analytics and marketing</span><span class={gatePill} data-gate="both">Waiting</span></li>
 		</ul>
-		<script is:inline type="text/plain" data-cookie-category="analytics">
+		<script is:inline type="text/plain" data-cookie--category="analytics">
 			window.cookieGate?.("inline");
 		</script>
-		<script is:inline type="text/plain" data-type="module" data-cookie-category="analytics">
+		<script is:inline type="text/plain" data-cookie--type="module" data-cookie--category="analytics">
 			window.cookieGate?.("module");
 		</script>
-		<script is:inline type="text/plain" data-cookie-category="analytics" src="/cookie/analytics.js"></script>
-		<script is:inline type="text/plain" data-cookie-category="analytics marketing">
+		<script is:inline type="text/plain" data-cookie--category="analytics" src="/cookie/analytics.js"></script>
+		<script is:inline type="text/plain" data-cookie--category="analytics marketing">
 			window.cookieGate?.("both");
 		</script>
 	</Scenario>
@@ -247,7 +248,7 @@ const gatePill =
 	<Scenario
 		id="gated-media"
 		title="Gated media and refresh"
-		description="Images and iframes use `data-src` until consented. Activated elements get `data-cookie-activated`, which hides their placeholders here. Media added after `init` needs `refresh()`."
+		description="Images and iframes use `data-cookie--src` until consented. Activated elements get `data-cookie--activated`, which hides their placeholders here. Media added after `init` needs `refresh()`."
 		expect={[
 			"The analytics image loads once analytics is granted.",
 			"`Add a marketing image` adds one that stays on its placeholder, even with marketing granted, until `refresh()` runs.",
@@ -255,14 +256,58 @@ const gatePill =
 	>
 		<div class="space-y-3">
 			<figure class="relative overflow-hidden rounded-md border border-line">
-				<img data-cookie-category="analytics" data-src="/cookie/pixel.svg" alt="Analytics image" width="320" height="120" class="peer block h-24 w-full object-cover" />
-				<figcaption class="absolute inset-0 grid place-items-center bg-raised text-xs text-subtle peer-data-[cookie-activated]:hidden">Waiting for analytics consent</figcaption>
+				<img data-cookie--category="analytics" data-cookie--src="/cookie/pixel.svg" alt="Analytics image" width="320" height="120" class="peer block h-24 w-full object-cover" />
+				<figcaption class="absolute inset-0 grid place-items-center bg-raised text-xs text-subtle peer-data-[cookie--activated]:hidden">Waiting for analytics consent</figcaption>
 			</figure>
 			<pg-media class="block space-y-3" data-dynamic-media></pg-media>
 			<pg-controls class="flex gap-2">
 				<button type="button" class="btn btn-sm" data-add-gated-image>Add a marketing image</button>
 				<button type="button" class="btn btn-sm" data-call="refresh">refresh()</button>
 			</pg-controls>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="catalyst-store"
+		title="Catalyst store"
+		description="`consentStore` from `@lucidclient/cookie-controller/catalyst` is registered as the `consent` store. These bindings read `$granted`, `$denied` and `$decided`, the switches use `data-model`, and the buttons call its actions."
+		expect={[
+			"The values update with every consent change, from this page's banner, dialog, method buttons and category buttons.",
+			"The placeholder shows until marketing is granted, and the marketing content shows once it is.",
+			"A switch here saves its category straight away and logs type `update`. The dialog's toggles follow it.",
+			"`$decided` is `false` on a first visit and turns `true` after any choice.",
+		]}
+	>
+		<div data-store="consent" class="space-y-4">
+			<dl class="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1.5 text-[13px]">
+				<dt class="font-mono text-subtle">$decided</dt>
+				<dd class="font-mono" data-dom--text="$decided"></dd>
+				<dt class="font-mono text-subtle">$granted.analytics</dt>
+				<dd class="font-mono" data-dom--text="$granted.analytics"></dd>
+				<dt class="font-mono text-subtle">$granted.marketing</dt>
+				<dd class="font-mono" data-dom--text="$granted.marketing"></dd>
+				<dt class="font-mono text-subtle">$denied.marketing</dt>
+				<dd class="font-mono" data-dom--text="$denied.marketing"></dd>
+			</dl>
+			<div class="grid gap-2 sm:grid-cols-2">
+				<p class="rounded-md bg-raised px-3 py-2.5 text-[13px] text-muted" data-bind--hidden="$granted.marketing">Placeholder: hidden once marketing is granted</p>
+				<p class="rounded-md bg-emerald-400/10 px-3 py-2.5 text-[13px] text-emerald-200" data-bind--hidden="$denied.marketing">Marketing content: shown once marketing is granted</p>
+			</div>
+			<div class="flex flex-wrap gap-6">
+				<label class="flex items-center gap-3 text-sm">
+					<input type="checkbox" role="switch" class="switch" data-model="$granted.analytics" />
+					Analytics
+				</label>
+				<label class="flex items-center gap-3 text-sm">
+					<input type="checkbox" role="switch" class="switch" data-model="$granted.marketing" />
+					Marketing
+				</label>
+			</div>
+			<div class="flex flex-wrap gap-2">
+				<button type="button" class="btn btn-sm" data-events--click="@acceptAll">@acceptAll</button>
+				<button type="button" class="btn btn-sm" data-events--click="@rejectAll">@rejectAll</button>
+				<button type="button" class="btn btn-sm" data-events--click="@openDetails">@openDetails</button>
+			</div>
 		</div>
 	</Scenario>
 
