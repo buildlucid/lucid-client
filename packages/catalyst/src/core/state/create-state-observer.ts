@@ -1,9 +1,14 @@
 import { stringifyState } from "../../helpers.js";
 import { runUnowned } from "../../runtime/reactive.js";
 import type { RuntimeStore } from "../../runtime/types.js";
+import registerStateAttribute from "./register-state-attribute.js";
 import { attributeToStateKey, coerceStateString } from "./state-attribute.js";
 
-/** Applies `data-state--*` attribute changes made outside Catalyst to state. */
+/**
+ * Applies `data-state--*` attribute changes made outside Catalyst to state.
+ * An attribute added for declared state is kept in sync both ways from then
+ * on, without waiting for a sync.
+ */
 const createStateObserver = (store: RuntimeStore) => {
 	const observer = new MutationObserver((mutations) => {
 		for (const mutation of mutations) {
@@ -22,18 +27,17 @@ const createStateObserver = (store: RuntimeStore) => {
 			if (internalValue === attributeValue) continue;
 			const current = store.raw[key];
 			if (
-				attributeValue !== null &&
-				stringifyState(current) === attributeValue
+				attributeValue === null ||
+				stringifyState(current) !== attributeValue
 			) {
-				continue;
+				const next = coerceStateString(attributeValue, current);
+				runUnowned(() =>
+					store.setState((state) => {
+						state[key] = next;
+					}),
+				);
 			}
-
-			const next = coerceStateString(attributeValue, current);
-			runUnowned(() =>
-				store.setState((state) => {
-					state[key] = next;
-				}),
-			);
+			if (attributeValue !== null) registerStateAttribute(store, key);
 		}
 	});
 

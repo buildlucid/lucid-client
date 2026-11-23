@@ -168,6 +168,26 @@ describe("state attributes", () => {
 		expect(root?.getAttribute("data-state--label")).toBe("from state");
 	});
 
+	it("keeps an attribute added later for declared state in sync both ways", async () => {
+		document.body.innerHTML = `
+			<div data-store="declared">
+				<span data-dom--text="$label"></span>
+			</div>
+		`;
+		const declared = defineStore({ state: { label: "default" } });
+		Catalyst.start({ stores: { declared }, reactions: [dom] });
+		const root = document.querySelector("[data-store]");
+
+		// No sync: the observer picks the attribute up on its own.
+		root?.setAttribute("data-state--label", "from markup");
+		await settle();
+		expect(document.querySelector("span")?.textContent).toBe("from markup");
+
+		setStoreState("declared", "label", "from state");
+		await settle();
+		expect(root?.getAttribute("data-state--label")).toBe("from state");
+	});
+
 	it("warns when a lowercased attribute cannot match camelCase state", () => {
 		document.body.innerHTML = `<div data-store="case" data-state--userName="Ada"></div>`;
 		const caseStore = defineStore({ state: { userName: "Grace" } });
