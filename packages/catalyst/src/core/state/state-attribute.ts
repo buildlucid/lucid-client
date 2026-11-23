@@ -1,8 +1,19 @@
 import { parseStateString } from "../../helpers.js";
 import Catalyst from "../../runtime/catalyst.js";
 
-export const getStatePrefix = () =>
-	`${Catalyst.options.attributes.prefix}${Catalyst.options.attributes.state}`;
+let statePrefix = { attributes: Catalyst.options.attributes, value: "" };
+
+/** `data-state--`, kept until the attribute options change. */
+export const getStatePrefix = () => {
+	const { attributes } = Catalyst.options;
+	if (statePrefix.attributes !== attributes || !statePrefix.value) {
+		statePrefix = {
+			attributes,
+			value: `${attributes.prefix}${attributes.state}`,
+		};
+	}
+	return statePrefix.value;
+};
 
 /** `data-state--user-name` → `userName`, matching `dataset`. */
 export const attributeToStateKey = (attributeName: string) => {
@@ -10,6 +21,7 @@ export const attributeToStateKey = (attributeName: string) => {
 	if (!attributeName.startsWith(prefix)) return null;
 	const name = attributeName.slice(prefix.length);
 	if (!name) return null;
+	if (!name.includes("-")) return name;
 	return name.replace(/-([a-z])/g, (_, character: string) =>
 		character.toUpperCase(),
 	);

@@ -54,6 +54,8 @@ const apply = (resolved: Resolved, onValue: (value: unknown) => void) => {
 	};
 };
 
+const logError = (error: unknown) => console.error(error);
+
 const createResolvedEffect = (
 	directive: Directive,
 	context: ReactionContext,
@@ -77,9 +79,7 @@ const createResolvedEffect = (
 	const effect = {
 		effect: (resolved: Resolved) =>
 			runEffectCallback(() => apply(resolved, onValue)),
-		error: (error: unknown) => {
-			console.error(error);
-		},
+		error: logError,
 	};
 
 	// Computes return a box, never a promise, so Solid can skip checking for one.
