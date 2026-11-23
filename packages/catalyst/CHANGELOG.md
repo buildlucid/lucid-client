@@ -17,6 +17,10 @@
 - Refs are part of the core. `refs.get<E>(name)` returns one element and `refs.all<E>(name)` returns every element registered under a name.
 - `flush`, `untrack` and `snapshot` are exported from `solid-js`.
 - `start`, `sync` and `refresh` apply bindings before they return, and `start` waits for `DOMContentLoaded` when it runs before `<body>` exists.
+- Added the `model` reaction for two-way binding of form fields. Text, number, checkbox, radio and select fields are supported, checkboxes can be bound to an array, values keep the type of their state, state follows a native form reset, and `$item.field` inside a loop writes to the store the loop renders.
+- Added `data-dom--checked`, which sets a checkbox or radio's `checked` property rather than its default.
+- `data-dom--value` selects every matching option of a `<select multiple>` from an array, and applies a select's value again when its options change, such as when a loop renders them.
+- Actions called from inside a loop item receive a `LoopItem` with its `item`, `index`, `indexOne` and `parent`: after the `Event` for events, and as the only argument for actions that provide a value.
 - Catalyst now warns when a different store is registered for a scope that already has one, when state is written directly instead of through `setState`, when `sync` runs before `start`, when a `data-dom` specifier is unknown, and when a lowercased state attribute cannot match camelCase state. In debug mode it also warns when markup uses a first-party reaction that isn't registered.
 
 ### Breaking Changes:
@@ -38,6 +42,13 @@
 
 ### Bug Fixes:
 
+- An error thrown from a store effect's callback or cleanup is logged with the effect and store names, and callbacks run untracked, so reading state in them no longer logs Solid's `STRICT_READ_UNTRACKED` warning.
+- A different reaction reusing a registered name now warns, instead of being dropped silently.
+- Directives inside a store element skipped as a duplicate scope are left unbound, instead of being initialised without a scope, clearing their markup and warning.
+- Directives that reference a store that doesn't exist yet are left untouched until a sync creates it, and wait for a new store when it is removed.
+- Replacing a store's markup and syncing it in the same task no longer skips the new store as a duplicate.
+- A `data-state--*` attribute added later for declared state syncs both ways straight away, instead of one way until the next sync.
+- Focus moves into a trap after the rest of the update, so a binding that shows the trap applies first wherever it is in the markup.
 - Fixed state bindings inside loop templates, including `data-bind--href="$item.url"` when the array comes from a store definition's state.
 - Primitive, object and array state attributes stay synchronized without state mutations driving bindings.
 - State attributes are no longer rewritten on start: `""`, `"007"`, long numeric ids and other values that would not convert back exactly stay strings.

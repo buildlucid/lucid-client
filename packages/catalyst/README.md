@@ -51,8 +51,8 @@ with `$name`, actions are called with `@name`, and elements are registered as
 refs with `#name`.
 
 Reactions are registered explicitly, so an application only includes the
-behavior it uses. Catalyst exports `bind`, `dom`, `events`, `loop` and `trap`
-from `@lucidclient/catalyst/reactions`. Refs and store effects are part of the
+behavior it uses. Catalyst exports `bind`, `dom`, `events`, `loop`, `model` and
+`trap` from `@lucidclient/catalyst/reactions`. Refs and store effects are part of the
 core and need no reaction.
 
 `start` waits for `DOMContentLoaded` when it runs before `<body>` exists, and
@@ -182,8 +182,10 @@ effects: ({ state, effect }) => ({
 ```
 
 The callback's value is typed from the tracked function. It may return a cleanup
-function, which runs before the next run and when the store is destroyed. An
-effect that throws is logged and does not stop other effects from running.
+function, which runs before the next run and when the store is destroyed. The
+callback runs untracked, so it can read any other state without re-running when
+that state changes. An effect that throws, in either function or its cleanup, is
+logged with its name and does not stop other effects from running.
 
 ### Init and cleanup
 
@@ -244,11 +246,16 @@ the attribute changes, a string state stays a string even if the new value looks
 numeric. Removing a state attribute sets its state to `null` without recreating
 the attribute.
 
+An attribute added later for state the definition declares is kept in sync both
+ways straight away. An attribute for undeclared state is picked up by the next
+`sync`.
+
 ### Stores and scopes
 
 Stores must have unique scope names, including when they are nested. A second
 element that reuses a scope is skipped with a warning, and the directives inside
-it are left unbound rather than reading the first store.
+it are left unbound, so its markup stays as it was rendered rather than reading
+the first store.
 
 If any part of a definition throws, the error is logged and the store is still
 created from its HTML state, so the rest of the page keeps working.
@@ -331,6 +338,11 @@ receive the strings `"true"` and `"false"` instead, because their `"false"`
 value is meaningful. Case-sensitive SVG attributes such as `viewBox` are written
 with their correct casing.
 
+`data-bind--checked` and `data-bind--value` set attributes, which are only a
+field's defaults and stop applying once someone edits the field. Use
+`data-dom--checked`, `data-dom--value` or `data-model` to set what a field
+shows.
+
 ### DOM
 
 ```html
@@ -338,13 +350,20 @@ with their correct casing.
     <p data-dom--text="$name"></p>
     <div data-dom--html="@renderHtml"></div>
     <input data-dom--value="$value" />
+    <input type="checkbox" data-dom--checked="$subscribed" />
     <input data-dom--focus="$open" />
 </section>
 ```
 
-Supported specifiers are `text`, `html`, `value`, `focus`, `blur`, and
-`scrollto`. Omitting the specifier defaults to `text`, and an unknown specifier
-logs a warning. `null` and `undefined` render as empty content.
+Supported specifiers are `text`, `html`, `value`, `checked`, `focus`, `blur`,
+and `scrollto`. Omitting the specifier defaults to `text`, and an unknown
+specifier logs a warning. `null` and `undefined` render as empty content.
+
+`value` and `checked` set what a field shows, and are one-way: an edit only
+reaches state through an action, or use `data-model` for two-way binding. An
+array selects every matching option of a `<select multiple>`. A select's value
+is applied again whenever its options change, so it still selects an option
+that a loop renders afterwards.
 
 `html` writes the value as raw markup. Only use it with trusted content, and note
 that markup it inserts is not synchronized automatically.
@@ -364,6 +383,36 @@ also target `document`, `body`, `head`, or `window`. HTML lowercases attribute
 names, so an event name containing uppercase letters, such as `DOMContentLoaded`
 or a camelCase custom event, cannot be listened to; give custom events lowercase
 or kebab-case names.
+
+### Two-way binding
+
+`data-model` keeps a form field and state in sync both ways: the field shows the
+state, and the state follows the field as it is edited.
+
+```html
+<form data-store="signup">
+    <input name="email" data-model="$email" />
+    <input type="number" data-model="$seats" />
+    <input type="checkbox" data-model="$terms" />
+    <input type="radio" value="pro" data-model="$plan" />
+    <input type="checkbox" value="news" data-model="$topics" />
+    <select multiple data-model="$tags">…</select>
+</form>
+```
+
+- Text fields and textareas write a string on every `input` event. Number and
+  range fields write a number, or `null` when they are empty.
+- A checkbox writes `true` or `false`. Checkboxes bound to an array write the
+  values of the checked ones, and keep any value no checkbox represents.
+- A radio writes its `value` when it is chosen.
+- A select writes its value, and a `<select multiple>` writes an array.
+- Values keep the type of the state they replace, so a select bound to a number
+  writes a number.
+- After a native form reset, state follows the reset fields.
+
+`data-model` writes state the store declares, or a property of a loop item, such
+as `data-model="$item.qty"`, which is written to the store the loop renders.
+Computed values can't be written.
 
 ### Loops
 
@@ -402,6 +451,29 @@ again. `null` and `undefined` render nothing, and any markup inside the loop
 element other than its `<template>`, such as server-rendered placeholders, is
 replaced on the first render.
 
+Actions called from inside a loop item receive the item: an event action gets
+it after the `Event`, and an action that provides a value gets it as its only
+argument. Reading `index` in a value keeps it up to date as the item moves.
+
+```ts
+import type { LoopItem } from "@lucidclient/catalyst/types";
+
+actions: ({ setState }) => ({
+    remove: (event: Event, { index }: LoopItem) =>
+        setState((state) => {
+            state.lines.splice(index, 1);
+        }),
+    amount: ({ item }: LoopItem<Line>) => format(item.qty * item.price),
+}),
+```
+
+```html
+<li>
+    <span data-dom--text="@amount"></span>
+    <button data-events--click="@remove">Remove</button>
+</li>
+```
+
 ```html
 <ul data-loop="$groups">
     <template>
@@ -436,7 +508,9 @@ replaced on the first render.
 
 While the value is truthy, everything outside the trap is made inert at every
 level of the page, page scrolling is locked, and focus moves to the trap's first
-`[autofocus]` or focusable element (or to the trap itself). When it closes,
+`[autofocus]` or focusable element (or to the trap itself). Focus moves once the
+rest of the update has run, so a binding that shows the trap, such as
+`data-bind--hidden`, applies first wherever it is in the markup. When it closes,
 focus returns to the element that was focused before. Elements that were already
 inert are left as they were.
 
@@ -466,10 +540,14 @@ Catalyst.sync(target);
 
 Repeated synchronization is idempotent. Removed subtrees automatically dispose
 their event listeners, reactive effects, refs, and nested stores. Markup that is
-removed and inserted again later needs another `sync`. Directives that reference
-a store before it exists are initialised once a `sync` creates that store, and
-`data-state--*` attributes added to an existing store's element are picked up by
-the next `sync`.
+removed and inserted again later needs another `sync`. A store can be replaced
+by removing its markup and syncing the new markup straight away.
+
+Directives that reference a store before it exists, such as
+`data-dom--text="cart:$count"`, are left as they are until a `sync` creates that
+store, then bind to it. When the store is removed they wait for a new one, keeping
+what they last showed. `data-state--*` attributes added to an existing store's
+element for undeclared state are picked up by the next `sync`.
 
 ```ts
 Catalyst.refresh();
@@ -538,6 +616,9 @@ Because `is-active` has no `$`, `@`, or `#` prefix, it remains a literal value
 and `directive.reference` is `null`. `context.resolve(reference)` reads a
 reference's value, and `context.getStore(scope)` returns a store's `key`,
 `element`, `state`, `setState`, `actions` and `refs`.
+
+Each reaction needs its own name and attribute. A reaction that reuses either is
+not registered, and Catalyst warns.
 
 `setup` runs inside a Solid root that Catalyst disposes with the directive, so
 reactive primitives created there are cleaned up automatically. It must not
