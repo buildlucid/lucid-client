@@ -1,0 +1,62 @@
+---
+import Scenario from "../../../components/Scenario.astro";
+import Playground from "../../../layouts/Playground.astro";
+import { findTarget, targetLinks } from "../../../scripts/speculate-links";
+
+export const getStaticPaths = () =>
+	targetLinks.map((link) => ({ params: { id: String(link.id) } }));
+
+const id = Number(Astro.params.id);
+const link = findTarget(id);
+const next = targetLinks.find((target) => target.id === id + 1) ?? targetLinks[0];
+---
+
+<Playground title={`Target ${id}`}>
+	<Fragment slot="intro">
+		<p>
+			A target page for the <a href="/speculate">Speculate</a> scenarios.
+			{
+				link?.rel ? (
+					<>
+						Its link uses <code>rel="{link.rel}"</code>: {link.note.toLowerCase()}.
+					</>
+				) : (
+					<>Its link has no <code>rel</code>, so it is never speculated.</>
+				)
+			}
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="load"
+		title="How this page loaded"
+		description="Read from the navigation timing entry: `activationStart` is above 0 for a prerendered page, and `deliveryType` is `navigational-prefetch` for a page prefetched by Speculation Rules."
+		expect={[
+			"A `prerender` link opened after it was speculated shows `Prerendered`, with an activation time.",
+			"A `prefetch` link opened after it was speculated shows `Prefetched by Speculation Rules`, or `HTTP cache` on the fallback paths.",
+			"The link without a `rel`, or a reload, shows `Network`.",
+		]}
+		markup={false}
+	>
+		<div class="space-y-4">
+			<p class="flex items-center gap-3">
+				<span
+					class="rounded-full border border-line bg-raised px-3 py-1 text-sm font-medium data-[method=network]:text-muted data-[method=prefetch]:border-sky-400/30 data-[method=prefetch]:text-sky-300 data-[method=prerender]:border-emerald-400/30 data-[method=prerender]:text-emerald-300 data-[method=cache]:border-amber-400/30 data-[method=cache]:text-amber-200"
+					data-load-method
+				>
+					Checking…
+				</span>
+				<span class="text-xs text-subtle" data-load-detail></span>
+			</p>
+			<pre class="readout" data-load-values></pre>
+			<div class="flex flex-wrap gap-2">
+				<a class="btn" href="/speculate#links">Back to Speculate</a>
+				<a class="btn btn-ghost" href={next?.href}>Target {next?.id}</a>
+			</div>
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../../scripts/speculate-target";
+	</script>
+</Playground>

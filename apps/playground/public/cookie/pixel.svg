@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" width="320" height="120">
+	<defs>
+		<linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+			<stop offset="0" stop-color="#4f46e5" />
+			<stop offset="1" stop-color="#0f766e" />
+		</linearGradient>
+	</defs>
+	<rect width="320" height="120" rx="10" fill="url(#g)" />
+	<text x="160" y="58" fill="#f4f4f5" font-family="system-ui, sans-serif" font-size="15" font-weight="600" text-anchor="middle">Image loaded</text>
+	<text x="160" y="80" fill="#d4d4d8" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle">src was held back until analytics consent</text>
+</svg>
