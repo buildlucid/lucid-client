@@ -1,0 +1,196 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+---
+
+<Playground title="Persisted state">
+	<Fragment slot="intro">
+		<p>
+			State wrapped in <code>persisted()</code>, or listed in a
+			<code>data-persist</code> attribute, is saved to storage and restored when
+			the page loads again. The readouts show what is saved under the
+			<code>catalyst:</code> prefix.
+		</p>
+		<p>
+			<button class="btn btn-sm" data-reload>Reload the page</button>
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="preferences"
+		title="Persisted preferences"
+		description="`prefs` persists `theme`, `sidebarOpen` and `fontSize` with `persisted()`. `busy` isn't persisted. `theme` has a `validate` option that only accepts `light` or `dark`."
+		expect={[
+			"Nothing is saved on the first load, because no value has changed yet.",
+			"Each change is saved straight away, and the readout shows its JSON.",
+			"After a reload, the theme, sidebar and font size come back, and `busy` is `false` again.",
+		]}
+	>
+		<div data-store="prefs" class="space-y-4">
+			<div class="flex flex-wrap items-center gap-4 text-sm">
+				<label class="flex items-center gap-1.5"><input type="radio" name="theme" value="light" data-model="$theme" /> Light</label>
+				<label class="flex items-center gap-1.5"><input type="radio" name="theme" value="dark" data-model="$theme" /> Dark</label>
+				<label class="flex items-center gap-1.5"><input type="checkbox" data-model="$sidebarOpen" /> Sidebar open</label>
+				<label class="flex items-center gap-2">
+					<input type="range" min="12" max="24" data-model="$fontSize" />
+					<span class="font-mono text-xs" data-dom--text="$fontSizeLabel"></span>
+				</label>
+				<button class="btn btn-sm" data-events--click="@toggleBusy">Toggle busy</button>
+				<span class="font-mono text-xs text-subtle">busy: <span data-dom--text="$busy"></span></span>
+			</div>
+			<p class="text-sm text-muted" data-dom--text="$summary"></p>
+			<pre class="readout min-h-10" data-storage-readout="prefs:"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="markup-only"
+		title="Persisted state in markup"
+		description="`notes` has no definition. `data-persist` saves `title` and `pinned` to local storage, and `data-persist--session` saves `draft` to session storage."
+		expect={[
+			"After a reload, the title, pinned and draft values come back.",
+			"In a new tab, the title and pinned values come back, but the draft is empty, because session storage belongs to one tab.",
+			"A restored value replaces the `data-state--*` value in the markup, and the readout shows the attribute updated to match.",
+		]}
+	>
+		<div
+			id="notes-store"
+			data-store="notes"
+			data-state--title="Untitled"
+			data-state--pinned="false"
+			data-state--draft=""
+			data-persist="title pinned"
+			data-persist--session="draft"
+			class="space-y-4"
+		>
+			<div class="grid gap-3 sm:grid-cols-[1fr_auto]">
+				<input class="input" data-model="$title" aria-label="Title" />
+				<label class="flex items-center gap-1.5 text-sm"><input type="checkbox" data-model="$pinned" /> Pinned</label>
+			</div>
+			<textarea class="input min-h-20 w-full" data-model="$draft" placeholder="Draft, saved for this tab only" aria-label="Draft"></textarea>
+			<pre class="readout min-h-10" data-storage-readout="notes:"></pre>
+			<AttributeReadout target="#notes-store" exclude={["id"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="per-instance"
+		title="One definition, persisted in one scope"
+		description={'The same `disclosure` definition is registered as `helpPanel` and `tipsPanel`. Only the `helpPanel` element has `data-persist="open"`.'}
+		expect={[
+			"Both panels open and close independently.",
+			"After a reload, the help panel stays as you left it, and the tips panel is closed again.",
+		]}
+	>
+		<div class="grid gap-3 sm:grid-cols-2">
+			<div data-store="helpPanel" data-persist="open" class="space-y-3">
+				<button class="btn w-full" data-events--click="@toggle" data-bind--aria-expanded="$open">
+					<span data-dom--text="$label"></span>&nbsp;help (persisted)
+				</button>
+				<p class="rounded-md bg-raised px-3 py-2 text-sm text-muted" data-bind--hidden="$closed" hidden>The help panel is open.</p>
+			</div>
+			<div data-store="tipsPanel" class="space-y-3">
+				<button class="btn w-full" data-events--click="@toggle" data-bind--aria-expanded="$open">
+					<span data-dom--text="$label"></span>&nbsp;tips (not persisted)
+				</button>
+				<p class="rounded-md bg-raised px-3 py-2 text-sm text-muted" data-bind--hidden="$closed" hidden>The tips panel is open.</p>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="stale-values"
+		title="Stale and invalid stored values"
+		description="Each button writes to local storage directly, as an older version of the page might have, then refreshes `legacy` so it restores again. Turn on Debug in the log to see why a value is ignored."
+		expect={[
+			"`Save theme \"purple\"` keeps the theme `light`, because `validate` rejects it.",
+			"`Save count \"twelve\"` keeps the count at its starting value, because a string doesn't match a number.",
+			"`Save broken JSON` is treated as nothing saved.",
+			"`Save count 42` restores the count as `42`.",
+		]}
+	>
+		<div data-store="legacy" class="space-y-4">
+			<pg-controls class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-legacy-control="invalid-theme">Save theme "purple"</button>
+				<button class="btn btn-sm" data-legacy-control="wrong-type">Save count "twelve"</button>
+				<button class="btn btn-sm" data-legacy-control="broken-json">Save broken JSON</button>
+				<button class="btn btn-sm" data-legacy-control="valid">Save count 42</button>
+				<button class="btn btn-sm btn-ghost" data-legacy-control="refresh">Refresh</button>
+			</pg-controls>
+			<div class="flex flex-wrap items-center gap-3 text-sm">
+				<button class="btn btn-sm" data-events--click="@toggleTheme">Toggle theme</button>
+				<button class="btn btn-sm" data-events--click="@increment">Increment</button>
+				<span class="font-mono text-xs">theme: <span class="text-accent" data-dom--text="$theme"></span></span>
+				<span class="font-mono text-xs">count: <span class="text-accent" data-dom--text="$count"></span></span>
+			</div>
+			<pre class="readout min-h-10" data-storage-readout="legacy:"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="sync"
+		title="Following other tabs"
+		description="`synced` is persisted with `sync: true`, so it follows changes saved by other tabs. `unsynced` uses the default, which ignores them. Open this page in a second tab to try it."
+		expect={[
+			"Incrementing `synced` in one tab updates it in the other straight away.",
+			"Incrementing `unsynced` in one tab only reaches the other after a reload.",
+			"Removing `catalyst:tabs:synced` in devtools sets `synced` back to `0` in the other tab.",
+		]}
+	>
+		<div data-store="tabs" class="space-y-4">
+			<div class="flex flex-wrap items-center gap-3 text-sm">
+				<button class="btn btn-sm" data-events--click="@incrementSynced">Increment synced</button>
+				<span class="font-mono text-xs">synced: <span class="text-accent" data-dom--text="$synced"></span></span>
+				<button class="btn btn-sm" data-events--click="@incrementUnsynced">Increment unsynced</button>
+				<span class="font-mono text-xs">unsynced: <span class="text-accent" data-dom--text="$unsynced"></span></span>
+			</div>
+			<pre class="readout min-h-10" data-storage-readout="tabs:"></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="clear"
+		title="Clearing saved values"
+		description="`Catalyst.clearPersisted(scope)` removes one running store's saved values, and `Catalyst.clearPersisted()` removes every running store's."
+		expect={[
+			"`Clear prefs` removes only the `catalyst:prefs:*` entries, and the preferences above keep their current values.",
+			"Changing a preference after clearing saves it again.",
+			"`Clear everything` empties the readout, and a reload starts every store from its starting values.",
+		]}
+	>
+		<div class="space-y-4">
+			<pg-controls class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-clear-prefs>Clear prefs</button>
+				<button class="btn btn-sm" data-clear-all>Clear everything</button>
+			</pg-controls>
+			<pre class="readout min-h-10" data-storage-readout></pre>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="mistakes"
+		title="Mistakes in markup"
+		description="`mistakes` lists `sidebar-open` instead of the `sidebarOpen` key, a key that isn't state, and a storage that isn't registered."
+		expect={[
+			"On load, the log shows a warning suggesting `sidebarOpen`.",
+			"It warns that `missing` isn't a state value.",
+			"It warns that the `cookie` storage isn't registered.",
+		]}
+	>
+		<div
+			data-store="mistakes"
+			data-state--sidebar-open="true"
+			data-state--theme="light"
+			data-persist="sidebar-open missing"
+			data-persist--cookie="theme"
+			class="text-sm text-muted"
+		>
+			Nothing on this store is persisted.
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/catalyst/persistence";
+	</script>
+</Playground>

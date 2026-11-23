@@ -69,6 +69,13 @@ const nav: NavGroup[] = [
 					"How data-state--* values are parsed and typed, and how they stay in sync both ways.",
 			},
 			{
+				title: "Persisted state",
+				href: "/catalyst/persistence",
+				description:
+					"persisted() and data-persist, restore order, stale values, other tabs and clearPersisted.",
+				isNew: true,
+			},
+			{
 				title: "Bindings",
 				href: "/catalyst/bindings",
 				description:
