@@ -103,7 +103,7 @@ const resolvePersistence = (
 	config: PersistenceConfig,
 	element: Element,
 	storeKey: string,
-	requested: Map<string, PersistOptions>,
+	requested: ReadonlyMap<string, PersistOptions>,
 	state: StoreState,
 ): PersistEntry[] => {
 	const markup = readPersistAttributes(element);

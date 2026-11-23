@@ -97,7 +97,7 @@ export type Persistence = {
 	restore: (
 		element: Element,
 		storeKey: string,
-		requested: Map<string, PersistOptions>,
+		requested: ReadonlyMap<string, PersistOptions>,
 		state: StoreState,
 	) => PersistEntry[];
 	/** Saves a new store's values whenever they change. */

@@ -33,17 +33,17 @@ const collectScopeDependents = (target: Element, stores: RuntimeStore[]) => {
 	return directives;
 };
 
-const initialisePhase = (
-	directives: Directive[],
-	phase: ReactionPhase,
-	shouldInitialise: (directive: Directive) => boolean,
-) => {
+/** Splits directives by the phase their reaction is set up in. */
+const splitByPhase = (directives: Directive[]) => {
+	const phases: Record<ReactionPhase, Directive[]> = {
+		beforeStoreInit: [],
+		afterStoreInit: [],
+	};
 	for (const directive of directives) {
 		const reaction = Catalyst.reactions.get(directive.reaction);
-		const reactionPhase = reaction?.phase ?? "afterStoreInit";
-		if (reactionPhase !== phase) continue;
-		if (shouldInitialise(directive)) initialiseDirective(directive);
+		phases[reaction?.phase ?? "afterStoreInit"].push(directive);
 	}
+	return phases;
 };
 
 /** Synchronises a subtree without flushing; used by reactions mid-update. */
@@ -68,9 +68,14 @@ export const syncTarget = (target: Element, options?: SyncOptions) => {
 			? directive.element.isConnected
 			: isWithin(target, directive.element);
 
-	initialisePhase(directives, "beforeStoreInit", shouldInitialise);
+	const phases = splitByPhase(directives);
+	for (const directive of phases.beforeStoreInit) {
+		if (shouldInitialise(directive)) initialiseDirective(directive);
+	}
 	for (const store of stores) startStore(store);
-	initialisePhase(directives, "afterStoreInit", shouldInitialise);
+	for (const directive of phases.afterStoreInit) {
+		if (shouldInitialise(directive)) initialiseDirective(directive);
+	}
 };
 
 const sync = (target: Element, options?: SyncOptions) => {

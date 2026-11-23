@@ -49,11 +49,12 @@ const wrap = (value: unknown) => {
  * `state.items = state.items.filter(...)`, are replaced with their plain
  * objects. A proxy's plain object never holds proxies, so it isn't walked.
  */
-const unwrap = (value: unknown, seen = new Set<object>()): unknown => {
+const unwrap = (value: unknown, seen?: Set<object>): unknown => {
 	if (typeof value !== "object" || value === null) return value;
 	const raw = (value as { [RAW]?: object })[RAW];
 	if (raw) return raw;
-	if (seen.has(value) || !isWrappable(value)) return value;
+	if (seen?.has(value) || !isWrappable(value)) return value;
+	seen ??= new Set();
 	seen.add(value);
 	const record = value as Record<string, unknown>;
 	for (const key of Object.keys(record)) {

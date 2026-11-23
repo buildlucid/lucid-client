@@ -48,7 +48,9 @@ const resolveReference = (reference: MemberReference, args: unknown[] = []) => {
 			return undefined;
 		}
 
-		const value = store.state[reference.key];
+		// Read as `store.state` would, without going through its proxy.
+		const memo = store.computed.get(reference.key);
+		const value = memo ? memo() : store.raw[reference.key];
 		return reference.path.length
 			? evaluatePathValue(value, reference.path)
 			: value;

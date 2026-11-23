@@ -24,7 +24,7 @@ const isStateObject = (value: unknown): value is StoreState =>
 type Defaults = {
 	state: StoreState;
 	/** The options of each state value marked with `persisted()`. */
-	persist: Map<string, PersistOptions>;
+	persist: ReadonlyMap<string, PersistOptions>;
 };
 
 const noDefaults = (): Defaults => ({ state: {}, persist: new Map() });
@@ -57,7 +57,7 @@ const resolveDefaults = (
 
 	const isFactory = typeof state === "function";
 	let value: unknown;
-	let persist = new Map<string, PersistOptions>();
+	let persist: ReadonlyMap<string, PersistOptions> = new Map();
 	try {
 		value = isFactory ? (state as () => unknown)() : state;
 		if (isStateObject(value)) {
@@ -89,7 +89,7 @@ const resolveDefaults = (
 const warnPersistenceDisabled = (
 	element: Element,
 	key: string,
-	requested: Map<string, PersistOptions>,
+	requested: ReadonlyMap<string, PersistOptions>,
 ) => {
 	const { prefix, persist, specifierSeparator } = Catalyst.options.attributes;
 	const attribute = `${prefix}${persist}`;

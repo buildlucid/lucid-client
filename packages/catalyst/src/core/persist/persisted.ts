@@ -23,11 +23,17 @@ const persisted = <T>(value: T, options: PersistOptions = {}): Persisted<T> =>
 export const isPersisted = (value: unknown): value is PersistedMarker =>
 	typeof value === "object" && value !== null && PERSISTED in value;
 
+/** Shared by every state object without persisted values. Never changed. */
+const NO_OPTIONS: ReadonlyMap<string, PersistOptions> = new Map();
+
 /**
  * Replaces each top-level `persisted()` value with the value it wraps, and
  * returns the options of every persisted key.
  */
 export const unwrapPersisted = (state: Record<string, unknown>) => {
+	if (!Object.values(state).some(isPersisted)) {
+		return { values: state, options: NO_OPTIONS };
+	}
 	const values: Record<string, unknown> = {};
 	const options = new Map<string, PersistOptions>();
 	for (const [key, value] of Object.entries(state)) {

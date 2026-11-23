@@ -133,7 +133,7 @@ const parsed = new Map<string, MemberReference | null>();
 
 /**
  * Parses an attribute value, reusing an earlier parse of the same value, since
- * loop items repeat the same few. Each directive gets its own copy.
+ * loop items repeat the same few. The result is shared, so its path is frozen.
  */
 const parseValue = (value: string, scopeSeparator: string) => {
 	const key = `${scopeSeparator} ${value}`;
@@ -141,9 +141,10 @@ const parseValue = (value: string, scopeSeparator: string) => {
 	if (reference === undefined) {
 		if (parsed.size >= 1000) parsed.clear();
 		reference = parseReference(value, scopeSeparator);
+		if (reference) Object.freeze(reference.path);
 		parsed.set(key, reference);
 	}
-	return reference && { ...reference, path: [...reference.path] };
+	return reference;
 };
 
 /** Reads the directives of `elements`, which a sync collects in document order. */
@@ -170,7 +171,12 @@ const collectDirectives = (elements: Element[]) => {
 			if (context.inDuplicate) break;
 
 			const value = element.getAttribute(name) ?? "";
-			const reference = parseValue(value, scopeSeparator);
+			const parsedReference = parseValue(value, scopeSeparator);
+			const reference = resolveDirectiveReference(
+				parsedReference,
+				context.loop,
+				context.scope,
+			);
 			directives.push({
 				element,
 				reaction: match.reaction.name,
@@ -180,11 +186,11 @@ const collectDirectives = (elements: Element[]) => {
 						? ""
 						: name.slice(match.base.length + specifierSeparator.length),
 				value,
-				reference: resolveDirectiveReference(
-					reference,
-					context.loop,
-					context.scope,
-				),
+				// Each directive gets its own reference, not the shared parse.
+				reference:
+					reference && reference === parsedReference
+						? { ...reference }
+						: reference,
 			});
 		}
 	}

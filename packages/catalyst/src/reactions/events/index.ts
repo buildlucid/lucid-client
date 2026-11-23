@@ -40,6 +40,11 @@ const getEventTarget = (
 	return first ? { target: element, eventName: first } : null;
 };
 
+const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
+	typeof value === "object" &&
+	value !== null &&
+	typeof (value as { then?: unknown }).then === "function";
+
 const callAction = (
 	reference: MemberReference,
 	event: Event,
@@ -47,7 +52,8 @@ const callAction = (
 ) => {
 	try {
 		const result = resolve(reference, [event]);
-		void Promise.resolve(result).catch(console.error);
+		// An async action's rejection is reported like a thrown error.
+		if (isPromiseLike(result)) Promise.resolve(result).catch(console.error);
 	} catch (error) {
 		console.error(error);
 	}
@@ -83,22 +89,31 @@ const eventsReaction: Reaction & { [NO_ROOT]: true } = {
 			return;
 		}
 
-		let targetRegistrations = eventRegistrations.get(config.target);
+		const { target, eventName } = config;
+		const listener = (event: Event) =>
+			callAction(reference, event, context.resolve);
+
+		// The element's own events need no sharing, since each attribute names a
+		// different event.
+		if (target === directive.element) {
+			target.addEventListener(eventName, listener);
+			return () => target.removeEventListener(eventName, listener);
+		}
+
+		let targetRegistrations = eventRegistrations.get(target);
 		if (!targetRegistrations) {
 			targetRegistrations = new Map();
-			eventRegistrations.set(config.target, targetRegistrations);
+			eventRegistrations.set(target, targetRegistrations);
 		}
 		const registrations = targetRegistrations;
 
 		// Identical listeners on a shared target (document, window) run once.
-		const registrationKey = `${config.eventName}:${reference.scope}:${reference.key}`;
+		const registrationKey = `${eventName}:${reference.scope}:${reference.key}`;
 		let registration = registrations.get(registrationKey);
 		if (registration) {
 			registration.count += 1;
 		} else {
-			const listener = (event: Event) =>
-				callAction(reference, event, context.resolve);
-			config.target.addEventListener(config.eventName, listener);
+			target.addEventListener(eventName, listener);
 			registration = { count: 1, listener };
 			registrations.set(registrationKey, registration);
 		}
@@ -107,7 +122,7 @@ const eventsReaction: Reaction & { [NO_ROOT]: true } = {
 		return () => {
 			owned.count -= 1;
 			if (owned.count > 0) return;
-			config.target.removeEventListener(config.eventName, owned.listener);
+			target.removeEventListener(eventName, owned.listener);
 			if (registrations.get(registrationKey) === owned) {
 				registrations.delete(registrationKey);
 			}
