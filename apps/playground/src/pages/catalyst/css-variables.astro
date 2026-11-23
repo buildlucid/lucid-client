@@ -1,0 +1,208 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+
+const values = ["colour", "number", "zero", "true", "false", "empty", "null", "undefined", "object", "array"];
+---
+
+<Playground title="CSS variables">
+	<Fragment slot="intro">
+		<p>
+			<code>data-css--{"{name}"}</code> sets the <code>--{"{name}"}</code>
+			custom property on the element from state, a computed value, an action or
+			a loop value, so the styles themselves stay in CSS. The live readouts show
+			the <code>style</code> attribute it writes.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="number"
+		title="A number, with the unit added in CSS"
+		description="`data-css--progress` writes the `percent` number as it is. The bar's width is `calc(var(--progress) * 1%)`, so the unit lives in CSS."
+		expect={[
+			"On load, the track has `style=\"--progress: 40\"` and the bar fills 40%.",
+			"Each `Advance` adds 20 and the bar grows, wrapping to 0 after 100.",
+		]}
+	>
+		<div data-store="progress" class="space-y-4">
+			<div class="flex items-center gap-3">
+				<button class="btn btn-sm" data-events--click="@advance">Advance</button>
+				<span class="font-mono text-sm text-muted" data-dom--text="$label"></span>
+			</div>
+			<div id="progress-target" class="h-2 overflow-hidden rounded-full bg-line" data-css--progress="$percent">
+				<div class="h-full rounded-full bg-accent transition-[width]" style="width: calc(var(--progress, 0) * 1%)"></div>
+			</div>
+			<AttributeReadout target="#progress-target" exclude={["id", "data-css--progress"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="computed"
+		title="A colour from a computed value"
+		description="The range input writes `hue` with `data-model`. The store element gets `--hue` from state and `--accent` from a computed value, and its children only use `var()`."
+		expect={[
+			"Dragging the slider updates `--hue` and `--accent` together, and the swatch, border and text follow.",
+			"Only the store element's `style` attribute changes. The children's inline styles stay as written.",
+		]}
+	>
+		<div id="theme-target" data-store="theme" class="space-y-4" data-css--hue="$hue" data-css--accent="$accent">
+			<label class="block space-y-2">
+				<span class="label">Hue <span class="font-mono text-muted" data-dom--text="$hue"></span></span>
+				<input type="range" min="0" max="360" class="w-full accent-(--accent)" data-model="$hue" />
+			</label>
+			<div class="flex flex-wrap items-center gap-3">
+				<div class="size-10 rounded-lg" style="background: var(--accent)"></div>
+				<p class="rounded-md border px-3 py-1.5 text-sm" style="border-color: var(--accent); color: var(--accent)">
+					Accent text
+				</p>
+			</div>
+			<AttributeReadout target="#theme-target" exclude={["id", "data-store", "data-css--hue", "data-css--accent"]} />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="loop"
+		title="Staggered loop items"
+		description="Each item gets `--index` from `$index`. Its indent is `calc(var(--index) * 0.75rem)`, and its fade-in is delayed by `calc(var(--index) * 70ms)`."
+		expect={[
+			"On load, the items fade in one after another, each indented one step further than the one above.",
+			"`Reverse` moves the items without animating them again: each keeps its markup, and its `--index`, indent and number update.",
+			"`Add` animates only the new item. `Remove first` moves every other item up a step.",
+			"`Replay` renders every item again, with the stagger.",
+		]}
+	>
+		<div data-store="stagger" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-events--click="@reverse">Reverse</button>
+				<button class="btn btn-sm" data-events--click="@add">Add</button>
+				<button class="btn btn-sm" data-events--click="@removeFirst">Remove first</button>
+				<button class="btn btn-sm" data-events--click="@replay">Replay</button>
+			</div>
+			<ul class="space-y-1.5" data-loop="$items">
+				<template>
+					<li class="css-stagger flex w-fit items-center gap-3 rounded-md bg-raised px-3 py-1.5 text-sm transition-[margin]" style="margin-left: calc(var(--index) * 0.75rem)" data-css--index="$index">
+						<span class="font-mono text-xs text-subtle" data-dom--text="$index"></span>
+						<span data-dom--text="$item.label"></span>
+					</li>
+				</template>
+			</ul>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="booleans"
+		title="Booleans for style queries"
+		description="Booleans are written as `true` and `false` rather than removing the property, so a style query such as `@container style(--open: true)` can match them."
+		expect={[
+			"`Toggle` switches between `--open: false` and `--open: true`. The property is never removed.",
+			"In browsers that support style queries for custom properties, the card turns accent-coloured and reads `open` while `--open` is `true`.",
+		]}
+	>
+		<div data-store="toggle" class="space-y-4">
+			<button class="btn btn-sm" data-events--click="@toggle">Toggle</button>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div id="boolean-target" data-css--open="$open">
+					<p class="css-query rounded-md border border-line bg-raised px-3 py-2 text-sm text-muted">
+						The card is <span class="css-query-state font-mono"></span>
+					</p>
+				</div>
+				<AttributeReadout target="#boolean-target" exclude={["id", "data-css--open"]} />
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="values"
+		title="Nullish, empty and invalid values"
+		description="The swatch's background is `var(--value, …)` with a striped fallback, so the stripes show whenever `--value` is removed."
+		expect={[
+			"`colour` writes `--value: tomato` and paints the swatch.",
+			"`number`, `zero`, `true` and `false` write `12`, `0`, `true` and `false`. They aren't colours, so the swatch is empty.",
+			"`empty`, `null` and `undefined` remove `--value`, and the swatch shows the striped fallback.",
+			"`object` and `array` remove it too, and the log shows a Catalyst warning.",
+		]}
+	>
+		<div data-store="values" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				{values.map((name) => (
+					<button class="btn btn-sm font-mono" data-value-name={name} data-events--click="@setValue">{name}</button>
+				))}
+			</div>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div
+					id="values-target"
+					class="h-16 rounded-lg border border-line"
+					style="background: var(--value, repeating-linear-gradient(45deg, var(--color-line) 0 6px, transparent 6px 12px))"
+					data-css--value="$value"
+				></div>
+				<AttributeReadout target="#values-target" exclude={["id", "data-css--value"]} />
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="restore"
+		title="Server-rendered values and disposal"
+		description={"The box is rendered with `style=\"--size: 1rem\"`. When the directive is disposed, the property goes back to that value instead of being removed. The buttons remove and add the attribute, then call `Catalyst.sync`."}
+		expect={[
+			"On load, `--size: 1rem` is replaced with `--size: 2rem`, and the box grows.",
+			"`Grow` updates `--size`.",
+			"`Remove the directive` removes `data-css--size` and puts back `--size: 1rem`. `Grow` then changes nothing.",
+			"`Add it back` writes the current size again.",
+		]}
+	>
+		<div data-store="restore" class="space-y-4">
+			<div class="flex flex-wrap gap-2">
+				<button class="btn btn-sm" data-events--click="@grow">Grow</button>
+				<button class="btn btn-sm" data-events--click="@removeDirective" data-bind--disabled="$detached">Remove the directive</button>
+				<button class="btn btn-sm" data-events--click="@addDirective" data-bind--disabled="$attached">Add it back</button>
+			</div>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div id="restore-target" style="--size: 1rem" data-ref="#target" data-css--size="$size">
+					<div class="rounded-md bg-accent transition-all" style="width: calc(var(--size) * 4); height: var(--size)"></div>
+				</div>
+				<AttributeReadout target="#restore-target" exclude={["id", "data-ref"]} />
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="misconfigured"
+		title="Misconfigured directives"
+		description="A directive without a name, one with `.` in its name, one that references a ref, and one with a literal value are skipped with a warning."
+		expect={[
+			"On load, the log shows a Catalyst warning for each of the four directives.",
+			"None of the elements gets a `style` attribute.",
+		]}
+	>
+		<div data-store="misconfigured" class="flex flex-wrap gap-3 text-sm text-muted">
+			<p class="rounded-md bg-raised px-3 py-2" data-css="$size">No name</p>
+			<p class="rounded-md bg-raised px-3 py-2" data-css--root.size="$size">A dot in the name</p>
+			<p class="rounded-md bg-raised px-3 py-2" data-css--size="#size">A ref instead of state</p>
+			<p class="rounded-md bg-raised px-3 py-2" data-css--size="2rem">A literal value</p>
+		</div>
+	</Scenario>
+
+	<style is:global>
+		/* Loop items fade in one after another, delayed by their --index. */
+		@keyframes css-stagger-in {
+			from { opacity: 0; translate: -0.5rem 0; }
+		}
+		.css-stagger {
+			animation: css-stagger-in 400ms ease-out both;
+			animation-delay: calc(var(--index) * 70ms);
+		}
+
+		/* The boolean card reads --open from its parent with a style query. */
+		.css-query-state::before { content: "closed"; }
+		@container style(--open: true) {
+			.css-query { border-color: var(--color-accent); color: var(--color-accent); }
+			.css-query-state::before { content: "open"; }
+		}
+	</style>
+
+	<script>
+		import "../../scripts/catalyst/css-variables";
+	</script>
+</Playground>

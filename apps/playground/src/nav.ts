@@ -82,6 +82,13 @@ const nav: NavGroup[] = [
 					"data-bind attribute writes: booleans, aria and data attributes, nullish values and SVG.",
 			},
 			{
+				title: "CSS variables",
+				href: "/catalyst/css-variables",
+				description:
+					"data-css custom properties from state, computed values and loops, booleans, fallbacks and restored inline values.",
+				isNew: true,
+			},
+			{
 				title: "DOM",
 				href: "/catalyst/dom",
 				description:
