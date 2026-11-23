@@ -1,4 +1,5 @@
 import { defineStore, flush, snapshot } from "@lucidclient/catalyst";
+import type { LoopItem } from "@lucidclient/catalyst/types";
 import { startCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
@@ -80,6 +81,61 @@ const profile = defineStore({
 				draft.email = "";
 				draft.age = null;
 				draft.bio = "";
+			}),
+	}),
+});
+
+// --------------------------------------------------------
+// Two-way binding
+
+const MODELLED_DEFAULTS = {
+	name: "Ada Lovelace",
+	seats: 3 as number | null,
+	newsletter: true,
+	plan: "pro",
+	topics: ["catalyst"] as string[],
+	size: "m",
+	tags: ["docs"] as string[],
+	notes: "",
+};
+
+const modelled = defineStore({
+	state: () => structuredClone(MODELLED_DEFAULTS),
+	computed: ({ state }) => ({
+		json: () =>
+			json({
+				name: state.name,
+				seats: state.seats,
+				newsletter: state.newsletter,
+				plan: state.plan,
+				topics: state.topics,
+				size: state.size,
+				tags: state.tags,
+				notes: state.notes,
+			}),
+	}),
+	actions: ({ setState }) => ({
+		fillSample: () =>
+			setState((draft) => {
+				draft.name = "Grace Hopper";
+				draft.seats = 12;
+				draft.newsletter = false;
+				draft.plan = "team";
+				draft.topics = ["speculate", "cookies"];
+				draft.size = "l";
+				draft.tags = ["design", "support"];
+				draft.notes = "Filled from state.";
+			}),
+		clear: () =>
+			setState((draft) => {
+				draft.name = "";
+				draft.seats = null;
+				draft.newsletter = false;
+				draft.plan = "free";
+				draft.topics = [];
+				draft.size = "s";
+				draft.tags = [];
+				draft.notes = "";
 			}),
 	}),
 });
@@ -400,33 +456,14 @@ const contact = defineStore({
 
 const invoiceLog = createLogger("invoice");
 
-type Line = {
-	description: string;
-	qty: number | null;
-	price: number | null;
-	amount: string;
-};
-const lineAmount = (line: Pick<Line, "qty" | "price">) =>
-	money.format((line.qty ?? 0) * (line.price ?? 0));
-const line = (description: string, qty: number, price: number): Line => ({
-	description,
-	qty,
-	price,
-	amount: lineAmount({ qty, price }),
-});
-const rowIndex = (event: Event) => {
-	const row = (event.target as Element | null)?.closest<HTMLElement>(
-		"[data-row]",
-	);
-	return row ? Number(row.dataset.row) : -1;
-};
+type Line = { description: string; qty: number | null; price: number | null };
 
 const invoice = defineStore({
 	state: {
 		lines: [
-			line("Design", 2, 450),
-			line("Build", 5, 600),
-			line("Hosting", 12, 15),
+			{ description: "Design", qty: 2, price: 450 },
+			{ description: "Build", qty: 5, price: 600 },
+			{ description: "Hosting", qty: 12, price: 15 },
 		] as Line[],
 	},
 	computed: ({ state }) => ({
@@ -442,35 +479,22 @@ const invoice = defineStore({
 		hasLines: () => state.lines.length > 0,
 	}),
 	actions: ({ state, setState, refs }) => ({
-		updateLine: (event: Event) => {
-			const field = fieldFrom(event);
-			const index = rowIndex(event);
-			if (!field || index < 0) return;
+		// Actions inside the loop receive the line they were called from.
+		amount: ({ item }: LoopItem<Line>) =>
+			money.format((item.qty ?? 0) * (item.price ?? 0)),
+		removeLine: (_event: Event, { index, item }: LoopItem<Line>) => {
+			invoiceLog.info(`Removed line ${index + 1}`, snapshot(item));
 			setState((draft) => {
-				const item = draft.lines[index];
-				if (!item || !(field.name in item)) return;
-				(item as Record<string, unknown>)[field.name] = readField(field);
-				item.amount = lineAmount(item);
+				draft.lines.splice(index, 1);
 			});
 		},
 		addLine: () => {
 			setState((draft) => {
-				draft.lines.push(line("", 1, 0));
+				draft.lines.push({ description: "", qty: 1, price: 0 });
 			});
 			// Apply the write so the new row exists, then focus it.
 			flush();
 			refs.all<HTMLInputElement>("descriptions").at(-1)?.focus();
-		},
-		removeLine: (event: Event) => {
-			const index = rowIndex(event);
-			if (index < 0) return;
-			invoiceLog.info(
-				`Removed line ${index + 1}`,
-				snapshot(state.lines[index]),
-			);
-			setState((draft) => {
-				draft.lines.splice(index, 1);
-			});
 		},
 		reverse: () =>
 			setState((draft) => {
@@ -573,22 +597,13 @@ const wizard = defineStore({
 // --------------------------------------------------------
 // Native reset
 
-const resetLog = createLogger("reset");
-const RESET_DEFAULTS = { title: "Quarterly report", owner: "Ada" };
-
 const resettable = defineStore({
-	state: { ...RESET_DEFAULTS },
+	state: { title: "Quarterly report", owner: "Ada" },
 	computed: ({ state }) => ({
 		json: () => json({ title: state.title, owner: state.owner }),
 	}),
 	actions: ({ setState }) => ({
 		input: (event: Event) => setState((draft) => assignField(draft, event)),
-		reset: () => {
-			resetLog.info("reset event handled, state set back to its defaults");
-			setState((draft) => {
-				Object.assign(draft, RESET_DEFAULTS);
-			});
-		},
 	}),
 });
 
@@ -624,6 +639,7 @@ const account = defineStore({
 startCatalyst({
 	stores: {
 		profile,
+		modelled,
 		choices,
 		selects,
 		address,
@@ -631,8 +647,8 @@ startCatalyst({
 		contact,
 		invoice,
 		wizard,
-		resetHandled: resettable,
-		resetUnhandled: resettable,
+		resetModel: resettable,
+		resetOneWay: resettable,
 		account,
 	},
 });

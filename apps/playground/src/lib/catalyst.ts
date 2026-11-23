@@ -1,9 +1,16 @@
 import Catalyst from "@lucidclient/catalyst";
-import { bind, dom, events, loop, trap } from "@lucidclient/catalyst/reactions";
+import {
+	bind,
+	dom,
+	events,
+	loop,
+	model,
+	trap,
+} from "@lucidclient/catalyst/reactions";
 import type { CatalystStartOptions } from "@lucidclient/catalyst/types";
 
 /** Every first-party reaction. Pages pass their own list to test fewer. */
-export const allReactions = [bind, dom, events, loop, trap];
+export const allReactions = [bind, dom, events, loop, model, trap];
 
 /**
  * Starts Catalyst in debug mode with every first-party reaction, unless the

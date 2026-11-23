@@ -7,10 +7,11 @@ import Playground from "../../layouts/Playground.astro";
 <Playground title="Forms">
 	<Fragment slot="intro">
 		<p>
-			Catalyst has no two-way binding. Fields are filled from state with
-			<code>data-dom--value</code> and write back through an action, usually
-			one <code>input</code> listener on the form that copies each field onto the
-			state key matching its <code>name</code>.
+			Fields can be wired one way or two. One way, <code>data-dom--value</code>
+			and <code>data-dom--checked</code> fill a field from state, and an action
+			writes edits back, usually one <code>input</code> listener on the form
+			that copies each field onto the state key matching its <code>name</code>.
+			Two way, <code>data-model</code> does both.
 		</p>
 		<p>
 			Each scenario's <span class="text-fg">Fields show</span> readout comes straight
@@ -66,12 +67,89 @@ import Playground from "../../layouts/Playground.astro";
 		</div>
 	</Scenario>
 
+	<!-- Two-way binding -->
+	<Scenario
+		id="two-way"
+		title="Two-way binding with data-model"
+		description="Every kind of field bound with `data-model`, with no actions for writing. Values keep the type of their state, and checkboxes bound to an array write the ticked values."
+		expect={[
+			"The fields start from state: Pro, the Catalyst topic, Medium and Docs are selected.",
+			"Typing, ticking, choosing a radio or changing a select updates the state preview straight away. Seats is a number, or `null` when empty.",
+			"The topic checkboxes write an array of the ticked values.",
+			"`Fill sample` and `Clear` update every field from state.",
+			"The native `Reset` puts the fields back to their HTML defaults, and the state follows.",
+		]}
+	>
+		<div data-store="modelled" class="grid gap-5 sm:grid-cols-[1fr_16rem]">
+			<form class="space-y-4" autocomplete="off">
+				<div class="grid gap-4 sm:grid-cols-[1fr_7rem]">
+					<div class="space-y-1.5">
+						<label class="label" for="modelled-name">Name</label>
+						<input id="modelled-name" class="input" data-model="$name" />
+					</div>
+					<div class="space-y-1.5">
+						<label class="label" for="modelled-seats">Seats</label>
+						<input id="modelled-seats" type="number" min="0" class="input" data-model="$seats" />
+					</div>
+				</div>
+				<label class="flex items-center gap-2.5 text-sm">
+					<input type="checkbox" class="check" data-model="$newsletter" />
+					Send me the newsletter
+				</label>
+				<div class="grid gap-4 sm:grid-cols-2">
+					<fieldset class="space-y-2">
+						<legend class="label mb-2">Plan</legend>
+						<label class="flex items-center gap-2.5 text-sm"><input type="radio" name="modelled-plan" value="free" class="check" data-model="$plan" /> Free</label>
+						<label class="flex items-center gap-2.5 text-sm"><input type="radio" name="modelled-plan" value="pro" class="check" data-model="$plan" /> Pro</label>
+						<label class="flex items-center gap-2.5 text-sm"><input type="radio" name="modelled-plan" value="team" class="check" data-model="$plan" /> Team</label>
+					</fieldset>
+					<fieldset class="space-y-2">
+						<legend class="label mb-2">Topics</legend>
+						<label class="flex items-center gap-2.5 text-sm"><input type="checkbox" value="catalyst" class="check" data-model="$topics" /> Catalyst</label>
+						<label class="flex items-center gap-2.5 text-sm"><input type="checkbox" value="speculate" class="check" data-model="$topics" /> Speculate</label>
+						<label class="flex items-center gap-2.5 text-sm"><input type="checkbox" value="cookies" class="check" data-model="$topics" /> Cookies</label>
+					</fieldset>
+				</div>
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div class="space-y-1.5">
+						<label class="label" for="modelled-size">Size</label>
+						<select id="modelled-size" class="input" data-model="$size">
+							<option value="s">Small</option>
+							<option value="m">Medium</option>
+							<option value="l">Large</option>
+						</select>
+					</div>
+					<div class="space-y-1.5">
+						<label class="label" for="modelled-tags">Tags</label>
+						<select id="modelled-tags" multiple size="3" class="input" data-model="$tags">
+							<option value="design">Design</option>
+							<option value="docs">Docs</option>
+							<option value="support">Support</option>
+						</select>
+					</div>
+				</div>
+				<div class="space-y-1.5">
+					<label class="label" for="modelled-notes">Notes</label>
+					<textarea id="modelled-notes" rows="2" class="input" data-model="$notes"></textarea>
+				</div>
+				<div class="flex gap-2">
+					<button type="button" class="btn" data-events--click="@fillSample">Fill sample</button>
+					<button type="button" class="btn btn-ghost" data-events--click="@clear">Clear</button>
+					<button type="reset" class="btn btn-ghost ml-auto">Reset</button>
+				</div>
+			</form>
+			<div class="space-y-1.5">
+				<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">State</p>
+				<pre class="readout" data-dom--text="$json"></pre>
+			</div>
+		</div>
+	</Scenario>
+
 	<!-- Checkboxes and radios -->
 	<Scenario
 		id="checkboxes-radios"
 		title="Checkboxes and radios"
-		description="The newsletter checkbox and the plan radios are checked with `data-bind--checked`, and the buttons change the same state."
-		gap="`data-bind--checked` sets the `checked` attribute, which is only the field's default. Once you click a checkbox or radio yourself, state changes stop updating that field. Catalyst needs a way to set the `checked` property, such as a `data-dom--checked` specifier."
+		description="The newsletter checkbox and the plan radios are checked one way with `data-dom--checked`, which sets the `checked` property, and an `input` action writes clicks back. `data-bind--checked` would only set the attribute, which stops applying once a field has been clicked."
 		expect={[
 			"On load the checkbox is unchecked and the Pro radio is selected.",
 			"Clicking the checkbox or a radio updates the state preview.",
@@ -81,19 +159,19 @@ import Playground from "../../layouts/Playground.astro";
 		<div data-store="choices" class="grid gap-5 sm:grid-cols-[1fr_16rem]">
 			<div class="space-y-5" data-events--input="@setField">
 				<label class="flex items-center gap-2.5 text-sm">
-					<input type="checkbox" name="newsletter" class="check" data-bind--checked="$newsletter" />
+					<input type="checkbox" name="newsletter" class="check" data-dom--checked="$newsletter" />
 					Send me the newsletter
 				</label>
 				<fieldset class="space-y-2">
 					<legend class="label mb-2">Plan</legend>
 					<label class="flex items-center gap-2.5 text-sm">
-						<input type="radio" name="plan" value="free" class="check" data-bind--checked="$planFree" /> Free
+						<input type="radio" name="plan" value="free" class="check" data-dom--checked="$planFree" /> Free
 					</label>
 					<label class="flex items-center gap-2.5 text-sm">
-						<input type="radio" name="plan" value="pro" class="check" data-bind--checked="$planPro" /> Pro
+						<input type="radio" name="plan" value="pro" class="check" data-dom--checked="$planPro" /> Pro
 					</label>
 					<label class="flex items-center gap-2.5 text-sm">
-						<input type="radio" name="plan" value="team" class="check" data-bind--checked="$planTeam" /> Team
+						<input type="radio" name="plan" value="team" class="check" data-dom--checked="$planTeam" /> Team
 					</label>
 				</fieldset>
 				<div class="flex flex-wrap gap-2">
@@ -119,8 +197,7 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="selects"
 		title="Selects"
-		description="A single `<select>` is filled with `data-dom--value`. A multiple `<select>` writes its selected options to an array through `selectedOptions`."
-		gap="A multiple `<select>` can be read but not set from state: `data-dom--value` selects one option at most, so `Select design and docs` changes the state but not the field."
+		description="A single `<select>` is filled with `data-dom--value`. A multiple `<select>` is filled from an array the same way, and writes its selected options back through `selectedOptions`."
 		expect={[
 			"Choosing a size updates the state, and `Pick XL` selects XL in the field.",
 			"Selecting interests (hold ⌘ or Ctrl) writes them to the `interests` array.",
@@ -143,7 +220,7 @@ import Playground from "../../layouts/Playground.astro";
 				</div>
 				<div class="space-y-1.5">
 					<label class="label" for="select-interests">Interests</label>
-					<select id="select-interests" name="interests" multiple size="4" class="input" data-events--change="@setInterests">
+					<select id="select-interests" name="interests" multiple size="4" class="input" data-dom--value="$interests" data-events--change="@setInterests">
 						<option value="design">Design</option>
 						<option value="engineering">Engineering</option>
 						<option value="docs">Docs</option>
@@ -170,7 +247,6 @@ import Playground from "../../layouts/Playground.astro";
 		id="dependent-selects"
 		title="Dependent selects"
 		description="The region `<select>` renders its options with `data-loop` from a computed list that depends on the country, and is filled with `data-dom--value`. Changing the country picks the first region."
-		gap="When the country and region change together, `data-dom--value` sets the region before the loop renders the new country's options, so the field falls back to the first option. After `Texas` the state says `tx` but the field shows California."
 		expect={[
 			"On load the country is United Kingdom and Scotland is selected.",
 			"Changing the country replaces the region options and selects the first one.",
@@ -360,8 +436,7 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="field-arrays"
 		title="Field arrays"
-		description="Invoice lines rendered with `data-loop`. One `input` listener on the list updates the line its field belongs to, and the total is computed."
-		gap="Actions called from inside a loop don't receive `$item` or `$index`. Each row carries a `data-row` index bound from `$index`, which the actions read from the event target, and each line's amount is stored on the item because a computed value can't be calculated per item."
+		description={'Invoice lines rendered with `data-loop`. Each field is bound with `data-model="$item.qty"` and similar, so edits write to that line in the store. The amount is an action that receives the loop item, and `Remove` gets the index of the item the same way.'}
 		expect={[
 			"Editing a quantity or price updates that line's amount and the total.",
 			"`Add line` adds an empty line and focuses its description.",
@@ -374,15 +449,15 @@ import Playground from "../../layouts/Playground.astro";
 			<div class="hidden grid-cols-[2rem_1fr_5rem_6rem_6.5rem_2rem] gap-2 px-1 text-[11px] font-medium tracking-wide text-subtle uppercase sm:grid">
 				<span>#</span><span>Description</span><span>Qty</span><span>Price</span><span class="text-right">Amount</span><span></span>
 			</div>
-			<ol class="space-y-2" data-loop="$lines" data-events--input="@updateLine">
+			<ol class="space-y-2" data-loop="$lines">
 				<template>
-					<li class="grid grid-cols-[2rem_1fr_2rem] items-center gap-2 sm:grid-cols-[2rem_1fr_5rem_6rem_6.5rem_2rem]" data-bind--data-row="$index">
+					<li class="grid grid-cols-[2rem_1fr_2rem] items-center gap-2 sm:grid-cols-[2rem_1fr_5rem_6rem_6.5rem_2rem]">
 						<span class="font-mono text-xs text-subtle" data-dom--text="$indexOne"></span>
-						<input name="description" class="input" placeholder="Description" aria-label="Description" data-ref="#descriptions[]" data-dom--value="$item.description" />
+						<input class="input" placeholder="Description" aria-label="Description" data-ref="#descriptions[]" data-model="$item.description" />
 						<button type="button" class="btn btn-ghost btn-sm px-1.5 sm:order-last" aria-label="Remove line" data-events--click="@removeLine">✕</button>
-						<input name="qty" type="number" min="0" class="input col-start-2 sm:col-start-auto" aria-label="Quantity" data-dom--value="$item.qty" />
-						<input name="price" type="number" min="0" step="0.01" class="input col-start-2 sm:col-start-auto" aria-label="Price" data-dom--value="$item.price" />
-						<span class="col-start-2 text-right font-mono text-sm tabular-nums sm:col-start-auto" data-dom--text="$item.amount"></span>
+						<input type="number" min="0" class="input col-start-2 sm:col-start-auto" aria-label="Quantity" data-model="$item.qty" />
+						<input type="number" min="0" step="0.01" class="input col-start-2 sm:col-start-auto" aria-label="Price" data-model="$item.price" />
+						<span class="col-start-2 text-right font-mono text-sm tabular-nums sm:col-start-auto" data-dom--text="@amount"></span>
 					</li>
 				</template>
 			</ol>
@@ -470,24 +545,23 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="native-reset"
 		title="Native reset"
-		description="Both forms use the same definition. A native reset puts each field back to its `value` attribute. The first form also handles the `reset` event and resets its state, the second doesn't."
-		gap="With no two-way binding, a native reset only changes the fields. Without a `reset` handler the store keeps the edited values, as the second form shows."
+		description="Both forms use the same definition, and a native reset puts their fields back to their `value` attributes. The first binds its fields with `data-model`, so its state follows the reset. The second fills them one way with `data-dom--value` and writes edits through an `input` action, which a reset doesn't fire."
 		expect={[
 			"Edit both forms, then press `Reset` in each.",
 			"The first form's fields and state both return to their defaults.",
-			"The second form's fields reset but its state keeps the edited values.",
+			"The second form's fields reset, but its state keeps the edited values: nothing tells a one-way store about a reset.",
 		]}
 	>
 		<div class="grid gap-4 sm:grid-cols-2">
-			<form data-store="resetHandled" class="space-y-3 rounded-md bg-raised/60 p-4" data-events--input="@input" data-events--reset="@reset" autocomplete="off">
-				<p class="text-xs font-medium text-accent">Handles reset</p>
-				<input name="title" class="input" value="Quarterly report" aria-label="Title" data-dom--value="$title" />
-				<input name="owner" class="input" value="Ada" aria-label="Owner" data-dom--value="$owner" />
+			<form data-store="resetModel" class="space-y-3 rounded-md bg-raised/60 p-4" autocomplete="off">
+				<p class="text-xs font-medium text-accent">data-model</p>
+				<input class="input" value="Quarterly report" aria-label="Title" data-model="$title" />
+				<input class="input" value="Ada" aria-label="Owner" data-model="$owner" />
 				<button type="reset" class="btn btn-sm">Reset</button>
 				<pre class="readout" data-dom--text="$json"></pre>
 			</form>
-			<form data-store="resetUnhandled" class="space-y-3 rounded-md bg-raised/60 p-4" data-events--input="@input" autocomplete="off">
-				<p class="text-xs font-medium text-subtle">Doesn't handle reset</p>
+			<form data-store="resetOneWay" class="space-y-3 rounded-md bg-raised/60 p-4" data-events--input="@input" autocomplete="off">
+				<p class="text-xs font-medium text-subtle">data-dom--value and an input action</p>
 				<input name="title" class="input" value="Quarterly report" aria-label="Title" data-dom--value="$title" />
 				<input name="owner" class="input" value="Ada" aria-label="Owner" data-dom--value="$owner" />
 				<button type="reset" class="btn btn-sm">Reset</button>
@@ -544,7 +618,7 @@ import Playground from "../../layouts/Playground.astro";
 				</div>
 			</div>
 			<label class="flex items-center gap-2.5 text-sm">
-				<input type="checkbox" name="marketing" class="check" data-bind--checked="$marketing" />
+				<input type="checkbox" name="marketing" class="check" data-dom--checked="$marketing" />
 				Product updates by email
 			</label>
 			<button type="submit" class="btn btn-primary">Save</button>
