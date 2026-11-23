@@ -107,42 +107,72 @@ const createContextLookup = () => {
 	};
 };
 
+type AttributeMatch = { reaction: Reaction; specifier: string } | null;
+
 /**
- * The reaction an attribute belongs to: `data-bind` and `data-bind--href` both
- * belong to the reaction with the `bind` attribute.
+ * Attribute names already matched to a reaction, kept for the reactions map
+ * `start` builds, since names such as `data-dom--text` repeat on every item.
  */
-const findReaction = (
+const matches = new WeakMap<
+	Map<string, Reaction>,
+	Map<string, AttributeMatch>
+>();
+
+/**
+ * The reaction an attribute belongs to, and its specifier: `data-bind` and
+ * `data-bind--href` both belong to the reaction with the `bind` attribute.
+ */
+const matchAttribute = (
 	name: string,
 	reactions: Map<string, Reaction>,
 	separator: string,
-) => {
+): AttributeMatch => {
+	let cache = matches.get(reactions);
+	if (!cache) {
+		cache = new Map();
+		matches.set(reactions, cache);
+	}
+	const cached = cache.get(name);
+	if (cached !== undefined) return cached;
+
+	let match: AttributeMatch = null;
 	const reaction = reactions.get(name);
-	if (reaction) return { reaction, base: name };
-	let index = name.indexOf(separator);
-	while (index > 0) {
-		const base = name.slice(0, index);
-		const match = reactions.get(base);
-		if (match) return { reaction: match, base };
+	if (reaction) match = { reaction, specifier: "" };
+	let index = reaction ? -1 : name.indexOf(separator);
+	while (!match && index > 0) {
+		const base = reactions.get(name.slice(0, index));
+		if (base) {
+			match = {
+				reaction: base,
+				specifier: name.slice(index + separator.length),
+			};
+		}
 		index = name.indexOf(separator, index + 1);
 	}
-	return null;
+	if (cache.size >= 1000) cache.clear();
+	cache.set(name, match);
+	return match;
 };
 
-/** Parsed attribute values by scope separator and value. */
+/** Parsed attribute values, for the scope separator they were parsed with. */
 const parsed = new Map<string, MemberReference | null>();
+let parsedSeparator = "";
 
 /**
  * Parses an attribute value, reusing an earlier parse of the same value, since
  * loop items repeat the same few. The result is shared, so its path is frozen.
  */
 const parseValue = (value: string, scopeSeparator: string) => {
-	const key = `${scopeSeparator} ${value}`;
-	let reference = parsed.get(key);
+	if (parsedSeparator !== scopeSeparator) {
+		parsed.clear();
+		parsedSeparator = scopeSeparator;
+	}
+	let reference = parsed.get(value);
 	if (reference === undefined) {
 		if (parsed.size >= 1000) parsed.clear();
 		reference = parseReference(value, scopeSeparator);
 		if (reference) Object.freeze(reference.path);
-		parsed.set(key, reference);
+		parsed.set(value, reference);
 	}
 	return reference;
 };
@@ -156,11 +186,12 @@ const collectDirectives = (elements: Element[]) => {
 	const lookup = createContextLookup();
 
 	for (const element of elements) {
+		if (!element.hasAttributes()) continue;
 		let context: ElementContext | undefined;
 		// Attribute names are cheaper to read than `element.attributes`.
 		for (const name of element.getAttributeNames()) {
 			if (!name.startsWith(prefix)) continue;
-			const match = findReaction(name, reactions, specifierSeparator);
+			const match = matchAttribute(name, reactions, specifierSeparator);
 			if (!match) {
 				if (__DEV__ && Catalyst.options.debug) reportUnregisteredReaction(name);
 				continue;
@@ -181,10 +212,7 @@ const collectDirectives = (elements: Element[]) => {
 				element,
 				reaction: match.reaction.name,
 				attributeName: name,
-				specifier:
-					name === match.base
-						? ""
-						: name.slice(match.base.length + specifierSeparator.length),
+				specifier: match.specifier,
 				value,
 				// Each directive gets its own reference, not the shared parse.
 				reference:

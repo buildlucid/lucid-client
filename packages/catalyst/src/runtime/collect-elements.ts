@@ -6,6 +6,7 @@ import type { SyncOptions } from "../types/index.js";
  * overflow the call stack.
  */
 const collectElements = (target: Element, options?: SyncOptions) => {
+	if (!target.firstElementChild) return options?.childrenOnly ? [] : [target];
 	const descendants = target.querySelectorAll("*");
 	const elements: Element[] = options?.childrenOnly ? [] : [target];
 	for (let index = 0; index < descendants.length; index += 1) {
