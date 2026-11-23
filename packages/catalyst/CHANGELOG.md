@@ -25,6 +25,7 @@
 - Added persisted state, imported from `@lucidclient/catalyst/persistence` so pages that don't use it don't include it. Pass `persistence()` to `Catalyst.start`, then wrap a state value in `persisted()`, or list state keys in a `data-persist` attribute, to save it to `localStorage`, `sessionStorage` or a registered storage adapter and restore it when the page loads again. Stored values are restored before the store is created, are ignored when their type no longer matches, and can follow changes from other tabs with `sync`. `clearPersisted(scope)` removes a store's saved values.
 - Catalyst ships a development build, which bundlers pick through the `development` export condition, and a smaller production build without warnings or `debug` messages.
 - Catalyst is faster throughout: syncing walks each subtree once, loops set up new items in one pass and remove items without disposing them twice, events and refs need no reactive root, and bindings skip DOM writes that wouldn't change anything.
+- Reactions can't use the `cookie` or `speculate` attributes, which Cookie Controller and Speculate own.
 - In the development build, Catalyst now warns when a different store is registered for a scope that already has one, when state is written directly instead of through `setState`, when `sync` runs before `start`, when a `data-dom` specifier is unknown, and when a lowercased state attribute cannot match camelCase state. In debug mode it also warns when markup uses a first-party reaction that isn't registered.
 
 ### Breaking Changes:

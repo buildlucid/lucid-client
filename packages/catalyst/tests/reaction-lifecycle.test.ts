@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import Catalyst, { defineStore } from "../src/index.js";
 import { bind, dom, events } from "../src/reactions.js";
 import type { Reaction } from "../src/types/index.js";
@@ -154,6 +154,21 @@ describe("reaction lifecycle", () => {
 		await settle();
 
 		expect(document.querySelector("span")?.textContent).toBe("ready");
+	});
+
+	it("refuses attributes reserved for other Lucid Client packages", () => {
+		document.body.innerHTML = `<div data-store="reserved"><button data-cookie--action="accept"></button></div>`;
+		const setup = vi.fn();
+		const cookie: Reaction = { name: "cookie", attribute: "cookie", setup };
+
+		Catalyst.start({ reactions: [cookie] });
+
+		expect(setup).not.toHaveBeenCalled();
+		expect(catalystWarnings()).toContainEqual(
+			expect.stringContaining(
+				'The "cookie" attribute is reserved for another Lucid Client package.',
+			),
+		);
 	});
 
 	it("warns when a different reaction reuses a registered name", () => {
