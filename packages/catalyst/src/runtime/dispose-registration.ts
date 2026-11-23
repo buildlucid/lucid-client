@@ -52,13 +52,30 @@ const disposeRegistration = (registration: DirectiveRegistration) => {
 		}
 	}
 	unindexRegistration(registration);
+	runDispose(registration);
+};
 
+const runDispose = (registration: DirectiveRegistration) => {
 	const dispose = registration.dispose;
 	registration.dispose = () => {};
 	try {
 		dispose();
 	} catch (error) {
 		console.error(error);
+	}
+};
+
+/**
+ * Disposes every directive on an element. The element's entry is removed
+ * first, so directives a cleanup sets up on it again are kept.
+ */
+export const disposeElementRegistrations = (element: Element) => {
+	const registrations = Catalyst.registrations.get(element);
+	if (!registrations) return;
+	Catalyst.registrations.delete(element);
+	for (const registration of registrations.values()) {
+		unindexRegistration(registration);
+		runDispose(registration);
 	}
 };
 
