@@ -1,0 +1,234 @@
+import { describe, expect, it } from "vite-plus/test";
+import Catalyst, { defineStore } from "../src/index.js";
+import { bind, loop, model } from "../src/reactions.js";
+import { catalystWarnings, getStore, setStoreState, settle } from "./utils.js";
+
+const type = (field: HTMLInputElement | HTMLTextAreaElement, value: string) => {
+	field.value = value;
+	field.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
+const change = (field: HTMLElement) =>
+	field.dispatchEvent(new Event("change", { bubbles: true }));
+
+const field = <E extends Element = HTMLInputElement>(selector: string) => {
+	const element = document.querySelector<E>(selector);
+	if (!element) throw new Error(`Missing ${selector}`);
+	return element;
+};
+
+describe("model reaction", () => {
+	it("keeps text fields and state in sync both ways", async () => {
+		document.body.innerHTML = `
+			<form data-store="profile">
+				<input id="name" data-model="$name" />
+				<textarea id="bio" data-model="$details.bio"></textarea>
+			</form>
+		`;
+		const profile = defineStore({
+			state: { name: "Ada", details: { bio: "" } },
+		});
+		Catalyst.start({ stores: { profile }, reactions: [model] });
+		expect(field("#name").value).toBe("Ada");
+
+		type(field("#name"), "Grace");
+		type(field<HTMLTextAreaElement>("#bio"), "Compilers");
+		await settle();
+		expect(getStore("profile")?.state.name).toBe("Grace");
+		expect(getStore("profile")?.state.details).toEqual({ bio: "Compilers" });
+
+		setStoreState("profile", "name", "Hopper");
+		await settle();
+		expect(field("#name").value).toBe("Hopper");
+	});
+
+	it("rewrites a field when state is set back to a value it held", async () => {
+		document.body.innerHTML = `
+			<div data-store="fruit">
+				<input data-model="$value" />
+				<button data-reset></button>
+			</div>
+		`;
+		const fruit = defineStore({ state: { value: "apple" } });
+		Catalyst.start({ stores: { fruit }, reactions: [model] });
+
+		type(field("input"), "typed by user");
+		await settle();
+		setStoreState("fruit", "value", "apple");
+		await settle();
+		expect(field("input").value).toBe("apple");
+	});
+
+	it("types number fields, checkboxes, radios and selects", async () => {
+		document.body.innerHTML = `
+			<form data-store="prefs">
+				<input id="seats" type="number" data-model="$seats" />
+				<input id="news" type="checkbox" data-model="$newsletter" />
+				<input id="free" type="radio" name="plan" value="free" data-model="$plan" />
+				<input id="pro" type="radio" name="plan" value="pro" data-model="$plan" />
+				<input id="design" type="checkbox" value="design" data-model="$topics" />
+				<input id="docs" type="checkbox" value="docs" data-model="$topics" />
+				<select id="size" data-model="$size">
+					<option value="1">S</option><option value="2">M</option>
+				</select>
+				<select id="tags" multiple data-model="$tags">
+					<option value="a"></option><option value="b"></option><option value="c"></option>
+				</select>
+			</form>
+		`;
+		const prefs = defineStore({
+			state: {
+				seats: 2 as number | null,
+				newsletter: false,
+				plan: "pro",
+				topics: ["docs"] as string[],
+				size: 1,
+				tags: ["b"] as string[],
+			},
+		});
+		Catalyst.start({ stores: { prefs }, reactions: [model] });
+		const state = () => getStore("prefs")?.state;
+		const selected = (select: HTMLSelectElement) =>
+			Array.from(select.options)
+				.filter((option) => option.selected)
+				.map((option) => option.value);
+
+		expect(field("#seats").value).toBe("2");
+		expect(field("#pro").checked).toBe(true);
+		expect(field("#docs").checked).toBe(true);
+		expect(field<HTMLSelectElement>("#size").value).toBe("1");
+		expect(selected(field<HTMLSelectElement>("#tags"))).toEqual(["b"]);
+
+		type(field("#seats"), "");
+		field("#news").click();
+		field("#free").click();
+		field("#design").click();
+		field("#docs").click();
+		field<HTMLSelectElement>("#size").value = "2";
+		change(field("#size"));
+		const tags = field<HTMLSelectElement>("#tags");
+		for (const option of Array.from(tags.options)) {
+			option.selected = option.value !== "b";
+		}
+		change(tags);
+		await settle();
+
+		expect(state()?.seats).toBeNull();
+		expect(state()?.newsletter).toBe(true);
+		expect(state()?.plan).toBe("free");
+		expect(state()?.topics).toEqual(["design"]);
+		expect(state()?.size).toBe(2);
+		expect(state()?.tags).toEqual(["a", "c"]);
+
+		setStoreState("prefs", "newsletter", false);
+		setStoreState("prefs", "plan", "pro");
+		await settle();
+		expect(field("#news").checked).toBe(false);
+		expect(field("#pro").checked).toBe(true);
+		expect(field("#free").checked).toBe(false);
+	});
+
+	it("writes a property of a loop item to the store the loop renders", async () => {
+		document.body.innerHTML = `
+			<div data-store="invoice">
+				<ul data-loop="$lines">
+					<template><li><input data-model="$item.qty" type="number" /></li></template>
+				</ul>
+			</div>
+		`;
+		const invoice = defineStore({
+			state: { lines: [{ qty: 1 }, { qty: 2 }] },
+		});
+		Catalyst.start({ stores: { invoice }, reactions: [loop, model] });
+
+		const inputs = document.querySelectorAll("input");
+		const second = inputs[1];
+		if (!second) throw new Error("Missing input");
+		type(second, "7");
+		await settle();
+		expect(getStore("invoice")?.state.lines).toEqual([{ qty: 1 }, { qty: 7 }]);
+		// The row was updated in place, not rendered again.
+		expect(document.querySelectorAll("input")[1]).toBe(second);
+	});
+
+	it("follows a native form reset", async () => {
+		document.body.innerHTML = `
+			<form data-store="report">
+				<input id="title" value="Quarterly report" data-model="$title" />
+				<input id="a" type="checkbox" value="a" checked data-model="$flags" />
+				<input id="b" type="checkbox" value="b" data-model="$flags" />
+			</form>
+		`;
+		const report = defineStore({
+			state: { title: "Quarterly report", flags: ["a"] as string[] },
+		});
+		Catalyst.start({ stores: { report }, reactions: [model] });
+
+		type(field("#title"), "Edited");
+		field("#a").click();
+		field("#b").click();
+		await settle();
+		expect(getStore("report")?.state.flags).toEqual(["b"]);
+
+		field<HTMLFormElement>("form").reset();
+		await settle();
+		expect(getStore("report")?.state.title).toBe("Quarterly report");
+		expect(getStore("report")?.state.flags).toEqual(["a"]);
+	});
+
+	it("keeps checkbox groups of different stores apart", async () => {
+		document.body.innerHTML = `
+			<div data-store="first">
+				<input id="first-a" type="checkbox" value="a" data-model="$picked" />
+			</div>
+			<div data-store="second">
+				<input id="second-a" type="checkbox" value="a" data-model="$picked" />
+				<input id="second-b" type="checkbox" value="b" data-model="$picked" />
+			</div>
+		`;
+		const picker = defineStore({ state: { picked: ["kept"] as string[] } });
+		Catalyst.start({
+			stores: { first: picker, second: picker },
+			reactions: [model],
+		});
+
+		field("#first-a").click();
+		field("#second-b").click();
+		await settle();
+		expect(getStore("first")?.state.picked).toEqual(["kept", "a"]);
+		expect(getStore("second")?.state.picked).toEqual(["kept", "b"]);
+	});
+
+	it("warns about fields and references it can't bind", async () => {
+		document.body.innerHTML = `
+			<div data-store="bad">
+				<div data-model="$label"></div>
+				<input id="computed" data-model="$upper" />
+				<input data-model="@action" />
+				<ul data-loop="$items">
+					<template><li><input data-model="$item" /></li></template>
+				</ul>
+			</div>
+		`;
+		const bad = defineStore({
+			state: { label: "a", items: ["x"] },
+			computed: ({ state }) => ({ upper: () => state.label.toUpperCase() }),
+			actions: () => ({ action: () => "value" }),
+		});
+		Catalyst.start({ stores: { bad }, reactions: [bind, loop, model] });
+		type(field("#computed"), "B");
+		await settle();
+
+		const warnings = catalystWarnings();
+		expect(warnings).toContainEqual(
+			expect.stringContaining("requires an input, select or textarea"),
+		);
+		expect(
+			warnings.filter((warning) => warning.includes("requires state")),
+		).toHaveLength(2);
+		expect(warnings).toContainEqual(
+			expect.stringContaining('"upper" isn\'t declared state'),
+		);
+		expect(getStore("bad")?.state.label).toBe("a");
+	});
+});

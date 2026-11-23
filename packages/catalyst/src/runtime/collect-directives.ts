@@ -6,7 +6,14 @@ import { warn } from "./log.js";
 import resolveDirectiveReference from "./resolve-directive-reference.js";
 
 /** First-party reactions, whose names match their attributes. */
-const FIRST_PARTY_REACTIONS = ["bind", "dom", "events", "loop", "trap"];
+const FIRST_PARTY_REACTIONS = [
+	"bind",
+	"dom",
+	"events",
+	"loop",
+	"model",
+	"trap",
+];
 
 const matchesAttribute = (name: string, attribute: string) => {
 	const base = `${Catalyst.options.attributes.prefix}${attribute}`;

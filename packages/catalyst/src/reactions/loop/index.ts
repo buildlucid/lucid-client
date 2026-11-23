@@ -46,6 +46,12 @@ const loopReaction: Reaction = {
 
 		let entries: LoopEntry[] = [];
 		let hasRendered = false;
+		// Items of `$item.links` belong to the same store as the outer loop's.
+		const reference = directive.reference;
+		const scope =
+			reference?.type === "loop"
+				? (reference.context?.scope ?? null)
+				: (reference?.scope ?? null);
 
 		const createEntry = (
 			item: unknown,
@@ -57,7 +63,7 @@ const loopReaction: Reaction = {
 			if (!root) return null;
 
 			const [getIndex, setIndex] = createSignal(index);
-			setLoopContext(root, { item, index: getIndex, parent });
+			setLoopContext(root, { item, index: getIndex, parent, scope });
 			return {
 				item,
 				root,

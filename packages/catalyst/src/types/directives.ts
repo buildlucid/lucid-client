@@ -7,6 +7,8 @@ export type LoopContext = {
 	item: unknown;
 	index: () => number;
 	parent?: LoopContext;
+	/** The store whose state the loop renders, which writes to its items. */
+	scope?: string | null;
 };
 
 /**
