@@ -6,6 +6,7 @@ import type {
 	Reaction,
 	StoreActions,
 	StoreCleanup,
+	StorageAdapter,
 	StoreRefs,
 	StoreState,
 } from "../types/index.js";
@@ -16,9 +17,38 @@ export type ResolvedCatalystOptions = {
 		prefix: string;
 		store: string;
 		state: string;
+		persist: string;
 		scopeSeparator: string;
 		specifierSeparator: string;
 	};
+	persistence: {
+		prefix: string;
+		storage: string;
+		sync: boolean;
+		adapters: Record<string, StorageAdapter>;
+	};
+};
+
+/** A state value a store saves to storage. */
+export type PersistEntry = {
+	/** The state key. */
+	key: string;
+	/** The adapter's name, for messages. */
+	storage: string;
+	adapter: StorageAdapter;
+	/** The storage entry's full name, including the prefix. */
+	storageKey: string;
+	validate?: (value: unknown) => boolean;
+	sync: boolean;
+	/** The kind of value the state starts with, which stored values must match. */
+	kind: string;
+	/** The starting value without storage, as JSON, used when storage is cleared elsewhere. */
+	fallback: string | undefined;
+	/** The value as JSON when it was last restored or saved, so it isn't saved again unchanged. */
+	saved: string | undefined;
+	/** Whether a storage failure has already been reported. */
+	reported: boolean;
+	dispose?: () => void;
 };
 
 /** A store's full runtime record. Reactions receive it as the public `Store`. */
@@ -42,6 +72,8 @@ export type RuntimeStore = {
 	stateAttributeDisposes: Map<string, () => void>;
 	internalStateWrites: Map<string, string>;
 	stateObserver?: MutationObserver;
+	/** The state values saved to storage, by state key. */
+	persisted: Map<string, PersistEntry>;
 	disposeRoot: () => void;
 	cleanup?: StoreCleanup;
 };

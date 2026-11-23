@@ -21,6 +21,7 @@
 - Added `data-dom--checked`, which sets a checkbox or radio's `checked` property rather than its default.
 - `data-dom--value` selects every matching option of a `<select multiple>` from an array, and applies a select's value again when its options change, such as when a loop renders them.
 - Actions called from inside a loop item receive a `LoopItem` with its `item`, `index`, `indexOne` and `parent`: after the `Event` for events, and as the only argument for actions that provide a value.
+- Added persisted state. Wrap a state value in `persisted()`, or list state keys in a `data-persist` attribute, to save it to `localStorage`, `sessionStorage` or a registered storage adapter and restore it when the page loads again. Stored values are restored before the store is created, are ignored when their type no longer matches, and can follow changes from other tabs with `sync`. `Catalyst.clearPersisted(scope)` removes a store's saved values.
 - Catalyst now warns when a different store is registered for a scope that already has one, when state is written directly instead of through `setState`, when `sync` runs before `start`, when a `data-dom` specifier is unknown, and when a lowercased state attribute cannot match camelCase state. In debug mode it also warns when markup uses a first-party reaction that isn't registered.
 
 ### Breaking Changes:

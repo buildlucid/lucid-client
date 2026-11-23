@@ -3,7 +3,17 @@ import Catalyst from "../../runtime/catalyst.js";
 import { debug, error, warn } from "../../runtime/log.js";
 import { createOwnedRoot } from "../../runtime/reactive.js";
 import type { RuntimeStore } from "../../runtime/types.js";
-import type { AnyStoreDefinition, StoreState } from "../../types/index.js";
+import type {
+	AnyStoreDefinition,
+	PersistOptions,
+	StoreState,
+} from "../../types/index.js";
+import { unwrapPersisted } from "../persist/persisted.js";
+import resolvePersistence from "../persist/resolve-persistence.js";
+import {
+	registerPersistence,
+	restorePersistedState,
+} from "../persist/store-persistence.js";
 import { createRefs } from "../refs/index.js";
 import {
 	createStateObserver,
@@ -15,22 +25,39 @@ import {
 const isStateObject = (value: unknown): value is StoreState =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
 
+type Defaults = {
+	state: StoreState;
+	/** The options of each state value marked with `persisted()`. */
+	persist: Map<string, PersistOptions>;
+};
+
+const noDefaults = (): Defaults => ({ state: {}, persist: new Map() });
+
 /**
  * A plain state object is copied for every store so a refreshed store starts
  * from its defaults again. A function is called instead, for state that can't
- * be copied, such as functions or class instances.
+ * be copied, such as functions or class instances. `persisted()` values are
+ * unwrapped first, since copying would turn them into plain objects.
  */
 const resolveDefaults = (
 	key: string,
 	definition: AnyStoreDefinition | undefined,
-): StoreState => {
+): Defaults => {
 	const state = definition?.state;
-	if (state === undefined) return {};
+	if (state === undefined) return noDefaults();
 
 	const isFactory = typeof state === "function";
 	let value: unknown;
+	let persist = new Map<string, PersistOptions>();
 	try {
-		value = isFactory ? (state as () => unknown)() : structuredClone(state);
+		value = isFactory ? (state as () => unknown)() : state;
+		if (isStateObject(value)) {
+			const unwrapped = unwrapPersisted(value);
+			persist = unwrapped.options;
+			value = isFactory ? unwrapped.values : structuredClone(unwrapped.values);
+		} else if (!isFactory) {
+			value = structuredClone(value);
+		}
 	} catch (cause) {
 		error(
 			isFactory
@@ -38,12 +65,12 @@ const resolveDefaults = (
 				: `The state for store "${key}" could not be copied. Use a function that returns the state instead.`,
 			cause,
 		);
-		return {};
+		return noDefaults();
 	}
 
-	if (isStateObject(value)) return value;
+	if (isStateObject(value)) return { state: value, persist };
 	warn(`The state for store "${key}" must be an object.`);
-	return {};
+	return noDefaults();
 };
 
 const applyComputed = (store: RuntimeStore, definition: AnyStoreDefinition) => {
@@ -105,11 +132,15 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 	const store = createOwnedRoot((disposeRoot) => {
 		// State is complete before the Solid store exists, because writing to it
 		// while this root is being set up is not allowed.
-		const initial = readStateAttributes(
+		const defaults = resolveDefaults(key, definition);
+		const initial = readStateAttributes(element, key, defaults.state);
+		const persistence = resolvePersistence(
 			element,
 			key,
-			resolveDefaults(key, definition),
+			defaults.persist,
+			initial.state,
 		);
+		restorePersistedState(key, persistence, initial.state);
 		const [raw, setState] = createStore<StoreState>(initial.state);
 		const computed = new Map<string, Accessor<unknown>>();
 		const refElements = new Map<string, Element | Element[]>();
@@ -130,6 +161,7 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 			owner: getOwner(),
 			stateAttributeDisposes: new Map(),
 			internalStateWrites: new Map(),
+			persisted: new Map(),
 			disposeRoot,
 		};
 
@@ -137,6 +169,7 @@ const initialiseStore = (element: Element, key: string): RuntimeStore => {
 		for (const stateKey of initial.keys) {
 			registerStateAttribute(nextStore, stateKey);
 		}
+		registerPersistence(nextStore, persistence);
 		if (definition) applyActions(nextStore, definition);
 
 		nextStore.stateObserver = createStateObserver(nextStore);

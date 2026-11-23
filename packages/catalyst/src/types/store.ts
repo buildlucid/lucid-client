@@ -1,4 +1,5 @@
 import type { StoreSetter } from "solid-js";
+import type { StateOf } from "./persistence.js";
 
 export type StoreState = Record<string, unknown>;
 
@@ -88,21 +89,24 @@ export type StoreDefinition<
 	 * The store's state, as a plain object that is copied for every store
 	 * instance, or a function that returns it. A matching `data-state--*`
 	 * attribute sets the starting value, and this value provides the default and
-	 * the type.
+	 * the type. Wrap a top-level value in `persisted()` to save it to storage
+	 * and restore it when the page loads again.
 	 */
 	state?: S | (() => S);
 	/** Read-only values derived from state, recomputed only when it changes. */
-	computed?: (context: ComputedContext<S>) => StoreComputed<C>;
+	computed?: (context: ComputedContext<StateOf<S>>) => StoreComputed<C>;
 	/** Functions markup calls with `@name`, and that other store code can call. */
-	actions?: (context: ActionsContext<S, C>) => A;
+	actions?: (context: ActionsContext<StateOf<S>, C>) => A;
 	/** Effects that run for as long as the store exists. */
-	effects?: (context: EffectsContext<S, C, A>) => Record<string, StoreEffect>;
+	effects?: (
+		context: EffectsContext<StateOf<S>, C, A>,
+	) => Record<string, StoreEffect>;
 	/**
 	 * Runs once the store's refs are registered. Return a function to clean up
 	 * when the store is destroyed.
 	 */
 	init?: (
-		context: StoreContext<S, C, A>,
+		context: StoreContext<StateOf<S>, C, A>,
 	) => void | StoreCleanup | Promise<void | StoreCleanup>;
 };
 

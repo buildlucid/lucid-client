@@ -1,3 +1,4 @@
+import type { CatalystPersistenceOptions } from "./persistence.js";
 import type { Reaction } from "./reactions.js";
 import type { AnyStoreDefinition } from "./store.js";
 
@@ -5,6 +6,7 @@ export type CatalystAttributeOptions = {
 	prefix?: string;
 	store?: string;
 	state?: string;
+	persist?: string;
 	scopeSeparator?: string;
 	specifierSeparator?: string;
 };
@@ -17,6 +19,8 @@ export type CatalystStartOptions = {
 	stores?: CatalystStores;
 	reactions?: Reaction[];
 	attributes?: CatalystAttributeOptions;
+	/** Where `persisted()` state and `data-persist` attributes save values. */
+	persistence?: CatalystPersistenceOptions;
 };
 
 export type CatalystAddOptions = {
@@ -29,4 +33,10 @@ export type CatalystApi = {
 	destroy: () => void;
 	refresh: (targetStore?: string) => void;
 	sync: (target: Element, options?: { childrenOnly?: boolean }) => void;
+	/**
+	 * Removes the saved values of a running store, or of every running store,
+	 * from storage. State keeps its current values, and is saved again the next
+	 * time it changes.
+	 */
+	clearPersisted: (scope?: string) => void;
 };

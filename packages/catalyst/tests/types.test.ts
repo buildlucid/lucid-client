@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from "vite-plus/test";
-import Catalyst, { defineStore } from "../src/index.js";
+import Catalyst, { defineStore, persisted } from "../src/index.js";
 
 /**
  * These checks run when the tests are type-checked (`vp lint`). The runtime
@@ -86,6 +86,79 @@ describe("defineStore types", () => {
 		expectTypeOf(Catalyst.start).toBeCallableWith({
 			stores: { nav, factory, empty, alias: nav },
 		});
+	});
+
+	it("unwraps persisted state values", () => {
+		type Theme = "light" | "dark";
+		type User = { name: string };
+
+		const prefs = defineStore({
+			state: {
+				theme: persisted("light" as Theme, {
+					storage: "session",
+					key: "theme",
+					sync: true,
+					validate: (value) => value === "light" || value === "dark",
+				}),
+				open: persisted(false),
+				label: persisted("Menu"),
+				user: persisted(null as User | null),
+				busy: false,
+			},
+			computed: ({ state }) => {
+				expectTypeOf(state.theme).toEqualTypeOf<Theme>();
+				return { isDark: () => state.theme === "dark" };
+			},
+			actions: ({ state, setState }) => {
+				expectTypeOf(state.open).toEqualTypeOf<boolean>();
+				expectTypeOf(state.label).toEqualTypeOf<string>();
+				expectTypeOf(state.user).toEqualTypeOf<User | null>();
+				expectTypeOf(state.busy).toEqualTypeOf<boolean>();
+				expectTypeOf(state.isDark).toEqualTypeOf<boolean>();
+				return {
+					toggle: () =>
+						setState((draft) => {
+							draft.theme = draft.theme === "dark" ? "light" : "dark";
+							// @ts-expect-error theme is a Theme
+							draft.theme = "blue";
+						}),
+				};
+			},
+			init: ({ state }) => {
+				expectTypeOf(state.theme).toEqualTypeOf<Theme>();
+			},
+		});
+
+		const factory = defineStore({
+			state: () => ({ items: persisted([] as string[]) }),
+			effects: ({ state, effect }) => ({
+				count: effect(
+					() => state.items,
+					(items) => {
+						expectTypeOf(items).toEqualTypeOf<string[]>();
+					},
+				),
+			}),
+		});
+
+		expectTypeOf(Catalyst.start).toBeCallableWith({
+			stores: { prefs, factory },
+			attributes: { persist: "save" },
+			persistence: {
+				prefix: "site:",
+				storage: "session",
+				sync: true,
+				adapters: {
+					memory: {
+						get: () => undefined,
+						set: () => {},
+						remove: () => {},
+					},
+				},
+			},
+		});
+		expectTypeOf(Catalyst.clearPersisted).toBeCallableWith("prefs");
+		expectTypeOf(Catalyst.clearPersisted).toBeCallableWith();
 	});
 
 	it("rejects writes and wrong types", () => {

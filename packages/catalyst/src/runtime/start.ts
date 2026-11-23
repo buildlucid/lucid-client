@@ -41,12 +41,25 @@ const start = (options?: CatalystStartOptions) => {
 			prefix: options?.attributes?.prefix ?? DEFAULT_OPTIONS.attributes.prefix,
 			store: options?.attributes?.store ?? DEFAULT_OPTIONS.attributes.store,
 			state: options?.attributes?.state ?? DEFAULT_OPTIONS.attributes.state,
+			persist:
+				options?.attributes?.persist ?? DEFAULT_OPTIONS.attributes.persist,
 			scopeSeparator:
 				options?.attributes?.scopeSeparator ??
 				DEFAULT_OPTIONS.attributes.scopeSeparator,
 			specifierSeparator:
 				options?.attributes?.specifierSeparator ??
 				DEFAULT_OPTIONS.attributes.specifierSeparator,
+		},
+		persistence: {
+			prefix:
+				options?.persistence?.prefix ?? DEFAULT_OPTIONS.persistence.prefix,
+			storage:
+				options?.persistence?.storage ?? DEFAULT_OPTIONS.persistence.storage,
+			sync: options?.persistence?.sync ?? DEFAULT_OPTIONS.persistence.sync,
+			adapters: {
+				...DEFAULT_OPTIONS.persistence.adapters,
+				...options?.persistence?.adapters,
+			},
 		},
 	};
 	Catalyst.startOptions = options;

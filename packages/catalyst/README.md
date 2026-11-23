@@ -250,6 +250,132 @@ An attribute added later for state the definition declares is kept in sync both
 ways straight away. An attribute for undeclared state is picked up by the next
 `sync`.
 
+### Persisted state
+
+Wrap a state value in `persisted()` to save it to storage and restore it when
+the page loads again:
+
+```ts
+import { defineStore, persisted } from "@lucidclient/catalyst";
+
+type Theme = "light" | "dark";
+
+export const prefs = defineStore({
+    state: {
+        theme: persisted("light" as Theme),
+        sidebarOpen: persisted(true),
+        draft: persisted("", { storage: "session" }),
+        busy: false,
+    },
+});
+```
+
+`state.theme` is typed as `Theme`, not as a wrapper. `persisted()` works on
+top-level state values, including in a state function.
+
+Markup persists state with `data-persist`, which lists state keys as they are
+written in `$name`. The specifier chooses the storage, and without one the
+default storage is used:
+
+```html
+<div
+    data-store="prefs"
+    data-state--theme="light"
+    data-state--sidebar-open="true"
+    data-state--draft=""
+    data-persist="theme sidebarOpen"
+    data-persist--session="draft"
+></div>
+```
+
+This works for stores without a definition. On a store with one, markup can
+persist more keys and choose their storage for that store only, so a `dialog`
+registered under two scopes can persist just one of them.
+
+The order of starting values is: the definition's default, then the
+`data-state--*` attribute, then the stored value. A stored value wins, because
+restoring what the user chose is the point, and the attribute is then updated to
+match it. Don't persist values the server owns, such as a cart count, because a
+stored copy goes stale.
+
+Values are restored before the store is created, so bindings, `init` and effects
+see them from the start. A value is only saved once it changes, so users who
+never changed a setting pick up a new default when you change it in code.
+Changing nested data, such as pushing to an array, is saved too. Setting a value
+to `undefined` removes it from storage.
+
+A stored value is ignored when its type doesn't match the starting value's, such
+as a string where the state starts as a boolean, so data saved by an older
+version of the page doesn't break it. `null` matches any type. Use `validate`
+for anything more specific:
+
+```ts
+theme: persisted("light" as Theme, {
+    validate: (value) => value === "light" || value === "dark",
+}),
+```
+
+`persisted()` takes these options:
+
+- `storage`: `"local"`, `"session"` or the name of a registered adapter.
+  Defaults to `persistence.storage`.
+- `key`: the storage entry's name after the prefix. Defaults to `{scope}:{key}`,
+  such as `catalyst:prefs:theme`, so each scope saves its own value.
+- `validate`: returns `false` to ignore a stored value.
+- `sync`: applies changes saved by other tabs. Defaults to `persistence.sync`.
+
+Values must be plain data that JSON can represent. A `Map`, a class instance or
+a function logs a warning and isn't persisted. When storage is blocked or full,
+Catalyst warns once and the state keeps working without being saved.
+
+Persistence is decided when a store is created, so a changed `data-persist`
+attribute applies after `Catalyst.refresh(scope)`. A refreshed store restores its
+stored values again. `Catalyst.clearPersisted(scope)` removes a running store's
+saved values, or every running store's without a scope, such as when a user logs
+out. State keeps its current values and is saved again the next time it changes.
+
+Server-rendered markup shows its own values until Catalyst starts. For a value
+that must not flash, such as a theme, save it in a cookie with an adapter so the
+server can render it, or apply it with an inline script in `<head>`.
+
+#### Storage adapters
+
+`local` and `session` save JSON to `localStorage` and `sessionStorage`. Register
+other storage as an adapter:
+
+```ts
+import type { StorageAdapter } from "@lucidclient/catalyst/types";
+
+const memory = new Map<string, unknown>();
+const memoryAdapter: StorageAdapter = {
+    get: (key) => memory.get(key),
+    set: (key, value) => memory.set(key, value),
+    remove: (key) => memory.delete(key),
+};
+
+Catalyst.start({
+    stores: { prefs },
+    persistence: {
+        prefix: "catalyst:",
+        storage: "local",
+        sync: false,
+        adapters: { memory: memoryAdapter },
+    },
+});
+```
+
+```html
+<div data-store="cart" data-state--open="false" data-persist--memory="open"></div>
+```
+
+Adapters receive values as they are and decide how to encode them. `get` returns
+`undefined` when nothing is stored, `set` is never passed `undefined`, and the
+optional `subscribe(key, onChange)` reports changes made elsewhere when sync is
+on, with `undefined` for a removed value, which resets the state to its starting
+value. HTML lowercases attribute names, so give adapters used in markup
+lowercase names. Adapters are read synchronously, because values are restored
+before the store is created.
+
 ### Stores and scopes
 
 Stores must have unique scope names, including when they are nested. A second
@@ -556,7 +682,8 @@ Catalyst.refresh("storeScope");
 Catalyst.destroy();
 ```
 
-`refresh` rebuilds a store, or every store, from scratch. Directives elsewhere
+`refresh` rebuilds a store, or every store, from scratch, restoring its
+persisted values from storage again. Directives elsewhere
 on the page that reference a rebuilt store, such as `dialog:$open`, are bound to
 the new store. `destroy` resets the running instance so it can be started again,
 even if a store's cleanup throws. Registered stores and reactions remain
@@ -579,8 +706,15 @@ Catalyst.start({
         prefix: "data-",
         store: "store",
         state: "state--",
+        persist: "persist",
         scopeSeparator: ":",
         specifierSeparator: "--",
+    },
+    persistence: {
+        prefix: "catalyst:",
+        storage: "local",
+        sync: false,
+        adapters: {},
     },
 });
 ```
