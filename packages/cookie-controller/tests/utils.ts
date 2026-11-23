@@ -13,9 +13,3 @@ export const click = (selector: string) => {
 	if (!element) throw new Error(`No element matches ${selector}`);
 	element.click();
 };
-
-/** Waits for Catalyst's batched writes and effects. */
-export const settle = async () => {
-	await Promise.resolve();
-	await new Promise((resolve) => setTimeout(resolve, 0));
-};

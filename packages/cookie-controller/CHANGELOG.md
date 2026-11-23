@@ -2,10 +2,6 @@
 
 ## v1.2.0 (unreleased)
 
-### Features:
-
-- Added `consentStore`, a Catalyst store imported from `@lucidclient/cookie-controller/catalyst`. Markup reads `$granted.{category}`, `$denied.{category}` and `$decided`, `data-model` on `$granted.{category}` saves that category straight away, and `@acceptAll`, `@rejectAll`, `@saveDetails`, `@openDetails` and `@closeDetails` call the matching methods. `@lucidclient/catalyst` 0.6 is an optional peer dependency, and sites that don't import the store don't load it.
-
 ### Breaking Changes:
 
 - Attributes follow the suite's `data-{namespace}--{specifier}` grammar. `data-cookie-action`, `data-cookie-category`, `data-cookie-details`, `data-cookie-alert` and `data-cookie-activated` are now `data-cookie--action`, `data-cookie--category`, `data-cookie--details`, `data-cookie--alert` and `data-cookie--activated`, so Tailwind variants such as `data-[cookie-alert=true]:` become `data-[cookie--alert=true]:`.

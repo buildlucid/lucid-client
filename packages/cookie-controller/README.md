@@ -19,7 +19,6 @@ A lightweight, bring your own markup and styles, cookie consent solution. Perfec
 - Accessibility: The library is fully accessible and as its attribute driven, you can easily customise the HTML to further meet your accessibility requirements.
 - Refresh: Pick up markup added or replaced after initialisation, such as after a client side navigation.
 - Destroy: Destroy the cookie controller instance and remove all event listeners. Useful for using within SPA's.
-- Catalyst: Bind any markup to the visitor's consent with an optional Catalyst store, imported on its own so it adds nothing for sites that don't use it.
 
 ## Examples
 
@@ -267,61 +266,6 @@ The `essential` category is always consented, and it always lists the `CookieCon
 #### Dynamic Markup
 
 Action elements work as soon as they are added to the page. If the `data-cookie--details` or `data-cookie--alert` elements, the category checkboxes, or consent gated scripts and media are added or replaced after `init`, such as after a client side navigation, call `refresh()`.
-
-## Catalyst
-
-`@lucidclient/cookie-controller/catalyst` exports `consentStore`, a [Catalyst](https://github.com/ProtoDigitalUK/lucid_client/tree/master/packages/catalyst) store that follows the visitor's consent, so any markup can show, hide or toggle with it. It is a separate import, so sites that don't use Catalyst don't load it. It needs `@lucidclient/catalyst` 0.6 or later.
-
-```typescript
-import Catalyst from "@lucidclient/catalyst";
-import { bind, events, model } from "@lucidclient/catalyst/reactions";
-import cookieController from "@lucidclient/cookie-controller";
-import { consentStore } from "@lucidclient/cookie-controller/catalyst";
-
-cookieController.init();
-
-Catalyst.start({
-  stores: { consent: consentStore },
-  reactions: [bind, events, model],
-});
-```
-
-```html
-<body data-store="consent">
-  <div data-bind--hidden="$granted.marketing">
-    <p>This video needs marketing cookies.</p>
-    <button data-cookie--action="accept" data-cookie--category="marketing">
-      Allow marketing cookies
-    </button>
-  </div>
-  <iframe
-    data-bind--hidden="$denied.marketing"
-    data-cookie--category="marketing"
-    data-cookie--src="https://www.youtube-nocookie.com/embed/VIDEO_ID"
-    title="Video"
-  ></iframe>
-
-  <label>
-    <input type="checkbox" data-model="$granted.analytics" />
-    Allow analytics cookies
-  </label>
-
-  <header data-store="nav">
-    <a href="/cookies" data-bind--hidden="consent:$decided">Choose your cookie settings</a>
-  </header>
-</body>
-```
-
-| Reference | Description |
-| --- | --- |
-| `$granted.{category}` | `true` when the category is consented. `essential` is always `true`. |
-| `$denied.{category}` | The opposite of `$granted`, as Catalyst references have no negation. |
-| `$decided` | `true` once the visitor has made a choice for the current policy version. |
-| `@acceptAll`, `@rejectAll`, `@saveDetails`, `@openDetails`, `@closeDetails` | Call the matching methods. |
-
-- The store follows every consent change, and starting Catalyst before or after `init` both work. Categories come from the checkboxes in the details element, so before `init` a category the visitor hasn't saved reads `undefined`, which leaves both of the `hidden` bindings above showing.
-- `data-model` on `$granted.{category}` saves that category as soon as it is toggled, as `updateConsent` does, and fires `onConsentChange` with the `update` type. Checkboxes in the details element still wait for Save. A change the library refuses, such as turning off `essential`, is put back.
-- Register the store under any scope, or several: each scope gets its own copy of the consent.
 
 ## Google Tag Manager
 

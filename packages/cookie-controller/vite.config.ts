@@ -2,7 +2,7 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
 	pack: {
-		entry: ["src/index.ts", "src/catalyst.ts"],
+		entry: ["src/index.ts"],
 		platform: "browser",
 		target: "es2022",
 		format: ["esm", "cjs"],
