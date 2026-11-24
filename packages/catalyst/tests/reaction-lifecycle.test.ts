@@ -189,6 +189,20 @@ describe("reaction lifecycle", () => {
 		);
 	});
 
+	it("refuses the form attribute", () => {
+		document.body.innerHTML = `<div data-store="reserved"></div>`;
+		const setup = vi.fn();
+		const form: Reaction = { name: "form", attribute: "form", setup };
+
+		Catalyst.start({ reactions: [form] });
+
+		expect(catalystWarnings()).toContainEqual(
+			expect.stringContaining(
+				'The "form" attribute is reserved for another Lucid Client package.',
+			),
+		);
+	});
+
 	it("warns when a different reaction reuses a registered name", () => {
 		document.body.innerHTML = `<div data-store="names"></div>`;
 		const impostor: Reaction = {

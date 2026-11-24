@@ -6,7 +6,12 @@ import { warn } from "./log.js";
  * Attributes other Lucid Client packages own, such as Cookie Controller's
  * `data-cookie--*`, so a reaction can't claim their markup.
  */
-const RESERVED_ATTRIBUTES = new Set(["carousel", "cookie", "speculate"]);
+const RESERVED_ATTRIBUTES = new Set([
+	"carousel",
+	"cookie",
+	"form",
+	"speculate",
+]);
 
 const registerReaction = (reaction: Reaction) => {
 	if (Catalyst.started) {

@@ -1139,10 +1139,10 @@ reference's value, and `context.getStore(scope)` returns a store's `key`,
 `element`, `state`, `setState`, `actions` and `refs`.
 
 Each reaction needs its own name and attribute. A reaction that reuses either is
-not registered, and Catalyst warns. The `carousel`, `cookie` and `speculate`
-attributes are reserved for Carousel, Cookie Controller and Speculate, so a
-reaction can't claim their `data-carousel--*`, `data-cookie--*` and
-`data-speculate--*` markup.
+not registered, and Catalyst warns. The `carousel`, `cookie`, `form` and
+`speculate` attributes are reserved for Carousel, Cookie Controller, Forms and
+Speculate, so a reaction can't claim their `data-carousel--*`, `data-cookie--*`,
+`data-form--*` and `data-speculate--*` markup.
 
 `setup` runs inside a Solid root that Catalyst disposes with the directive, so
 reactive primitives created there are cleaned up automatically. It must not
