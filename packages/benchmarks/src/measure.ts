@@ -4,7 +4,10 @@ import type { Step } from "./suite.ts";
 import "./harness.ts";
 
 /** A step that runs in the page, rather than in the runner. */
-type PageStep = Exclude<Step, { wait: number } | { resize: unknown }>;
+type PageStep = Exclude<
+	Step,
+	{ wait: number } | { settle: number } | { resize: unknown }
+>;
 
 type StepOptions = { step: PageStep; timed: boolean; settle: boolean };
 
@@ -80,10 +83,65 @@ const runStep = async ({ step, timed, settle }: StepOptions) => {
 	return duration;
 };
 
+/**
+ * How long a page must do no scripting, style or layout work to count as
+ * quiet, for steps that wait for a move to finish. Longer than the gaps
+ * libraries leave while a transition or smooth scroll runs off the main
+ * thread, and the delays they wait after scrolling before they settle.
+ */
+export const QUIET_MS = 300;
+
+/**
+ * How long a page must do no work before a timed step. Longer, as some
+ * libraries still do work a while after the page loads or after their last
+ * move, which would otherwise be counted against the step.
+ */
+export const QUIET_BEFORE_MS = 500;
+
+/** How often the runner reads the page's work while it waits for it to go quiet. */
+const POLL_MS = 50;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Waits until the page has done no scripting, style or layout work for
+ * `quiet` ms, once `min` ms have passed, or until `max` ms have passed,
+ * whichever comes first. Only for waits that aren't timed: reading the work
+ * while a library animates adds to it.
+ */
+export const settle = async (
+	session: Session,
+	{
+		quiet = QUIET_MS,
+		min = 0,
+		max,
+	}: { quiet?: number; min?: number; max: number },
+) => {
+	const start = performance.now();
+	let last = await session.busy();
+	let quietSince = start;
+	for (;;) {
+		await sleep(POLL_MS);
+		const now = performance.now();
+		const busy = await session.busy();
+		if (busy !== last) {
+			last = busy;
+			quietSince = now;
+		}
+		if (now - start >= max) return;
+		if (now - start >= min && now - quietSince >= quiet) return;
+	}
+};
+
 /** Performs an untimed step. */
-export const perform = async (page: Page, step: Step) => {
+export const perform = async (session: Session, step: Step) => {
+	const { page } = session;
 	if ("wait" in step) {
 		await page.waitForTimeout(step.wait);
+		return;
+	}
+	if ("settle" in step) {
+		await settle(session, { max: step.settle });
 		return;
 	}
 	if ("resize" in step) {
@@ -105,7 +163,7 @@ export const perform = async (page: Page, step: Step) => {
  * the step has almost nothing left to free and leaves no clean-up for the step.
  */
 export const time = async (page: Page, step: Step) => {
-	if ("wait" in step || "resize" in step)
+	if ("wait" in step || "settle" in step || "resize" in step)
 		throw new Error("Only `work` can measure a wait or a resize");
 	await page.evaluate(() => (globalThis as { gc?: () => void }).gc?.());
 	return page.evaluate(runStep, { step, timed: true, settle: true });
@@ -114,16 +172,19 @@ export const time = async (page: Page, step: Step) => {
 /**
  * Performs the timed step and returns, in ms, the scripting, style and layout
  * work the page did from the step until `settleMs` later, in every task,
- * frame, event and observer that followed. The page is left to go quiet and
- * garbage is collected first, so earlier work isn't counted.
+ * frame, event and observer that followed. The page is left to go quiet for
+ * `QUIET_BEFORE_MS` and garbage is collected first, so earlier work isn't
+ * counted. The page isn't read until the window ends, as reading its work
+ * while a library animates adds to it.
  */
 export const work = async (session: Session, step: Step, settleMs: number) => {
 	const { page } = session;
-	await page.waitForTimeout(250);
+	await settle(session, { quiet: QUIET_BEFORE_MS, max: 3000 });
 	await page.evaluate(() => (globalThis as { gc?: () => void }).gc?.());
 	const before = await session.busy();
 	if ("resize" in step) await page.setViewportSize(step.resize);
 	else if ("wait" in step) await page.waitForTimeout(step.wait);
+	else if ("settle" in step) throw new Error("A settle step can't be timed");
 	else await page.evaluate(runStep, { step, timed: true, settle: false });
 	await page.waitForTimeout(settleMs);
 	return (await session.busy()) - before;

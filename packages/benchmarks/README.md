@@ -22,7 +22,7 @@ npm run bench
 
 This builds Catalyst and the benchmark pages, checks every library's output, benchmarks them all and writes `results/catalyst.json`. A full run takes about five minutes. Commit the new results with the change that caused them.
 
-For the carousel suite, run `npm run bench:carousel`, which builds Lucid Carousel and writes `results/carousel.json`. Every scenario waits for the carousels to settle, so a full run takes about 40 minutes.
+For the carousel suite, run `npm run bench:carousel`, which builds Lucid Carousel and writes `results/carousel.json`. Every scenario waits for the carousels to settle, so a full run takes about 20 minutes.
 
 While working on one library, run the runner directly from this package:
 
@@ -39,16 +39,18 @@ The runner doesn't build Catalyst. Run `npm run bench` or build it first when yo
 ## How it works
 
 - Every page is built for production with Vite, served with cross-origin isolation headers so timers are precise to 5 µs, and opened in Playwright's Chromium.
-- Each sample opens its page in a fresh browser context. It runs the scenario's warm-up steps 5 times and its setup steps once, collects garbage, then times one step.
+- Each sample opens its page in a fresh browser context. It runs the scenario's warm-up steps 5 times and its setup steps once, collects garbage, then times one step. A scenario with `reset` steps instead opens and warms up one page per library, and resets it after each sample, as the carousel's navigation scenarios do.
 - A timed step starts with the click, call or typing that triggers it. It ends once the library has finished its work and the browser has recalculated styles and layout. Painting isn't timed, because every library renders the same DOM.
 - Libraries take turns in a different order each round, so a change in the machine's speed during a run doesn't favour one of them. Results are the median of 15 samples.
 - The runner keeps one CPU core busy while it runs. Otherwise the operating system slows the CPU down, or moves the page to an efficiency core, while the page is mostly idle, as it is while a carousel scrolls, and work spread over many frames measures several times slower than the same work done at once.
 - Memory is the JavaScript heap after garbage collection, from the Chrome DevTools Protocol. Size is the JavaScript a page loads, built on its own and compressed with gzip and brotli, and the CSS its code imports.
+- Nothing is timed while the output is checked, or while memory and size are measured, so those run several libraries at once. Samples are always timed one at a time.
 
 Scenarios measure one of two things:
 
 - `time`, the default, is the task the step runs in: from the step until the library's work and the browser's style and layout are done. The Catalyst suite measures this.
-- `work` adds up the JavaScript, style and layout work the browser reports, from the step until the scenario's `settleMs` has passed, across every frame, scroll event and observer that follows. The carousel suite measures this, as carousels spread their work over an animation. Painting isn't counted, because how much of it runs on the main thread depends on the GPU, and headless Chromium has none. The step runs in a task of its own, as a click would, since the browser doesn't count script that the runner evaluates in the page.
+- `work` adds up the JavaScript, style and layout work the browser reports, from the step until the scenario's `settleMs` has passed, across every frame, scroll event and observer that follows. Before the step, the page must have done no work for 500ms, so work left over from loading or setting up isn't counted. The page isn't read during the window, as reading its work while a library animates adds to it.
+- Steps that wait for a move to finish end once the page has done no work for 300ms, rather than waiting out a fixed time. 300ms is longer than the gaps carousels leave while a transition or smooth scroll runs off the main thread, and the delays they wait after scrolling before they settle. The carousel suite measures this, as carousels spread their work over an animation. Painting isn't counted, because how much of it runs on the main thread depends on the GPU, and headless Chromium has none. The step runs in a task of its own, as a click would, since the browser doesn't count script that the runner evaluates in the page.
 
 ## How it is organised
 

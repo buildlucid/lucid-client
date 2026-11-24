@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { brotliCompressSync, constants, gzipSync } from "node:zlib";
-import { build } from "./build.ts";
+import { buildAsync } from "./build.ts";
 
 type ManifestChunk = { file: string; imports?: string[]; css?: string[] };
 
@@ -31,7 +31,7 @@ export const measureSize = async (
 	outDir: string,
 	page: string,
 ): Promise<Size> => {
-	build(outDir, page);
+	await buildAsync(outDir, page);
 	const manifest: Record<string, ManifestChunk> = JSON.parse(
 		await readFile(join(outDir, ".vite/manifest.json"), "utf8"),
 	);

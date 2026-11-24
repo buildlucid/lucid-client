@@ -8,12 +8,13 @@
  * node src/run.ts catalyst --samples 5       take fewer samples, for a quick look
  * node src/run.ts catalyst --throttle 4      slow the CPU down 4 times, as on a mid-range phone
  *
- * Every sample opens its page in a fresh browser context.
+ * Every sample opens its page in a fresh browser context, except in scenarios
+ * with `reset` steps, which use one warmed-up page per library throughout.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { keepCpuBusy, launch, open } from "./browser.ts";
+import { keepCpuBusy, launch, open, type Session } from "./browser.ts";
 import { build, root } from "./build.ts";
 import {
 	countReplacedElements,
@@ -27,6 +28,7 @@ import {
 	packageVersion,
 } from "./environment.ts";
 import { perform, time, work } from "./measure.ts";
+import { pool } from "./pool.ts";
 import { serve } from "./server.ts";
 import { measureSize } from "./size.ts";
 import { geometricMean, median, summarise } from "./stats.ts";
@@ -38,6 +40,8 @@ const dist = join(root, "dist");
 const WARMUPS = 5;
 /** Fresh pages measured per library for the heap size. */
 const MEMORY_SAMPLES = 5;
+/** Pages the untimed phases, the output check and the heap sizes, open at once. */
+const PARALLEL = 6;
 
 const { values: args, positionals } = parseArgs({
 	allowPositionals: true,
@@ -99,9 +103,9 @@ const prepare = async (library: Library, scenario: Scenario) => {
 	);
 	try {
 		for (let round = 0; round < (scenario.warmups ?? WARMUPS); round++) {
-			for (const step of scenario.warmup) await perform(session.page, step);
+			for (const step of scenario.warmup) await perform(session, step);
 		}
-		for (const step of scenario.setup) await perform(session.page, step);
+		for (const step of scenario.setup) await perform(session, step);
 	} catch (error) {
 		await session.close();
 		throw error;
@@ -109,87 +113,122 @@ const prepare = async (library: Library, scenario: Scenario) => {
 	return session;
 };
 
-/** Runs every scenario once per library and checks the DOM matches the first library's. */
 /** Problems a scenario that isn't `strict` found, by `{scenario}/{library}`, for the results. */
 const notes = new Map<string, string>();
 
-const check = async () => {
+type Checked = { problems: string[]; html?: string };
+
+/** Runs a scenario once for a library, and checks what it renders and logs */
+const checkOne = async (
+	scenario: Scenario,
+	library: Library,
+): Promise<Checked> => {
+	const label = `${scenario.id} / ${library.id}`;
 	const problems: string[] = [];
-	for (const scenario of suite.scenarios) {
-		let expected: string | undefined;
-		for (const library of selected) {
-			const label = `${scenario.id} / ${library.id}`;
-			try {
-				const session = await prepare(library, scenario);
-				try {
-					if (scenario.keepsElements) {
-						await rememberElements(session.page, suite.root);
-					}
-					await perform(session.page, scenario.timed);
-					if (scenario.keepsElements) {
-						const replaced = await countReplacedElements(
-							session.page,
-							suite.root,
-						);
-						if (replaced > 0) {
-							problems.push(
-								`${label}: rendered ${replaced} elements again instead of keeping them.`,
-							);
-						}
-					}
-					for (const step of scenario.check ?? []) {
-						await perform(session.page, step);
-					}
-					if (suite.verify) {
-						const problem = await suite.verify(session.page, scenario);
-						if (problem && scenario.strict === false) {
-							notes.set(`${scenario.id}/${library.id}`, problem);
-							console.log(`Note for ${label}: ${problem}`);
-						} else if (problem) problems.push(`${label}: ${problem}`);
-					} else {
-						const html = await snapshot(session.page, suite.root);
-						expected ??= html;
-						const diff = difference(expected, html);
-						if (diff) problems.push(`${label}:\n${diff}`);
-					}
-					if (session.messages.length) {
-						problems.push(`${label} logged:\n${session.messages.join("\n")}`);
-					}
-				} finally {
-					await session.close();
-				}
-			} catch (error) {
-				problems.push(`${label}: ${String(error)}`);
+	let html: string | undefined;
+	try {
+		const session = await prepare(library, scenario);
+		try {
+			if (scenario.keepsElements) {
+				await rememberElements(session.page, suite.root);
 			}
+			await perform(session, scenario.timed);
+			if (scenario.keepsElements) {
+				const replaced = await countReplacedElements(session.page, suite.root);
+				if (replaced > 0) {
+					problems.push(
+						`${label}: rendered ${replaced} elements again instead of keeping them.`,
+					);
+				}
+			}
+			for (const step of scenario.check ?? []) await perform(session, step);
+			if (suite.verify) {
+				const problem = await suite.verify(session.page, scenario);
+				if (problem && scenario.strict === false) {
+					notes.set(`${scenario.id}/${library.id}`, problem);
+					console.log(`Note for ${label}: ${problem}`);
+				} else if (problem) problems.push(`${label}: ${problem}`);
+			} else {
+				html = await snapshot(session.page, suite.root);
+			}
+			if (session.messages.length) {
+				problems.push(`${label} logged:\n${session.messages.join("\n")}`);
+			}
+		} finally {
+			await session.close();
 		}
+	} catch (error) {
+		problems.push(`${label}: ${String(error)}`);
 	}
+	return { problems, html };
+};
+
+/**
+ * Runs every scenario once per library, several at a time as nothing is
+ * timed, and checks each library's output: with the suite's `verify`, or
+ * against the DOM the first library renders
+ */
+const check = async () => {
+	const runs = suite.scenarios.flatMap((scenario) =>
+		selected.map((library) => ({ scenario, library })),
+	);
+	const results = await pool(
+		runs.map(
+			({ scenario, library }) =>
+				() =>
+					checkOne(scenario, library),
+		),
+		PARALLEL,
+	);
+	const problems: string[] = [];
+	results.forEach(({ problems: found, html }, index) => {
+		problems.push(...found);
+		const run = runs[index];
+		if (html === undefined || !run) return;
+		const first =
+			results[runs.findIndex((other) => other.scenario === run.scenario)];
+		const diff = first?.html === undefined ? "" : difference(first.html, html);
+		if (diff) problems.push(`${run.scenario.id} / ${run.library.id}:\n${diff}`);
+	});
 	return problems;
 };
 
-/** Times every scenario for every library, `samples` times each. */
+/**
+ * Times every scenario for every library, `samples` times each. A scenario
+ * with `reset` steps keeps each library's page open between rounds, putting
+ * it back to its starting state after each sample.
+ */
 const measure = async () => {
 	const times = new Map<string, number[]>();
-	for (let round = 0; round < samples; round++) {
-		console.log(`Round ${round + 1} of ${samples}`);
-		// Libraries take turns in a different order each round, so a change in
-		// the machine's speed during the run doesn't favour one of them.
-		const shift = round % selected.length;
-		const order = [...selected.slice(shift), ...selected.slice(0, shift)];
-		for (const scenario of suite.scenarios) {
-			for (const library of order) {
-				const session = await prepare(library, scenario);
-				try {
+	const kept = new Map<string, Session>();
+	try {
+		for (let round = 0; round < samples; round++) {
+			console.log(`Round ${round + 1} of ${samples}`);
+			// Libraries take turns in a different order each round, so a change in
+			// the machine's speed during the run doesn't favour one of them.
+			const shift = round % selected.length;
+			const order = [...selected.slice(shift), ...selected.slice(0, shift)];
+			for (const scenario of suite.scenarios) {
+				for (const library of order) {
 					const key = `${scenario.id}/${library.id}`;
-					const ms =
-						scenario.metric === "work"
-							? await work(session, scenario.timed, scenario.settleMs ?? 1000)
-							: await time(session.page, scenario.timed);
-					times.set(key, [...(times.get(key) ?? []), ms]);
-				} finally {
-					await session.close();
+					const session = kept.get(key) ?? (await prepare(library, scenario));
+					if (scenario.reset) kept.set(key, session);
+					try {
+						const ms =
+							scenario.metric === "work"
+								? await work(session, scenario.timed, scenario.settleMs ?? 1000)
+								: await time(session.page, scenario.timed);
+						times.set(key, [...(times.get(key) ?? []), ms]);
+						for (const step of scenario.reset ?? [])
+							await perform(session, step);
+					} finally {
+						if (!scenario.reset) await session.close();
+					}
 				}
 			}
 		}
+	} finally {
+		for (const session of kept.values()) await session.close();
 	}
 	return times;
 };
@@ -206,7 +245,7 @@ const measureMemory = async (library: Library) => {
 		);
 		try {
 			ready.push(await session.heap());
-			for (const step of suite.memory.steps) await perform(session.page, step);
+			for (const step of suite.memory.steps) await perform(session, step);
 			after.push(await session.heap());
 		} finally {
 			await session.close();
@@ -283,23 +322,26 @@ try {
 			}))
 			.sort((a, b) => a.geometricMean - b.geometricMean);
 
-		console.log("Measuring memory…");
-		const memory = [];
-		for (const library of selected) {
-			memory.push({ library: library.id, ...(await measureMemory(library)) });
-		}
-
-		console.log("Measuring size…");
-		const sizes = [];
-		for (const library of selected) {
-			sizes.push({
-				library: library.id,
-				...(await measureSize(
-					join(dist, "size", library.id),
-					`${suite.id}/pages/${library.id}/${suite.size.page}.html`,
-				)),
-			});
-		}
+		// Neither is timed, so the libraries are measured side by side.
+		console.log("Measuring memory and size…");
+		const [memory, sizes] = await Promise.all([
+			pool(
+				selected.map((library) => async () => ({
+					library: library.id,
+					...(await measureMemory(library)),
+				})),
+				PARALLEL,
+			),
+			Promise.all(
+				selected.map(async (library) => ({
+					library: library.id,
+					...(await measureSize(
+						join(dist, "size", library.id),
+						`${suite.id}/pages/${library.id}/${suite.size.page}.html`,
+					)),
+				})),
+			),
+		]);
 
 		const results = {
 			suite: suite.id,

@@ -5,11 +5,17 @@ import type { ExpectedSlides } from "./verify.ts";
 const next: Step = { click: "[data-bench-next]" };
 const prev: Step = { click: "[data-bench-prev]" };
 
-/** Long enough for any library's slide animation or smooth scroll to finish. */
+/**
+ * Long enough for any library's slide animation or smooth scroll to finish.
+ * Waits between steps end sooner once the page goes quiet.
+ */
 const SETTLE = 1000;
 
+/** Waits for a move to finish, until the page goes quiet. */
+const settled: Step = { settle: SETTLE };
+
 /** Warms up the navigation code before timing, waiting out each move. */
-const navigate: Step[] = [next, { wait: SETTLE }, prev, { wait: SETTLE }];
+const navigate: Step[] = [next, settled, prev, settled];
 
 const expect = (...slides: ExpectedSlides): ExpectedSlides => slides;
 
@@ -32,7 +38,7 @@ export const scenarios: Scenario[] = [
 		timed: { call: "start" },
 		metric: "work",
 		settleMs: SETTLE,
-		check: [next, { wait: SETTLE }],
+		check: [next, settled],
 		expected: expect({ carousel: 0, slide: 1 }, { carousel: 19, slide: 0 }),
 	},
 	{
@@ -47,7 +53,7 @@ export const scenarios: Scenario[] = [
 		timed: { call: "start" },
 		metric: "work",
 		settleMs: SETTLE,
-		check: [next, { wait: SETTLE }],
+		check: [next, settled],
 		expected: expect({ carousel: 0, slide: 1 }),
 	},
 	{
@@ -60,6 +66,7 @@ export const scenarios: Scenario[] = [
 		warmup: navigate,
 		warmups: 2,
 		setup: [],
+		reset: [prev, settled],
 		timed: next,
 		metric: "work",
 		settleMs: SETTLE,
@@ -75,6 +82,7 @@ export const scenarios: Scenario[] = [
 		warmup: navigate,
 		warmups: 2,
 		setup: [],
+		reset: [{ call: "dot", args: [0] }, settled],
 		timed: { call: "dot", args: [7] },
 		metric: "work",
 		settleMs: SETTLE,
@@ -88,7 +96,7 @@ export const scenarios: Scenario[] = [
 		features: ["Measuring", "Resize"],
 		page: "navigation",
 		warmup: [],
-		setup: [{ call: "dot", args: [3] }, { wait: SETTLE }],
+		setup: [{ call: "dot", args: [3] }, settled],
 		timed: { resize: { width: 900, height: 720 } },
 		metric: "work",
 		settleMs: SETTLE,

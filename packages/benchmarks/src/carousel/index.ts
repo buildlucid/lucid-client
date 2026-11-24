@@ -21,7 +21,7 @@ const suite: Suite = {
 		page: "start-up",
 		description:
 			"The JavaScript heap of the start-up page when it has loaded, and once its 20 carousels have started, after collecting garbage.",
-		steps: [{ call: "render" }, { call: "start" }, { wait: 1000 }],
+		steps: [{ call: "render" }, { call: "start" }, { settle: 1000 }],
 	},
 	size: {
 		page: "navigation",

@@ -2,14 +2,16 @@ import type { Page } from "playwright";
 
 /**
  * One thing a sample does: click an element, call a function the page exposes
- * with `defineHarness`, type a value into a field, wait, or resize the
- * browser window.
+ * with `defineHarness`, type a value into a field, wait, wait for the page to
+ * go quiet, or resize the browser window.
  */
 export type Step =
 	| { click: string }
 	| { call: string; args?: unknown[] }
 	| { input: string; value: string }
 	| { wait: number }
+	/** Waits until the page has done no work for a moment, for at most this many ms */
+	| { settle: number }
 	| { resize: { width: number; height: number } };
 
 export type Scenario = {
@@ -26,6 +28,12 @@ export type Scenario = {
 	warmups?: number;
 	/** Steps run once after warming up, to put the page in its starting state. */
 	setup: Step[];
+	/**
+	 * Steps that bring the page back to its starting state after the timed
+	 * step. With them, each library's page is opened and warmed up once and
+	 * used for every sample, instead of a fresh page each time.
+	 */
+	reset?: Step[];
 	/** The step that is timed. */
 	timed: Step;
 	/**
