@@ -50,9 +50,9 @@
 </div>
 
 <!-- Settings -->
-<div
+<dialog
 	data-cookie--details
-	class="fixed top-0 left-0 bottom-0 bg-black w-full md:w-[500px] -translate-x-full data-[cookie--details=true]:translate-x-0 data-[cookie--details=false]:-translate-x-full overflow-y-auto p-7 text-white h-screen flex flex-col justify-between transition-transform duration-200 z-50"
+	class="m-0 max-h-none max-w-none fixed top-0 left-0 bottom-0 bg-black w-full md:w-[500px] -translate-x-full data-[cookie--details=true]:translate-x-0 data-[cookie--details=false]:-translate-x-full overflow-y-auto p-7 text-white h-screen flex-col justify-between transition-transform duration-200 z-50 open:flex backdrop:bg-black/50"
 	aria-labelledby="cookie-details-title-2"
 >
 	<div>
@@ -177,14 +177,16 @@
 	>
 		Save preferences
 	</button>
-</div>
+</dialog>
 
 <!-- Toggle Btn -->
 <button
 	data-cookie--action="details"
+	aria-label="Cookie settings"
 	class="flex items-center justify-center fixed bottom-5 right-5 h-14 w-14 rounded-full bg-black"
 >
 	<svg
+		aria-hidden="true"
 		xmlns="http://www.w3.org/2000/svg"
 		height="16"
 		width="16"
@@ -196,3 +198,9 @@
 		></path>
 	</svg>
 </button>
+
+<!-- Status: confirms each choice, and takes focus when a choice hides the button that had it -->
+<p
+	data-cookie--status
+	class="fixed bottom-5 left-5 rounded-md bg-black text-white [&:not(:empty)]:px-4 [&:not(:empty)]:py-2"
+></p>

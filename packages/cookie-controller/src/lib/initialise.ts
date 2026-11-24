@@ -21,21 +21,22 @@ const initialise = (initOptions?: Partial<Options>) => {
 			...initOptions?.storage,
 			expires: initOptions?.storage?.expires ?? C.defaultExpires,
 		},
+		messages: initOptions?.messages ?? {},
 	};
 
 	S.elements = lib.getElements();
 	S.abortController = new AbortController();
 	S.alertClosed = false;
+	S.warnings = new Set();
 
 	if (!S.elements.details) {
-		lib.log("warn", "No details element has been found.");
+		if (__DEV__) lib.log("warn", "No details element has been found.");
 		return;
 	}
 
 	const { state, previousVersion } = lib.getCookieState();
 	S.state = state;
-	lib.setAttributes("static");
-	lib.setAttributes("dynamic");
+	lib.setAttributes();
 
 	lib.detailsState.set(false);
 	lib.alertState.set(!S.state.decided);

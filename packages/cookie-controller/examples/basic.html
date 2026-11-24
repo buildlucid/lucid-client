@@ -1,4 +1,5 @@
-<div data-cookie--details>
+<dialog data-cookie--details aria-labelledby="cookie-details-title" hidden>
+	<h2 id="cookie-details-title">Cookie settings</h2>
 	<button data-cookie--action="dismiss">Close</button>
 	<button data-cookie--action="accept">Accept Recommended</button>
 	<button data-cookie--action="reject">Reject</button>
@@ -16,9 +17,9 @@
 		</li>
 	</ul>
 	<button data-cookie--action="save">Save My Preferences</button>
-</div>
+</dialog>
 
-<div data-cookie--alert>
+<div data-cookie--alert aria-label="Cookies on Example" hidden>
 	<button data-cookie--action="accept">Accept All</button>
 	<button data-cookie--action="reject">Reject</button>
 	<button data-cookie--action="details">Details</button>
@@ -26,3 +27,5 @@
 </div>
 
 <button data-cookie--action="details">Open Cookie Modal</button>
+
+<p data-cookie--status></p>

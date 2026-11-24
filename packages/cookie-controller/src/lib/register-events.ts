@@ -50,6 +50,24 @@ const onDetailsCancel = (event: Event) => {
 };
 
 /**
+ * Closes a details element that isn't a `<dialog>` with Escape, as a dialog closes
+ */
+const onDetailsKeydown = (event: KeyboardEvent) => {
+	const details = S.elements?.details;
+	if (
+		event.key !== "Escape" ||
+		event.defaultPrevented ||
+		!details ||
+		details instanceof HTMLDialogElement ||
+		!lib.detailsState.get() ||
+		!(event.target instanceof Node && details.contains(event.target))
+	)
+		return;
+	event.preventDefault();
+	lib.closeDetails();
+};
+
+/**
  * Register the required event listeners
  * - Listeners live on the document, so action elements added after initialisation work without a refresh
  * - `cancel` does not bubble, so it is listened for in the capture phase
@@ -62,6 +80,7 @@ const registerEvents = () => {
 		capture: true,
 		signal,
 	});
+	document.addEventListener("keydown", onDetailsKeydown, { signal });
 };
 
 export default registerEvents;

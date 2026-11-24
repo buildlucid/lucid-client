@@ -1,6 +1,5 @@
 import C from "../constants.js";
 import S from "../state.js";
-import lib from "./index.js";
 
 /**
  * Sets the alert modal state - open/close
@@ -11,7 +10,6 @@ const setAlertState = (modalState: boolean) => {
 		modalState ? "true" : "false",
 	);
 	S.elements?.alert?.toggleAttribute("hidden", !modalState);
-	lib.setAttributes("dynamic");
 };
 
 /**

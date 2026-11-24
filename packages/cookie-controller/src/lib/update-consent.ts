@@ -5,12 +5,12 @@ import lib from "./index.js";
 /**
  * Updates the consent for individual cookie categories
  * - Unlisted categories keep their saved value, or stay off if the visitor has not decided yet
- * - Saves the decision, closes the alert and fires the onConsentChange update callback
+ * - Saves the decision, closes the alert, fires the onConsentChange update callback and writes the status
  * - Leaves the details modal open, updating its checkboxes for the changed categories
  */
 const updateConsent = (categories: Record<string, boolean>) => {
 	if (!S.initialised) {
-		lib.log("warn", "Call init before updating cookie consent.");
+		if (__DEV__) lib.log("warn", "Call init before updating cookie consent.");
 		return;
 	}
 
@@ -18,14 +18,16 @@ const updateConsent = (categories: Record<string, boolean>) => {
 	const updated: string[] = [];
 	for (const [key, consented] of Object.entries(categories)) {
 		if (key === "essential") {
-			lib.log("warn", 'The "essential" category is always consented.');
+			if (__DEV__)
+				lib.log("warn", 'The "essential" category is always consented.');
 			continue;
 		}
 		if (!Object.hasOwn(next, key)) {
-			lib.log(
-				"warn",
-				`Unknown cookie category "${key}". Add a checkbox with ${C.attributes.cookieCategory}="${key}" to the details element.`,
-			);
+			if (__DEV__)
+				lib.log(
+					"warn",
+					`Unknown cookie category "${key}". Add a checkbox with ${C.attributes.cookieCategory}="${key}" to the details element.`,
+				);
 			continue;
 		}
 		next[key] = consented === true;
@@ -42,6 +44,7 @@ const updateConsent = (categories: Record<string, boolean>) => {
 
 	lib.alertState.set(false);
 	lib.onConsentChange("update");
+	lib.confirm("update");
 };
 
 export default updateConsent;

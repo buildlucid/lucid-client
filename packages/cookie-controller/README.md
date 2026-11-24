@@ -16,7 +16,9 @@ A lightweight, bring your own markup and styles, cookie consent solution. Perfec
 - Consent Records: Use the generated UUID and the consent callback to record the users consent within your own system.
 - Versioning: Ask for fresh consent when the cookie policy version changes.
 - Storage Config: Confure the cookie used to store the users preferences.
-- Accessibility: The library is fully accessible and as its attribute driven, you can easily customise the HTML to further meet your accessibility requirements.
+- Accessibility: Follows GOV.UK's cookie banner pattern, with a named banner that doesn't interrupt, a modal `<dialog>` for settings, focus that is never lost, and a status that confirms each choice. See [Accessibility](#accessibility).
+- Translatable: Every message the library writes can be set in `init` or with attributes. See [Messages](#messages).
+- Development Warnings: Markup mistakes are pointed out while you develop, and left out of production builds.
 - Refresh: Pick up markup added or replaced after initialisation, such as after a client side navigation.
 - Destroy: Destroy the cookie controller instance and remove all event listeners. Useful for using within SPA's.
 
@@ -125,6 +127,10 @@ type Options = {
    * Configure the options for the cookie used to store the user's preferences
    */
   storage?: StorageOptions;
+  /**
+   * The text the library writes, for translating or rewording. See Messages.
+   */
+  messages?: Partial<Messages>;
 };
 ```
 
@@ -134,7 +140,7 @@ type Options = {
 | --- | --- |
 | `init(options?)` | Initialises the library. Calling it again re-initialises it. |
 | `refresh()` | Re-queries the markup and re-applies its attributes and visibility, without re-reading the cookie or firing callbacks. |
-| `destroy()` | Removes all event listeners. |
+| `destroy()` | Removes all event listeners and the accessibility attributes the library added. |
 | `getConsent()` | Returns the consent for every category, for example `{ analytics: false, marketing: true, essential: true }`. |
 | `getConsent(category)` | Returns whether a category is consented. `"essential"` is always `true`, and unknown categories return `undefined`. |
 | `updateConsent(categories)` | Updates individual categories, for example `{ marketing: true }`. Other categories keep their saved value, or stay off if the visitor has not decided yet. Saves the decision, closes the alert and fires `onConsentChange` with the `update` type. |
@@ -178,7 +184,7 @@ On each page, include one `data-cookie--details` element and, optionally, one `d
   <button data-cookie--action="save">Save My Preferences</button>
 </dialog>
 
-<div data-cookie--alert hidden>
+<div data-cookie--alert aria-label="Cookies on Example" hidden>
   <button data-cookie--action="accept">Accept All</button>
   <button data-cookie--action="reject">Reject</button>
   <button data-cookie--action="details">Details</button>
@@ -186,11 +192,13 @@ On each page, include one `data-cookie--details` element and, optionally, one `d
 </div>
 
 <button data-cookie--action="details">Open Cookie Modal</button>
+
+<p data-cookie--status></p>
 ```
 
 > For a styled example, see `examples/tailwind.html`.
 
-Use a native `<dialog>` for the details element to get modal focus management and Escape-to-close. Checkbox edits take effect after Save.
+Use a native `<dialog>` for the details element to get modal focus management and Escape-to-close. Checkbox edits take effect after Save. The `data-cookie--status` element confirms each choice. See [Accessibility](#accessibility).
 
 A `dismiss` action closes whichever element it is in:
 
@@ -267,6 +275,64 @@ The `essential` category is always consented, and it always lists the `CookieCon
 
 Action elements work as soon as they are added to the page. If the `data-cookie--details` or `data-cookie--alert` elements, the category checkboxes, or consent gated scripts and media are added or replaced after `init`, such as after a client side navigation, call `refresh()`.
 
+## Accessibility
+
+The library follows GOV.UK's [cookie banner](https://design-system.service.gov.uk/components/cookie-banner/) pattern and fills in what the markup leaves out. Anything you set yourself is kept, and `destroy` removes what the library added.
+
+- A `div` alert gets `role="region"`, and an alert without a name gets `aria-label="Cookie consent"`, so it can be found as a landmark. It doesn't take focus or read itself out when it appears.
+- A `<dialog>` details element opens with `showModal()`, which keeps focus inside it until it closes, and Escape closes it without saving. Any other element gets `role="dialog"` and `tabindex="-1"`, takes focus when it opens and closes with Escape, but isn't modal.
+- A details element without a name gets `aria-label="Cookie settings"`, and `details` actions get `aria-controls`.
+- Closing the details element gives focus back to the element that opened it, once the alert it may be in is showing again.
+- `data-cookie--status` elements become polite live regions, and say what was chosen after each decision, such as "Your cookie preferences have been saved." When a decision hides the element that had focus, focus moves to the first status element rather than being lost.
+
+Your markup and CSS still need to:
+
+- Put the alert at the start of the `<body>`, so it is the first thing keyboard and screen reader users reach.
+- Keep a sticky or fixed alert from covering focused content (WCAG 2.4.11). Leave it in the page flow, or add `scroll-padding` the height of the alert.
+- Keep the status in the page from the start rather than `display: none`, so screen readers know of it before it is written to. A visible message, as GOV.UK shows, also shows sighted keyboard users where focus went.
+- Give every category checkbox a `<label>`. Use checkboxes or radios rather than `role="switch"`, as a switch suggests a choice takes effect straight away, and these take effect on Save.
+- Give Accept and Reject the same prominence, and show a focus style on every control.
+
+The [development build](#development-build) warns about a details element that isn't a `<dialog>` and a category checkbox without a label.
+
+## Messages
+
+Translate or reword the text the library writes. `init` sets the messages:
+
+```typescript
+cookieController.init({
+  messages: {
+    alert: "Consentement aux cookies",
+    details: "Paramètres des cookies",
+    accepted: "Vous avez accepté tous les cookies.",
+    rejected: "Vous avez refusé les cookies facultatifs.",
+    saved: "Vos préférences ont été enregistrées.",
+    updated: "Vos préférences ont été mises à jour.",
+  },
+});
+```
+
+A status element can set its own with `data-cookie--message-{name}` attributes, which win over `init`:
+
+```html
+<p data-cookie--status data-cookie--message-saved="Vos préférences ont été enregistrées."></p>
+```
+
+`alert` and `details` are only used for elements without an `aria-label` or `aria-labelledby`, so on a translated page, name them in the markup. An empty message passed to `init` writes nothing.
+
+| Message | Default | Used for |
+| --- | --- | --- |
+| `alert` | `Cookie consent` | The alert's name, when it has none. |
+| `details` | `Cookie settings` | The details element's name, when it has none. |
+| `accepted` | `You've accepted all cookies.` | The status after `accept`. |
+| `rejected` | `You've rejected optional cookies.` | The status after `reject`. |
+| `saved` | `Your cookie preferences have been saved.` | The status after `save`. |
+| `updated` | `Your cookie preferences have been updated.` | The status after one category is accepted or rejected, or after `updateConsent`. |
+
+## Development Build
+
+The library warns about markup it can't work with, such as a missing details element, a details element that isn't a `<dialog>`, a category checkbox without a label, or an unknown category passed to `updateConsent`. Warnings only log in the development build, which bundlers such as Vite and webpack pick through the `development` export condition while you develop. Production builds leave them out.
+
 ## Google Tag Manager
 
 Google consent mode loads the Google tag on every page with consent denied, and Tag Manager only runs each tag once its consent types are granted. Set the default in the `<head>`, before the Tag Manager snippet:
@@ -320,7 +386,7 @@ Here are some tips for achieving compliance:
 - Define Cookie Controls: Clearly define what each checkbox controls, providing details like the name, duration, and purpose of the cookies.
 - Necessary Cookies: Inform users about necessary cookies. These are for informational purposes only, so do not give them a `data-cookie--category` checkbox they can toggle. The `essential` category is always consented, and a checkbox with `data-cookie--category="essential"` is shown checked and disabled.
 - Equal Prominence: Ensure 'Accept' and 'Reject' options are equally prominent in your design.
-- Accessibility: Make sure the cookie controller is accessible to all users.
+- Accessibility: See [Accessibility](#accessibility) for what the library does and what your markup needs.
 - Consent Recording: Save the consent data to ensure compliance with the consent recording requirements of GDPR.
 - Consent Lifetime: Choices are kept for 180 days by default, then visitors are asked again. Change this with `storage.expires`, keeping in mind that some regulators, such as France's CNIL, recommend asking again at least every 6 months.
 

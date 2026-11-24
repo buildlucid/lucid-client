@@ -1,0 +1,192 @@
+import { describe, expect, it, vi } from "vite-plus/test";
+import cookieController from "../src/index.js";
+import { click } from "./utils.js";
+
+const $ = <E extends HTMLElement = HTMLElement>(selector: string) => {
+	const element = document.querySelector<E>(selector);
+	if (!element) throw new Error(`No element matches ${selector}`);
+	return element;
+};
+
+const press = (element: Element, key: string) =>
+	element.dispatchEvent(
+		new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
+	);
+
+const dialog = `
+	<dialog data-cookie--details hidden>
+		<label><input type="checkbox" data-cookie--category="analytics" /> Analytics</label>
+		<label><input type="checkbox" data-cookie--category="marketing" /> Marketing</label>
+		<button id="close" data-cookie--action="dismiss">Close</button>
+		<button id="save" data-cookie--action="save">Save</button>
+	</dialog>
+`;
+
+const alert = `
+	<div data-cookie--alert hidden>
+		<button id="accept" data-cookie--action="accept">Accept</button>
+		<button id="settings" data-cookie--action="details">Settings</button>
+	</div>
+`;
+
+describe("accessibility", () => {
+	it("makes the alert a named region rather than an alert", () => {
+		document.body.innerHTML = dialog + alert;
+		cookieController.init();
+		const banner = $("[data-cookie--alert]");
+		expect(banner.getAttribute("role")).toBe("region");
+		expect(banner.getAttribute("aria-label")).toBe("Cookie consent");
+		expect(banner.hasAttribute("aria-live")).toBe(false);
+		expect(banner.hasAttribute("aria-hidden")).toBe(false);
+	});
+
+	it("keeps the markup's own roles and names", () => {
+		document.body.innerHTML = `${dialog.replace("<dialog data-cookie--details", '<dialog data-cookie--details aria-labelledby="title"')}<h2 id="title">Settings</h2>
+			<aside data-cookie--alert aria-label="Cookies on Example"></aside>`;
+		cookieController.init();
+		expect($("aside").hasAttribute("role")).toBe(false);
+		expect($("aside").getAttribute("aria-label")).toBe("Cookies on Example");
+		expect($("dialog").hasAttribute("aria-label")).toBe(false);
+	});
+
+	it("names a <dialog> without making it modal itself, and leaves its triggers alone", () => {
+		document.body.innerHTML = dialog + alert;
+		cookieController.init();
+		const details = $("dialog");
+		expect(details.hasAttribute("role")).toBe(false);
+		expect(details.hasAttribute("aria-modal")).toBe(false);
+		expect(details.getAttribute("aria-label")).toBe("Cookie settings");
+		const trigger = $("#settings");
+		expect(trigger.getAttribute("aria-controls")).toBe(details.id);
+		expect(trigger.hasAttribute("aria-expanded")).toBe(false);
+		expect(trigger.hasAttribute("aria-haspopup")).toBe(false);
+	});
+
+	it("translates its names with the messages passed to init", () => {
+		document.body.innerHTML = dialog + alert;
+		cookieController.init({
+			messages: { alert: "Consentement aux cookies", details: "Paramètres" },
+		});
+		expect($("[data-cookie--alert]").getAttribute("aria-label")).toBe(
+			"Consentement aux cookies",
+		);
+		expect($("dialog").getAttribute("aria-label")).toBe("Paramètres");
+	});
+
+	it("removes what it added on destroy", () => {
+		document.body.innerHTML = `${dialog}${alert}<p data-cookie--status>Ready</p>`;
+		cookieController.init();
+		click("#accept");
+		cookieController.destroy();
+		for (const element of document.querySelectorAll(
+			"[data-cookie--alert], dialog, [data-cookie--status]",
+		)) {
+			for (const name of [
+				"role",
+				"aria-label",
+				"id",
+				"tabindex",
+				"aria-atomic",
+			])
+				expect(element.hasAttribute(name)).toBe(false);
+		}
+		expect($("#settings").hasAttribute("aria-controls")).toBe(false);
+		expect($("[data-cookie--status]").textContent).toBe("Ready");
+	});
+
+	it("warns about a details element that isn't a dialog and an unlabelled checkbox", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		document.body.innerHTML = `<div data-cookie--details><input type="checkbox" data-cookie--category="analytics" /></div>`;
+		cookieController.init();
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining("isn't a <dialog>"),
+		);
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining('The "analytics" category checkbox has no label'),
+		);
+		warn.mockRestore();
+	});
+});
+
+describe("focus", () => {
+	it("gives focus back to a trigger in the alert once the details close", () => {
+		document.body.innerHTML = dialog + alert;
+		cookieController.init();
+		const settings = $("#settings");
+		settings.focus();
+		click("#settings");
+		expect($("[data-cookie--alert]").hidden).toBe(true);
+		click("#close");
+		expect($("[data-cookie--alert]").hidden).toBe(false);
+		expect(document.activeElement).toBe(settings);
+	});
+
+	it("moves focus to the status once a decision hides what held it", () => {
+		document.body.innerHTML = `${dialog}${alert}<p data-cookie--status></p>`;
+		cookieController.init();
+		const status = $("[data-cookie--status]");
+		expect(status.getAttribute("role")).toBe("status");
+		$("#accept").focus();
+		click("#accept");
+		expect(status.textContent).toBe("You've accepted all cookies.");
+		expect(document.activeElement).toBe(status);
+	});
+
+	it("leaves focus on a trigger that is still showing", () => {
+		document.body.innerHTML = `${dialog}<button id="footer" data-cookie--action="details">Cookie settings</button><p data-cookie--status></p>`;
+		cookieController.init();
+		const footer = $("#footer");
+		footer.focus();
+		click("#footer");
+		click("#save");
+		expect($("[data-cookie--status]").textContent).toBe(
+			"Your cookie preferences have been saved.",
+		);
+		expect(document.activeElement).toBe(footer);
+	});
+
+	it("focuses a details element that isn't a dialog, and closes it with Escape", () => {
+		vi.spyOn(console, "warn").mockImplementation(() => {});
+		document.body.innerHTML = `<div data-cookie--details hidden><button id="close" data-cookie--action="dismiss">Close</button></div>
+			<button id="open" data-cookie--action="details">Cookie settings</button>`;
+		cookieController.init();
+		const details = $("[data-cookie--details]");
+		expect(details.getAttribute("role")).toBe("dialog");
+		expect(details.hasAttribute("aria-modal")).toBe(false);
+		const open = $("#open");
+		open.focus();
+		click("#open");
+		expect(document.activeElement).toBe(details);
+		press($("#close"), "Escape");
+		expect(details.hidden).toBe(true);
+		expect(document.activeElement).toBe(open);
+	});
+});
+
+describe("status messages", () => {
+	it("uses the status element's own messages, then init's", () => {
+		document.body.innerHTML = `${dialog}${alert}
+			<p data-cookie--status data-cookie--message-saved="Préférences enregistrées."></p>`;
+		cookieController.init({ messages: { accepted: "Cookies acceptés." } });
+		const status = $("[data-cookie--status]");
+		click("#accept");
+		expect(status.textContent).toBe("Cookies acceptés.");
+		cookieController.openDetails();
+		click("#save");
+		expect(status.textContent).toBe("Préférences enregistrées.");
+	});
+
+	it("writes a repeated message again, so it is read again", async () => {
+		vi.useFakeTimers();
+		document.body.innerHTML = `${dialog}<p data-cookie--status></p>`;
+		cookieController.init();
+		const status = $("[data-cookie--status]");
+		cookieController.rejectAll();
+		expect(status.textContent).toBe("You've rejected optional cookies.");
+		cookieController.rejectAll();
+		expect(status.textContent).toBe("");
+		await vi.advanceTimersByTimeAsync(100);
+		expect(status.textContent).toBe("You've rejected optional cookies.");
+		vi.useRealTimers();
+	});
+});

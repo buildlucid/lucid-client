@@ -11,6 +11,21 @@ export type StorageOptions = {
 	expires?: number | Date;
 };
 
+export type Messages = {
+	/** The `aria-label` of a `data-cookie--alert` element without a name. Defaults to `"Cookie consent"` */
+	alert: string;
+	/** The `aria-label` of a `data-cookie--details` element without a name. Defaults to `"Cookie settings"` */
+	details: string;
+	/** Written to `data-cookie--status` after every category is accepted. `""` writes nothing. */
+	accepted: string;
+	/** Written to `data-cookie--status` after every optional category is rejected */
+	rejected: string;
+	/** Written to `data-cookie--status` after the details checkboxes are saved */
+	saved: string;
+	/** Written to `data-cookie--status` after categories are updated one at a time, such as from an embed placeholder */
+	updated: string;
+};
+
 export type Options = {
 	/**
 	 * A list of cookies that get added when a certain category is consented
@@ -39,6 +54,10 @@ export type Options = {
 	 * Configure the options for the cookie used to store the user's preferences
 	 */
 	storage: StorageOptions;
+	/**
+	 * The text the library writes, for translating or rewording. A status element's own `data-cookie--message-{name}` attributes win over these.
+	 */
+	messages: Partial<Messages>;
 };
 
 export type ConsentChange = {
@@ -85,7 +104,8 @@ export type CookieState = {
 
 export type Elements = {
 	details: HTMLElement | null;
-	alert: Element | null;
+	alert: HTMLElement | null;
 	categoryCheckboxes: NodeListOf<HTMLInputElement>;
 	actionDetails: NodeListOf<Element>;
+	statuses: NodeListOf<HTMLElement>;
 };

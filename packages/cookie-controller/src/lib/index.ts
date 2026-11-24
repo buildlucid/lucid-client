@@ -1,8 +1,10 @@
 import acceptAll from "./accept-all.js";
 import activateElements from "./activate-elements.js";
 import alertState from "./alert-state.js";
+import { addAttribute, restoreAttributes } from "./attributes.js";
 import closeAlert from "./close-alert.js";
 import closeDetails from "./close-details.js";
+import confirm, { isShown } from "./confirm.js";
 import destroy from "./destroy.js";
 import detailsState from "./details-state.js";
 import formatCookieString from "./format-cookie-string.js";
@@ -12,6 +14,7 @@ import getCookieState from "./get-cookie-state.js";
 import getElements from "./get-elements.js";
 import initialise from "./initialise.js";
 import log from "./log.js";
+import message from "./messages.js";
 import onConsentChange from "./on-consent-change.js";
 import openDetails from "./open-details.js";
 import readCookie from "./read-cookie.js";
@@ -34,6 +37,11 @@ const lib = {
 	log,
 	setCookieState,
 	setAttributes,
+	addAttribute,
+	restoreAttributes,
+	message,
+	confirm,
+	isShown,
 	alertState,
 	detailsState,
 	onConsentChange,

@@ -5,7 +5,7 @@ import lib from "./index.js";
 /**
  * Saves the checkbox choices in the details element
  * - Fires the onConsentChange save callback
- * - Closes the details and alert elements
+ * - Closes the details and alert elements, and writes the status
  */
 const saveDetails = () => {
 	for (const element of S.elements?.categoryCheckboxes ?? []) {
@@ -18,6 +18,7 @@ const saveDetails = () => {
 	lib.setCookieState({ ...S.state, decided: true });
 	lib.closeDetails();
 	lib.onConsentChange("save");
+	lib.confirm("save");
 };
 
 export default saveDetails;

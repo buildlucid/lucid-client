@@ -10,20 +10,21 @@ import lib from "./index.js";
  */
 const refresh = () => {
 	if (!S.initialised) {
-		lib.log("warn", "Call init before refreshing.");
+		if (__DEV__) lib.log("warn", "Call init before refreshing.");
 		return;
 	}
 
 	const elements = lib.getElements();
 	if (!elements.details) {
-		lib.log("warn", "No details element has been found.");
+		if (__DEV__) lib.log("warn", "No details element has been found.");
 		return;
 	}
 	// A replaced alert means a new page, so a visitor who closed the previous alert sees it again.
 	if (elements.alert !== S.elements?.alert) S.alertClosed = false;
 	S.elements = elements;
 
-	lib.setAttributes("static");
+	lib.restoreAttributes();
+	lib.setAttributes();
 	// An open details element is the same node as before, so leave it and its focus alone.
 	const detailsOpen = lib.detailsState.get();
 	if (!detailsOpen) lib.detailsState.set(false);

@@ -6,6 +6,21 @@
 
 - Attributes follow the suite's `data-{namespace}--{specifier}` grammar. `data-cookie-action`, `data-cookie-category`, `data-cookie-details`, `data-cookie-alert` and `data-cookie-activated` are now `data-cookie--action`, `data-cookie--category`, `data-cookie--details`, `data-cookie--alert` and `data-cookie--activated`, so Tailwind variants such as `data-[cookie-alert=true]:` become `data-[cookie--alert=true]:`.
 - Gated media uses `data-cookie--src` and `data-cookie--srcset` instead of `data-src` and `data-srcset`, and gated scripts use `data-cookie--type` instead of `data-type`, so they no longer clash with lazy loading libraries that read `data-src`.
+- The alert gets `role="region"` and a name instead of `role="alert"` and `aria-live="polite"`, so screen readers no longer read the whole banner out when it appears. A role or name the markup sets is kept.
+- The details element only gets `role="dialog"` when it isn't a `<dialog>`, and never gets `aria-modal`. Use a `<dialog>` for a modal, which the library opens with `showModal()`.
+- The alert and details elements no longer get `aria-hidden`, as `hidden` already hides them, and `details` actions no longer get `aria-expanded` or `aria-haspopup`.
+- Warnings only log in the development build, which bundlers pick through the `development` export condition.
+
+### Features:
+
+- Added `data-cookie--status` elements, which say what was chosen after each decision and take focus when a decision hides the element that had it.
+- Added `messages` for translating the text the library writes, and `data-cookie--message-{name}` attributes for a status element's own.
+- An alert or details element without a name gets one, a details element that isn't a `<dialog>` takes focus when it opens and closes with Escape, and `destroy` removes the attributes the library added.
+- The development build warns about a details element that isn't a `<dialog>` and a category checkbox without a label.
+
+### Bug Fixes:
+
+- Closing the details element opened from the alert gives focus back to the alert's button, rather than losing it while the alert is hidden.
 
 ## v1.1.0
 
