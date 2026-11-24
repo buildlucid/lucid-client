@@ -4,6 +4,7 @@ import { recaptcha } from "../src/recaptcha.js";
 import { turnstile } from "../src/turnstile.js";
 import {
 	$,
+	$$,
 	contactForm,
 	mockFetch,
 	requestOf,
@@ -83,6 +84,26 @@ describe("turnstile", () => {
 		forms.destroy();
 		expect(api.remove).toHaveBeenCalledWith("widget-1");
 		expect($("[data-form--captcha]").children).toHaveLength(0);
+	});
+
+	it("follows the page's language unless the widget sets its own", async () => {
+		const api = fakeTurnstile();
+		document.body.innerHTML = `<div lang="fr-CA">${contactForm({
+			extra: `<div data-form--captcha="turnstile" data-sitekey="key"></div>`,
+		})}</div>${contactForm({
+			extra: `<div data-form--captcha="turnstile" data-sitekey="key" data-language="de"></div>`,
+		}).replace(
+			'data-form="contact" id="contact"',
+			'data-form="other" id="other"',
+		)}`;
+		forms.init({ extensions: [turnstile] });
+		for (const form of $$("form"))
+			form.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+		await settle();
+		expect(api.render.mock.calls.map((call) => call[1]?.language)).toEqual([
+			"fr",
+			"de",
+		]);
 	});
 
 	it("starts a failed check again on the next send, rather than waiting for it", async () => {

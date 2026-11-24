@@ -85,6 +85,7 @@ export default {
 			`Select no more than ${limit} ${plural(limit, "option", "options")}`,
 		match: "{label} must match {limit}",
 		rule: "{label} is not valid",
+		errorPrefix: "Error:",
 		invalid: ({ count = 0 }: MessageTokens) =>
 			plural(
 				count,

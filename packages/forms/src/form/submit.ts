@@ -169,7 +169,7 @@ export const hideSent = (ctx: Context) => {
 
 const succeed = (ctx: Context, detail: FormResultDetail) => {
 	const { result } = detail;
-	const text = result.message ?? message("success");
+	const text = result.message ?? message(ctx, "success");
 	replaceErrors(ctx, {});
 	setStatus(ctx, "success");
 	setState(ctx, { message: text });
@@ -197,7 +197,7 @@ const fail = (ctx: Context, detail: FormResultDetail) => {
 	const fieldErrors = Object.keys(ctx.state.errors).length > 0;
 	const text =
 		result.message ??
-		(fieldErrors || ctx.general.length > 0 ? undefined : message("error"));
+		(fieldErrors || ctx.general.length > 0 ? undefined : message(ctx, "error"));
 	presentErrors(ctx, { message: text, focus: fieldErrors });
 	resetTokens(ctx);
 	emit(ctx, C.events.error, detail);
@@ -243,7 +243,7 @@ export const send = async (
 	let sending = "";
 	let response: Response | null = null;
 	try {
-		sending = message("submitting");
+		sending = message(ctx, "submitting");
 		ctx.general = [];
 		setStatus(ctx, "submitting");
 		setState(ctx, { message: sending });
@@ -277,7 +277,7 @@ export const send = async (
 	} catch (error) {
 		if (signal.aborted) return null;
 		log("error", "The form couldn't be sent.", error);
-		const result: FormResult = { ok: false, message: message("error") };
+		const result: FormResult = { ok: false, message: message(ctx, "error") };
 		fail(ctx, { result, response, error });
 		return result;
 	} finally {

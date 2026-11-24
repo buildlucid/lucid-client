@@ -145,10 +145,14 @@ export const defineCaptcha = (
 	},
 });
 
+/** The language of the page around a captcha, such as `fr` or `en-GB`, or `""` when it has none */
+export const pageLanguage = (slot: Element) =>
+	slot.closest("[lang]")?.getAttribute("lang")?.trim() ?? "";
+
 /** Reads a slot's site key, warning when it has none */
 export const siteKey = (slot: HTMLElement, provider: string) => {
 	const key = slot.dataset.sitekey;
-	if (!key)
+	if (__DEV__ && !key)
 		log(
 			"warn",
 			`A ${provider} captcha has no data-sitekey, so it was skipped.`,

@@ -117,7 +117,7 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 						if (!button.hasAttribute("aria-label"))
 							button.setAttribute(
 								"aria-label",
-								message("remove", { file: file.name }),
+								message("remove", { file: file.name }, list),
 							);
 					}
 					nodes.push(...Array.from(fragment.childNodes));
@@ -201,7 +201,8 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 				const files = Array.from(input.files ?? []);
 				const [removed] = files.splice(index, 1);
 				change(input, files);
-				if (removed) announce(message("removed", { file: removed.name }));
+				if (removed)
+					announce(message("removed", { file: removed.name }, input));
 				// Focus moves to the file that took its place, or the one before, or the input once none are left.
 				const buttons = (rendered.get(input) ?? [])
 					.flatMap(({ nodes }) => nodes)
@@ -290,7 +291,11 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 			change(input, next);
 			const added = input.multiple ? dropped : dropped.slice(0, 1);
 			announce(
-				message("added", { count: added.length, file: added[0]?.name ?? "" }),
+				message(
+					"added",
+					{ count: added.length, file: added[0]?.name ?? "" },
+					input,
+				),
 			);
 		},
 		{ signal },

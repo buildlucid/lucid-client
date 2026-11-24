@@ -129,7 +129,7 @@ const setupExtensions = (ctx: Context) => {
 		signal: ctx.abort.signal,
 		owned: (selector) => owned(ctx, selector),
 		announce: (text) => announce(ctx, text),
-		message,
+		message: (key, tokens, from) => message(ctx, key, tokens, from ?? null),
 	};
 	for (const extension of S.settings.extensions) {
 		try {

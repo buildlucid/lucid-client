@@ -9,7 +9,7 @@ import lib from "./index.js";
  */
 const refresh = () => {
 	if (!S.initialised) {
-		lib.log("warn", "Call init before refreshing.");
+		if (__DEV__) lib.log("warn", "Call init before refreshing.");
 		return;
 	}
 	for (const [form, instance] of Array.from(S.instances)) {

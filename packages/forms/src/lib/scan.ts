@@ -15,10 +15,11 @@ export const forget = (form: Form) => {
 const scan = () => {
 	for (const element of document.querySelectorAll(`[${C.attributes.root}]`)) {
 		if (!(element instanceof HTMLFormElement)) {
-			log(
-				"warn",
-				"data-form only works on <form> elements, so one was skipped.",
-			);
+			if (__DEV__)
+				log(
+					"warn",
+					"data-form only works on <form> elements, so one was skipped.",
+				);
 			continue;
 		}
 		if (S.instances.has(element)) continue;

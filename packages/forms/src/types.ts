@@ -38,6 +38,8 @@ export type Messages = {
 	match: Message;
 	/** A custom rule that returned `false` */
 	rule: Message;
+	/** Read before each inline error by screen readers, from a visually hidden span. `""` leaves it out. */
+	errorPrefix: Message;
 	/** The status after client-side checks fail, when the form has no error summary */
 	invalid: Message;
 	/** The status while the form is being sent */
@@ -147,8 +149,15 @@ export type ExtensionContext = {
 	owned: <E extends Element = HTMLElement>(selector: string) => E[];
 	/** Reads a message out to screen readers without showing it */
 	announce: (message: string) => void;
-	/** Writes one of the library's messages, with the options passed to `init` */
-	message: (key: keyof Messages, tokens?: MessageTokens) => string;
+	/**
+	 * Writes one of the library's messages: a `data-form--message-{key}` attribute on `from`, an
+	 * element around it or the form, or else the options passed to `init`
+	 */
+	message: (
+		key: keyof Messages,
+		tokens?: MessageTokens,
+		from?: Element,
+	) => string;
 };
 
 export type ExtensionInstance = {
@@ -165,7 +174,10 @@ export type Extension = {
 };
 
 export type Options = {
-	/** Text the library writes, for translating or rewording */
+	/**
+	 * Text the library writes, for translating or rewording. `data-form--message-{key}` attributes
+	 * in the markup win over these.
+	 */
 	messages?: Partial<Messages>;
 	/** Custom checks, named by `data-form--rule` */
 	rules?: Record<string, Rule>;

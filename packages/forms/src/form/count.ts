@@ -30,23 +30,27 @@ const renderCount = (ctx: Context, element: HTMLElement, typed: boolean) => {
 			candidate instanceof HTMLInputElement,
 	);
 	if (!control) {
-		warnOnce(ctx, `The "${name}" character count has no field to count.`);
+		if (__DEV__)
+			warnOnce(ctx, `The "${name}" character count has no field to count.`);
 		return;
 	}
 	const limit = limitOf(control);
 	if (limit === 0) {
-		warnOnce(
-			ctx,
-			`The "${name}" character count needs a maxlength or data-form--maxlength on its field.`,
-		);
+		if (__DEV__)
+			warnOnce(
+				ctx,
+				`The "${name}" character count needs a maxlength or data-form--maxlength on its field.`,
+			);
 		return;
 	}
 
 	const remaining = limit - control.value.length;
-	const text = message(remaining < 0 ? "over" : "remaining", {
-		count: Math.abs(remaining),
-		limit,
-	});
+	const text = message(
+		ctx,
+		remaining < 0 ? "over" : "remaining",
+		{ count: Math.abs(remaining), limit },
+		element,
+	);
 	ctx.rec.content(element, text);
 	ctx.rec.attr(element, A.over, remaining < 0 ? "" : null);
 	setIdList(

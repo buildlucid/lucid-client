@@ -156,7 +156,9 @@ describe("sends", () => {
 		fill();
 		submit();
 		await settle();
-		expect($('[data-form--error="email"]').textContent).toBe("Try again");
+		expect($('[data-form--error="email"]').textContent).toBe(
+			"Error: Try again",
+		);
 		expect($("[data-form--status]").textContent).toContain("Invalid");
 	});
 
@@ -214,7 +216,9 @@ describe("checks", () => {
 		$<HTMLInputElement>("#email").setCustomValidity("Already taken");
 		submit();
 		expect(fetch).not.toHaveBeenCalled();
-		expect($('[data-form--error="email"]').textContent).toBe("Already taken");
+		expect($('[data-form--error="email"]').textContent).toBe(
+			"Error: Already taken",
+		);
 		forms.destroy();
 		expect($<HTMLInputElement>("#email").validationMessage).toBe(
 			"Already taken",
@@ -229,7 +233,9 @@ describe("checks", () => {
 		forms.init({ rules: { deny: () => "Not available" } });
 		fill();
 		submit();
-		expect($('[data-form--error="plan"]').textContent).toBe("Not available");
+		expect($('[data-form--error="plan"]').textContent).toBe(
+			"Error: Not available",
+		);
 	});
 
 	it("moves focus past controls that can't take it", () => {
@@ -387,7 +393,7 @@ describe("second review", () => {
 		pick("#docs", [file("right.pdf")]);
 		expect($<HTMLInputElement>("#docs").files).toHaveLength(2);
 		expect($('[data-form--error="docs"]').textContent).toBe(
-			"wrong.txt is not an accepted file type",
+			"Error: wrong.txt is not an accepted file type",
 		);
 	});
 

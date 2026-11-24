@@ -1,6 +1,7 @@
 import C from "../constants.js";
 import type { Context } from "./context.js";
 import { baseName, owned, textOf } from "./dom.js";
+import { message } from "./messages.js";
 
 const A = C.attributes;
 
@@ -48,6 +49,14 @@ export const prepareMarkup = (ctx: Context) => {
 	}
 };
 
+/** An error's text without a leading prefix such as "Error:", which the library adds again */
+const withoutPrefix = (text: string, prefix: string) => {
+	const trimmed = prefix.trim();
+	return trimmed && text.toLowerCase().startsWith(trimmed.toLowerCase())
+		? text.slice(trimmed.length).trim()
+		: text;
+};
+
 /**
  * Reads errors the server already wrote into the page, such as after a
  * submission without JavaScript, so they are linked to their fields and clear
@@ -60,7 +69,10 @@ export const readRenderedErrors = (ctx: Context) => {
 		const name = baseName(element.getAttribute(A.error) ?? "");
 		// The library already shows this field's errors.
 		if (Object.hasOwn(ctx.state.errors, name)) continue;
-		const text = textOf(element);
+		const text = withoutPrefix(
+			textOf(element),
+			message(ctx, "errorPrefix", {}, element),
+		);
 		if (name && text && !element.hidden)
 			errors.set(name, [...(errors.get(name) ?? []), text]);
 		else ctx.rec.attr(element, "hidden", "");

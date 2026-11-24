@@ -101,9 +101,11 @@ describe("validation", () => {
 		forms.init({ messages: { type: "Enter an email like name@example.com" } });
 		type("#email", "nope");
 		submit();
-		expect($('[data-form--error="name"]').textContent).toBe("Enter your Name");
+		expect($('[data-form--error="name"]').textContent).toBe(
+			"Error: Enter your Name",
+		);
 		expect($('[data-form--error="email"]').textContent).toBe(
-			"Enter an email like name@example.com",
+			"Error: Enter an email like name@example.com",
 		);
 	});
 
@@ -174,9 +176,11 @@ describe("validation", () => {
 		check("#topic-a");
 		submit();
 		expect($('[data-form--error="topics"]').textContent).toBe(
-			"Select at least 2 options",
+			"Error: Select at least 2 options",
 		);
-		expect($('[data-form--error="plan"]').textContent).toBe("Choose a plan");
+		expect($('[data-form--error="plan"]').textContent).toBe(
+			"Error: Choose a plan",
+		);
 		const fieldset = $('[data-form--field="plan"]');
 		expect(fieldset.getAttribute("aria-describedby")).toBe(
 			$('[data-form--error="plan"]').id,
@@ -189,7 +193,7 @@ describe("validation", () => {
 		check("#topic-d");
 		submit();
 		expect($('[data-form--error="topics"]').textContent).toBe(
-			"Select no more than 3 options",
+			"Error: Select no more than 3 options",
 		);
 		check("#topic-d", false);
 		expect($('[data-form--error="topics"]').hidden).toBe(true);
@@ -211,7 +215,7 @@ describe("validation", () => {
 		type("#confirm", "secrets");
 		submit();
 		expect($('[data-form--error="confirm"]').textContent).toBe(
-			"Confirm password must match Password",
+			"Error: Confirm password must match Password",
 		);
 		type("#password", "secrets");
 		expect($('[data-form--error="confirm"]').hidden).toBe(true);
@@ -244,10 +248,10 @@ describe("validation", () => {
 		type("#code", "3");
 		submit();
 		expect($('[data-form--error="postcode"]').textContent).toBe(
-			"Enter a real postcode",
+			"Error: Enter a real postcode",
 		);
 		expect($('[data-form--error="code"]').textContent).toBe(
-			"Use an even number",
+			"Error: Use an even number",
 		);
 		expect($<HTMLInputElement>("#code").validity.customError).toBe(true);
 	});
@@ -261,7 +265,7 @@ describe("validation", () => {
 		forms.get("contact")?.setErrors({ email: ["First", "Second"] });
 		expect(
 			$$('[data-form--error="email"] li').map((item) => item.textContent),
-		).toEqual(["First", "Second"]);
+		).toEqual(["Error: First", "Error: Second"]);
 	});
 
 	it("leaves out honeypot fields", () => {
@@ -473,7 +477,7 @@ describe("sending", () => {
 		expect(send).toHaveBeenCalledOnce();
 		expect(result?.ok).toBe(false);
 		expect($('[data-form--error="email"]').textContent).toBe(
-			"Already subscribed",
+			"Error: Already subscribed",
 		);
 	});
 });
@@ -511,10 +515,10 @@ describe("responses", () => {
 		);
 		expect($("form").getAttribute("data-form--state")).toBe("error");
 		expect($('[data-form--error="email"]').textContent).toBe(
-			"Already registered",
+			"Error: Already registered",
 		);
 		expect($('[data-form--error="files"]').textContent).toBe(
-			"Too large Wrong type",
+			"Error: Too large Wrong type",
 		);
 		expect($("[data-form--status]").textContent).toBe(
 			"Check your answers Something else",
@@ -550,7 +554,7 @@ describe("responses", () => {
 			),
 		);
 		expect($('[data-form--error="email"]').textContent).toBe(
-			"Use a work email",
+			"Error: Use a work email",
 		);
 
 		forms.destroy();
@@ -674,10 +678,148 @@ describe("character count", () => {
 		fill();
 		submit();
 		expect($('[data-form--error="message"]').textContent).toBe(
-			"Message must be 10 characters or fewer",
+			"Error: Message must be 10 characters or fewer",
 		);
 		forms.destroy();
 		expect(count.textContent).toBe("You can enter up to 10 characters");
+	});
+});
+
+describe("messages from the markup", () => {
+	it("reads data-form--message-{key} on the form and on sections around a field", () => {
+		document.body.innerHTML = contactForm({
+			attributes:
+				'lang="fr" data-form--message-required="Saisissez {label}" data-form--message-invalid="Corrigez le formulaire"',
+		})
+			.replace(
+				'<div data-form--field="email">',
+				'<section data-form--message-required="Saisissez votre e-mail"><div data-form--field="email">',
+			)
+			.replace(
+				'<p data-form--error="email"></p>\n\t\t</div>',
+				'<p data-form--error="email"></p>\n\t\t</div></section>',
+			);
+		forms.init();
+		submit();
+		expect($('[data-form--error="name"]').textContent).toBe(
+			"Error: Saisissez Name",
+		);
+		expect($('[data-form--error="email"]').textContent).toBe(
+			"Error: Saisissez votre e-mail",
+		);
+		expect($("[data-form--status]").textContent).toBe("Corrigez le formulaire");
+	});
+
+	it("prefers a field's own messages over the form's", () => {
+		document.body.innerHTML = contactForm({
+			attributes: 'data-form--message-required="Enter {label}"',
+		}).replace(
+			'name="name" required',
+			'name="name" required data-form--message="Tell us your name"',
+		);
+		forms.init();
+		submit();
+		expect($('[data-form--error="name"]').textContent).toBe(
+			"Error: Tell us your name",
+		);
+		expect($('[data-form--error="email"]').textContent).toBe(
+			"Error: Enter Email",
+		);
+	});
+
+	it("reads the form's status messages", async () => {
+		mockFetch(() => Response.json({}));
+		document.body.innerHTML = contactForm({
+			attributes: 'data-form--message-success="Merci !"',
+		}).replace("<div data-form--sent>Thanks, we'll be in touch.</div>", "");
+		forms.init();
+		fill();
+		submit();
+		await settle();
+		expect($("[data-form--status]").textContent).toBe("Merci !");
+	});
+
+	it("picks plural forms by the count, in the page's language", () => {
+		document.body.innerHTML = contactForm({
+			attributes: 'lang="pl"',
+			extra: `
+				<label for="message">Message</label>
+				<textarea id="message" name="message" maxlength="22"></textarea>
+				<p data-form--count="message"
+					data-form--message-remaining="Pozostało {count} znaków"
+					data-form--message-remaining-few="Pozostały {count} znaki"
+					data-form--message-remaining-one="Pozostał {count} znak"></p>`,
+		});
+		forms.init();
+		const count = $("[data-form--count]");
+		expect(count.textContent).toBe("Pozostały 22 znaki");
+		type("#message", "a".repeat(21));
+		expect(count.textContent).toBe("Pozostał 1 znak");
+		type("#message", "a".repeat(17));
+		expect(count.textContent).toBe("Pozostało 5 znaków");
+	});
+
+	it("picks a plural form of a check's message by its limit", () => {
+		document.body.innerHTML = contactForm({
+			extra: `
+				<fieldset data-form--field="topics" data-form--min-checked="1"
+					data-form--message-min-checked="Choose at least {limit} topics"
+					data-form--message-min-checked-one="Choose a topic">
+					<legend>Topics</legend>
+					<input type="checkbox" id="topic-a" name="topics" value="a">
+					<p data-form--error="topics"></p>
+				</fieldset>`,
+		});
+		forms.init();
+		submit();
+		expect($('[data-form--error="topics"]').textContent).toBe(
+			"Error: Choose a topic",
+		);
+	});
+});
+
+describe("error prefix", () => {
+	it("reads a visually hidden prefix before each inline error, and can be turned off", () => {
+		document.body.innerHTML = contactForm();
+		forms.init();
+		submit();
+		const prefix = $('[data-form--error="name"] > span');
+		expect(prefix.textContent).toBe("Error: ");
+		expect(prefix.style.position).toBe("absolute");
+
+		forms.init({ messages: { errorPrefix: "" } });
+		submit();
+		expect($('[data-form--error="name"]').children).toHaveLength(0);
+		expect($('[data-form--error="name"]').textContent).not.toBe("");
+	});
+
+	it("doesn't repeat a prefix the server already wrote", () => {
+		document.body.innerHTML = contactForm({ summary: true }).replace(
+			'<p data-form--error="name"></p>',
+			'<p data-form--error="name"><span class="visually-hidden">Error:</span> Enter your name</p>',
+		);
+		forms.init();
+		expect(forms.get("contact")?.state.errors.name).toEqual([
+			"Enter your name",
+		]);
+	});
+});
+
+describe("browser messages", () => {
+	it("warns when the browser's own message isn't in the page's language", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const language = vi
+			.spyOn(navigator, "language", "get")
+			.mockReturnValue("en-GB");
+		document.body.innerHTML = contactForm({ attributes: 'lang="de"' });
+		forms.init();
+		submit();
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining(
+				'The browser\'s own "required" message is in its language',
+			),
+		);
+		language.mockRestore();
 	});
 });
 
@@ -707,7 +849,7 @@ describe("API", () => {
 		expect(form?.state.errors.name).toBeUndefined();
 
 		form?.setErrors({ name: "Taken" }, { focus: false });
-		expect($('[data-form--error="name"]').textContent).toBe("Taken");
+		expect($('[data-form--error="name"]').textContent).toBe("Error: Taken");
 		form?.clearErrors("name");
 		expect(form?.state.errors.name).toBeUndefined();
 		form?.clearErrors();

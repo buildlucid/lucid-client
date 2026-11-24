@@ -89,13 +89,13 @@ describe("files", () => {
 
 		submit();
 		expect($('[data-form--error="docs"]').textContent).toBe(
-			"notes.txt is not an accepted file type",
+			"Error: notes.txt is not an accepted file type",
 		);
 		$("[data-form--remove]").click();
 		drag("drop", [file("huge.pdf", 4096, "application/pdf")]);
 		submit();
 		expect($('[data-form--error="docs"]').textContent).toBe(
-			"huge.pdf must be smaller than 1 KB",
+			"Error: huge.pdf must be smaller than 1 KB",
 		);
 		$("[data-form--remove]").click();
 		expect($('[data-form--error="docs"]').hidden).toBe(true);

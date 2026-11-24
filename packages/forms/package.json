@@ -13,22 +13,34 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js",
+			"import": {
+				"development": "./dist/dev/index.js",
+				"default": "./dist/index.js"
+			},
 			"require": "./dist/index.cjs"
 		},
 		"./files": {
 			"types": "./dist/files.d.ts",
-			"import": "./dist/files.js",
+			"import": {
+				"development": "./dist/dev/files.js",
+				"default": "./dist/files.js"
+			},
 			"require": "./dist/files.cjs"
 		},
 		"./turnstile": {
 			"types": "./dist/turnstile.d.ts",
-			"import": "./dist/turnstile.js",
+			"import": {
+				"development": "./dist/dev/turnstile.js",
+				"default": "./dist/turnstile.js"
+			},
 			"require": "./dist/turnstile.cjs"
 		},
 		"./recaptcha": {
 			"types": "./dist/recaptcha.d.ts",
-			"import": "./dist/recaptcha.js",
+			"import": {
+				"development": "./dist/dev/recaptcha.js",
+				"default": "./dist/recaptcha.js"
+			},
 			"require": "./dist/recaptcha.cjs"
 		}
 	},

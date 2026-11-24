@@ -102,6 +102,7 @@ export const createContext = (form: HTMLFormElement): Context => ({
 });
 
 /** Logs a warning, once per form */
+/** Logs a warning, once per form. Only call it inside `if (__DEV__)`. */
 export const warnOnce = (ctx: Context, message: string) => {
 	if (ctx.warnings.has(message)) return;
 	ctx.warnings.add(message);

@@ -15,6 +15,7 @@ import {
 	labelOf,
 	owned,
 	setIdList,
+	VISUALLY_HIDDEN,
 	wrapperOf,
 } from "./dom.js";
 import { message } from "./messages.js";
@@ -90,6 +91,18 @@ const unmark = (ctx: Context, element: Element) => {
 };
 
 /**
+ * An error's text, after a visually hidden prefix such as "Error:" so screen
+ * readers say what it is when it is read as the field's description
+ */
+const prefixed = (prefix: string, text: string): Array<Node | string> => {
+	if (!prefix) return [text];
+	const hidden = document.createElement("span");
+	hidden.style.cssText = VISUALLY_HIDDEN;
+	hidden.textContent = `${prefix} `;
+	return [hidden, text];
+};
+
+/**
  * Shows or clears one field's messages: its error elements, `aria-invalid`,
  * `aria-describedby` and its wrapper's `data-form--invalid`. Hidden inputs,
  * such as a captcha's token, are left alone as nobody sees or focuses them.
@@ -106,6 +119,7 @@ const renderField = (ctx: Context, name: string, messages: string[]) => {
 	const ids: string[] = [];
 	for (const element of errors) {
 		ids.push(ensureId(ctx, element, `${name}-error`));
+		const prefix = message(ctx, "errorPrefix", {}, element);
 		if (
 			element instanceof HTMLUListElement ||
 			element instanceof HTMLOListElement
@@ -114,11 +128,11 @@ const renderField = (ctx: Context, name: string, messages: string[]) => {
 				element,
 				...messages.map((text) => {
 					const item = document.createElement("li");
-					item.textContent = text;
+					item.append(...prefixed(prefix, text));
 					return item;
 				}),
 			);
-		} else rec.content(element, messages.join(" "));
+		} else rec.content(element, ...prefixed(prefix, messages.join(" ")));
 		rec.attr(element, "hidden", invalid ? null : "");
 	}
 
@@ -144,7 +158,7 @@ const renderField = (ctx: Context, name: string, messages: string[]) => {
 	if (invalid) ctx.marked.set(name, marking);
 	else ctx.marked.delete(name);
 
-	if (invalid && errors.length === 0)
+	if (__DEV__ && invalid && errors.length === 0)
 		warnOnce(
 			ctx,
 			`The "${name}" field has no data-form--error element, so its errors only show in the error summary or the status.`,
@@ -245,7 +259,8 @@ const updateCount = (ctx: Context) => {
 	if (!ctx.counting) return;
 	const count = Object.keys(ctx.state.errors).length;
 	const hasSummary = hasVisibleSummary(ctx);
-	const lead = count > 0 && !hasSummary ? message("invalid", { count }) : "";
+	const lead =
+		count > 0 && !hasSummary ? message(ctx, "invalid", { count }) : "";
 	writeErrorStatus(ctx, statusText(ctx, lead, hasSummary), lead !== "");
 };
 
@@ -357,9 +372,9 @@ const focusInView = (element: HTMLElement, view: Element = element) => {
 };
 
 /**
- * Moves focus to a control. A radio or checkbox in a group brings the group's
- * legend into view with it, so the question can be read with the answers.
- * Returns whether it took focus.
+ * Moves focus to a control, bringing its question into view with it, as
+ * GOV.UK's error summary does: a group's legend for a radio or checkbox, or
+ * else the control's label. Returns whether it took focus.
  */
 export const focusControl = (ctx: Context, control: Control) => {
 	const wrapper = wrapperOf(ctx, fieldKey(ctx, control));
@@ -370,13 +385,14 @@ export const focusControl = (ctx: Context, control: Control) => {
 	const grouped =
 		control instanceof HTMLInputElement &&
 		(control.type === "radio" || control.type === "checkbox");
-	// The legend comes into view with the control, unless they are too far apart to both fit.
+	const question = (grouped ? legend : null) ?? control.labels?.[0] ?? null;
+	// The question comes into view with the control, unless they are too far apart to both fit.
 	const fits =
-		legend !== null &&
+		question !== null &&
 		control.getBoundingClientRect().bottom -
-			legend.getBoundingClientRect().top <=
+			question.getBoundingClientRect().top <=
 			innerHeight;
-	return focusInView(control, grouped && legend && fits ? legend : control);
+	return focusInView(control, question && fits ? question : control);
 };
 
 /** Moves focus to the first visible error summary, or else the first control with an error that takes focus */
@@ -403,7 +419,7 @@ export const presentErrors = (
 	const hasSummary = hasVisibleSummary(ctx);
 	const counting = options.message === undefined && count > 0 && !hasSummary;
 	const lead =
-		options.message ?? (counting ? message("invalid", { count }) : "");
+		options.message ?? (counting ? message(ctx, "invalid", { count }) : "");
 	writeErrorStatus(ctx, statusText(ctx, lead, hasSummary), counting);
 	if (options.focus) focusErrors(ctx);
 };

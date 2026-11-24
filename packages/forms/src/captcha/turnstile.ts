@@ -2,6 +2,7 @@ import {
 	createWaitlist,
 	defineCaptcha,
 	loadScript,
+	pageLanguage,
 	siteKey,
 } from "./widget.js";
 
@@ -40,10 +41,23 @@ const loadTurnstile = async () => {
 };
 
 /**
+ * The page's language as Turnstile names it. Turnstile falls back to English
+ * for a region it doesn't list, such as `fr-CA`, so only the language is
+ * passed, apart from Chinese, which it has as `zh-cn` and `zh-tw`.
+ * `undefined` leaves Turnstile to follow the browser.
+ */
+const turnstileLanguage = (slot: Element) => {
+	const lang = pageLanguage(slot).toLowerCase();
+	if (!lang) return undefined;
+	return lang.startsWith("zh-") ? lang : lang.split("-")[0];
+};
+
+/**
  * Cloudflare Turnstile. Pass it to `init`, and add a
  * `data-form--captcha="turnstile"` element with your `data-sitekey`:
  * `forms.init({ extensions: [turnstile] })`
  * - Turnstile's own `data-action`, `data-cdata`, `data-theme`, `data-size`, `data-appearance`, `data-language` and `data-response-field-name` attributes are passed on
+ * - Without `data-language`, it follows the page's `lang`
  * - The token is sent as `cf-turnstile-response`, or the name in `data-response-field-name`
  */
 export const turnstile = defineCaptcha("turnstile", (slot) => {
@@ -82,7 +96,7 @@ export const turnstile = defineCaptcha("turnstile", (slot) => {
 					theme: dataset.theme,
 					size: dataset.size,
 					appearance: dataset.appearance,
-					language: dataset.language,
+					language: dataset.language || turnstileLanguage(slot),
 					"response-field-name": dataset.responseFieldName,
 					callback: pass,
 					"error-callback": fail,

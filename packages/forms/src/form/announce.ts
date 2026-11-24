@@ -1,10 +1,6 @@
 import C from "../constants.js";
 import { type Context, warnOnce } from "./context.js";
-import { owned } from "./dom.js";
-
-/** Hides the library's own live region from sight while screen readers still read it */
-const VISUALLY_HIDDEN =
-	"position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap";
+import { owned, VISUALLY_HIDDEN } from "./dom.js";
 
 /**
  * Writes a message to a live region. A message the same as the one showing is
@@ -73,10 +69,11 @@ export const writeStatus = (ctx: Context, text: string) => {
 	const regions = owned(ctx, `[${C.attributes.status}]`);
 	if (regions.length === 0) {
 		if (text === "") return;
-		warnOnce(
-			ctx,
-			"A form has no data-form--status element, so its messages are announced but not shown.",
-		);
+		if (__DEV__)
+			warnOnce(
+				ctx,
+				"A form has no data-form--status element, so its messages are announced but not shown.",
+			);
 		announce(ctx, text);
 		return;
 	}

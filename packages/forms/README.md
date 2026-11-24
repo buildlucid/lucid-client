@@ -8,13 +8,15 @@ A bring your own markup and styles form library. Forms are plain HTML that post 
 
 - Progressive Enhancement: Without JavaScript the browser checks and posts the form itself. With it, the same native constraints show accessible errors and the form sends with `fetch`.
 - Attribute Driven: Options, messages and state are `data-form--*` attributes, so most forms need no JavaScript of their own.
-- Accessible Errors: Errors are linked to their fields with `aria-describedby` and `aria-invalid`, focus moves to the error summary or the first error, and messages are announced through a live region.
+- Accessible Errors: Errors are linked to their fields with `aria-describedby` and `aria-invalid`, focus moves to the error summary or the first error, and messages are announced through a live region. See [Accessibility](#accessibility).
 - Error Summary: List every error with links to its field, as GOV.UK's error summary does.
 - Kind Timing: No errors appear while someone is typing, and an error clears as soon as it is fixed.
 - Responses: Reads a JSON `message`, `redirect` and `errors`, and shows server errors beside their fields.
 - Character Count: Counts what is left as people type, and announces it once they pause.
 - Files: Drop zones, file lists with remove buttons, and `accept`, size and count checks.
 - Captcha: Turnstile and reCAPTCHA, loaded only when a form is used, or a widget of your own.
+- Translatable: Every message can be set on the form, a field or in `init`, including plural forms. See [Messages](#messages).
+- Development Warnings: Markup mistakes are pointed out while you develop, and left out of production builds.
 
 ## Getting Started
 
@@ -105,17 +107,7 @@ These go on a control, apart from the checked counts, which go on a group's `dat
 
 `accept` is checked too, as browsers only use it to filter the file picker. Value checks skip empty fields, so pair them with `required` when a value is needed. A custom validity your own script sets with `setCustomValidity()` is shown like any other error.
 
-### Messages
-
-A failed check's message comes from the first of:
-
-1. `data-form--message-{check}` on the control, then on its wrapper, such as `data-form--message-required="Enter your email address"`.
-2. `data-form--message` on the control, then on its wrapper, for any check.
-3. The message a rule returned.
-4. `messages` passed to `init`.
-5. The browser's own message, which is in the visitor's language.
-
-Checks are `required`, `type`, `pattern`, `minlength`, `maxlength`, `min`, `max`, `step`, `accept`, `max-size`, `min-size`, `max-files`, `min-checked`, `max-checked`, `match` and a rule's name. Messages can use `{label}`, the field's label, and `{limit}`, the value of the check, such as `{limit}` characters. File messages also have `{file}`.
+Each check's message can be set in the markup. See [Messages](#messages).
 
 ### State
 
@@ -156,6 +148,91 @@ Fields are checked when the form is submitted. A field that shows an error is ch
 ```
 
 The count's text becomes `You have 20 characters remaining`, or `You have 3 characters too many`, and describes the field, so it is read when the field is focused. While typing, it is announced once typing pauses, rather than on every key. The field's `maxlength` or `data-form--maxlength` is the limit.
+
+## Accessibility
+
+The library follows GOV.UK's [error summary](https://design-system.service.gov.uk/components/error-summary/), [error message](https://design-system.service.gov.uk/components/error-message/) and [character count](https://design-system.service.gov.uk/components/character-count/) patterns. Anything you set yourself is kept, and `destroy` removes what the library added.
+
+- The form gets `novalidate`, and fields are checked when it is submitted rather than as people type.
+- Errors are written into each field's `data-form--error` element after a visually hidden "Error:", and linked to the field with `aria-describedby`. Controls get `aria-invalid="true"` while they have an error, and a `<fieldset>` wrapper is described rather than each radio or checkbox.
+- Focus moves to the error summary, or else to the first field with an error. Summary links focus their field and bring its label, or a group's legend, into view with it.
+- `data-form--status` elements are live regions from the start, so sending, sent and failed messages are announced. Without a summary, the status says how many answers need fixing.
+- Submit buttons get `aria-disabled="true"` while sending rather than `disabled`, so the one that was pressed keeps focus. The `data-form--sent` element takes focus once the form is sent.
+- Character counts describe their field and are announced once typing pauses.
+- Remove buttons are named after their file, focus moves to the next file once one is removed, and dropped and removed files are announced.
+- Honeypots are kept out of the tab order and away from screen readers.
+
+Your markup still needs to:
+
+- Give every control a `<label>`, and group radios and checkboxes in a `<fieldset>` with a `<legend>`.
+- Add `autocomplete` to fields about the visitor, such as `autocomplete="email"` (WCAG 1.3.5).
+- Put the error summary at the top of the form, with a heading such as "There is a problem".
+- Keep the file input reachable, or show its focus on the drop zone with `:focus-within`.
+- Start a translated remove button's label with its visible text, such as `Supprimer {file}` for a "Supprimer" button (WCAG 2.5.3).
+
+On a sign in form, a captcha that asks people to solve a puzzle or type characters fails WCAG 3.3.8. Turnstile and reCAPTCHA's invisible and score checks ask nothing of most visitors.
+
+The [development build](#development-build) warns about markup it can't work with, such as a field without an error element, a count without a limit or a form without a status.
+
+## Messages
+
+Every message the library writes can be translated or reworded, in the markup or with `messages` in `init`. Attributes win over `init`, so a form, or a section of one, can have its own.
+
+### Field errors
+
+A failed check's message comes from the first of:
+
+1. `data-form--message-{check}` on the control, then on its wrapper, such as `data-form--message-required="Enter your email address"`.
+2. `data-form--message` on the control, then on its wrapper, for any check.
+3. `data-form--message-{check}` on an element around the field, or on the form, for every field inside it.
+4. The message a rule returned.
+5. `messages` passed to `init`.
+6. The browser's own message.
+
+Checks are `required`, `type`, `pattern`, `minlength`, `maxlength`, `min`, `max`, `step`, `accept`, `max-size`, `min-size`, `max-files`, `min-checked`, `max-checked`, `match` and a rule's name. Messages can use `{label}`, the field's label, and `{limit}`, the value of the check, such as `{limit}` characters. File messages also have `{file}`.
+
+The browser's own messages are in the browser's language, which may not be the page's. On a site in more than one language, set a message for each check you use, such as on the form or in `init`. The development build warns when a browser message shows on a page whose `lang` differs from the browser's.
+
+### The library's own messages
+
+These come from `data-form--message-{key}` on the element that shows them or an element around it, such as the count, the field wrapper or the form, then `messages` passed to `init`, then the default. Keys are kebab case in attributes, such as `data-form--message-error-prefix`.
+
+```html
+<form
+  data-form
+  lang="fr"
+  data-form--message-required="Saisissez {label}"
+  data-form--message-error-prefix="Erreur :"
+  data-form--message-submitting="Envoi…"
+  data-form--message-success="Merci, votre formulaire a été envoyé."
+  data-form--message-error="Votre formulaire n'a pas pu être envoyé. Réessayez."
+>
+```
+
+| Message | Default | Used for |
+| --- | --- | --- |
+| `errorPrefix` | `Error:` | Read before each inline error, from a visually hidden span. `""` leaves it out. |
+| `invalid` | `There are problems with {count} answers. Check the form and try again.` | The status after checks fail, without an error summary. |
+| `submitting` | `Sending…` | The status while sending. |
+| `success` | `Thank you, your form has been sent.` | The status once sent, when the response has no message. |
+| `error` | `Your form couldn't be sent. Try again.` | The status after a failed send, when the response has no message. |
+| `remaining`, `over` | `You have {count} characters remaining`, `You have {count} characters too many` | Character counts. |
+| `remove` | `Remove {file}` | Remove buttons without a label. |
+| `added`, `removed` | `Added {file}` or `Added {count} files`, `Removed {file}` | Announced when files are dropped or removed. |
+| `accept`, `maxSize`, `minSize`, `maxFiles`, `minChecked`, `maxChecked`, `match`, `rule` | Such as `{file} must be smaller than {limit}` | Field errors without a browser message. |
+
+### Plurals
+
+In `init`, a message can be a function, such as `remaining: ({ count }) => …`. In the markup, a message can have plural forms with a suffix for each plural category of the element's `lang`: `zero`, `one`, `two`, `few`, `many` or `other`. They are picked by `{count}`, or by `{limit}` for a check, and the attribute without a suffix covers any form not given. Empty attributes are ignored.
+
+```html
+<p
+  data-form--count="message"
+  data-form--message-remaining="Pozostało {count} znaków"
+  data-form--message-remaining-few="Pozostały {count} znaki"
+  data-form--message-remaining-one="Pozostał {count} znak"
+></p>
+```
 
 ## Sending
 
@@ -224,6 +301,7 @@ forms.init({ extensions: [turnstile, recaptcha] });
 ```
 
 - Turnstile takes its own `data-action`, `data-cdata`, `data-theme`, `data-size`, `data-appearance` and `data-language`, and sends `cf-turnstile-response`.
+- Both follow the page's `lang` unless `data-language` sets their language. reCAPTCHA's script loads once, so the first widget on the page sets it.
 - reCAPTCHA shows the checkbox, and a send waits until it is ticked. `data-size="invisible"` runs an invisible check when the form is sent, `data-score` gets a v3 score token with `data-action` on every send, and `data-enterprise` uses reCAPTCHA Enterprise. It sends `g-recaptcha-response`.
 - `data-response-field-name` sends the token under another name, such as `captcha`.
 
@@ -289,8 +367,12 @@ Events bubble from the form.
 
 | Option | Description |
 | --- | --- |
-| `messages` | Text the library writes. Each is a template or a function, such as `remaining: ({ count }) => …` for plurals. Native checks use the browser's message unless set. |
+| `messages` | Text the library writes. Each is a template or a function, such as `remaining: ({ count }) => …` for plurals. Native checks use the browser's message unless set. See [Messages](#messages). |
 | `rules` | Custom checks for `data-form--rule`. A rule gets the value and `{ control, controls, form }`, and returns a message or `false` to fail. |
 | `extensions` | Extensions such as `files`, `turnstile` and `recaptcha`. |
 | `send(request, form)` | Sends the request instead of `fetch`. Return the `Response`, or a result such as `{ ok: false, errors }`. |
 | `parse(response, form)` | Reads a response instead of the default parser. Returns `{ ok, message?, errors?, redirect? }`. |
+
+### Development Build
+
+The library warns about markup it can't work with, such as a field without an error element, a character count without a limit, a rule that wasn't passed to `init`, or a browser message in a language other than the page's. Warnings only log in the development build, which bundlers such as Vite and webpack pick through the `development` export condition while you develop. Production builds leave them out.

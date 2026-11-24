@@ -2,6 +2,7 @@ import {
 	createWaitlist,
 	defineCaptcha,
 	loadScript,
+	pageLanguage,
 	siteKey,
 } from "./widget.js";
 
@@ -32,6 +33,7 @@ const FIELD = "g-recaptcha-response";
  * - `data-size="invisible"` runs an invisible check when the form is sent
  * - `data-score` is for v3 and score based keys, which get a token with `data-action` on every send
  * - `data-enterprise` uses reCAPTCHA Enterprise
+ * - `data-language` sets its language, which otherwise follows the page's `lang`. The script loads once, so the first widget on the page sets it
  * - The token is sent as `g-recaptcha-response`, or the name in `data-response-field-name`
  */
 export const recaptcha = defineCaptcha("recaptcha", (slot) => {
@@ -45,7 +47,8 @@ export const recaptcha = defineCaptcha("recaptcha", (slot) => {
 	const base = enterprise
 		? "https://www.google.com/recaptcha/enterprise.js"
 		: "https://www.google.com/recaptcha/api.js";
-	const src = `${base}?render=${score ? encodeURIComponent(sitekey) : "explicit"}`;
+	const language = dataset.language || pageLanguage(slot);
+	const src = `${base}?render=${score ? encodeURIComponent(sitekey) : "explicit"}${language ? `&hl=${encodeURIComponent(language)}` : ""}`;
 	/** reCAPTCHA once it has loaded. Its shape is checked, as an element with `id="grecaptcha"` is also `window.grecaptcha`. */
 	const apiOf = () => {
 		const api = enterprise ? window.grecaptcha?.enterprise : window.grecaptcha;

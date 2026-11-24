@@ -86,10 +86,11 @@ const ruleFailure = (
 		if (!name) continue;
 		const rule = S.settings.rules[name];
 		if (!rule) {
-			warnOnce(
-				ctx,
-				`There is no rule named "${name}". Pass it to init with the rules option.`,
-			);
+			if (__DEV__)
+				warnOnce(
+					ctx,
+					`There is no rule named "${name}". Pass it to init with the rules option.`,
+				);
 			continue;
 		}
 		const result = rule(valueOf(control), {
@@ -186,10 +187,12 @@ export const checkField = (
 	const wrapper = wrapperOf(ctx, name);
 	const label = labelOf(ctx, name, controls);
 	const write = (failure: Failure, control: Control) =>
-		failureMessage({ ...failure, tokens: { label, ...failure.tokens } }, [
+		failureMessage(
+			ctx,
+			{ ...failure, tokens: { label, ...failure.tokens } },
 			control,
 			wrapper,
-		]);
+		);
 
 	for (const control of active) {
 		const failure = nativeFailure(control);

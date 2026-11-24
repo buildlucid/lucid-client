@@ -123,6 +123,10 @@ export const fieldElements = (
 export const wrapperOf = (ctx: Context, name: string) =>
 	fieldElements(ctx, A.field, name)[0] ?? null;
 
+/** Hides an element the library adds from sight while screen readers still read it */
+export const VISUALLY_HIDDEN =
+	"position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap";
+
 /** Gives an element an id when it has none, and returns its id */
 export const ensureId = (ctx: Context, element: Element, hint: string) => {
 	if (!element.id) {
