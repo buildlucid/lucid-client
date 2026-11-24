@@ -231,7 +231,8 @@ const cellClass = "py-2.5 pr-4 text-right whitespace-nowrap tabular-nums";
 					fresh page, warms up where the scenario says to, lets the page go quiet
 					and collects garbage, then performs one step and adds up the
 					JavaScript, style and layout work the browser reports over the next
-					second, by when every carousel has settled. One CPU core is kept busy
+					second, by when every carousel has settled. The navigation scenarios
+					warm up one page per carousel and move it back after each sample. One CPU core is kept busy
 					throughout, so the CPU runs at full speed: otherwise work spread over
 					the frames of a smooth scroll is measured at a slower speed than work
 					done in one go. Painting
