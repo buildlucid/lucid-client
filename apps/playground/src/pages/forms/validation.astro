@@ -272,6 +272,58 @@ import "../../styles/forms.css";
 		</form>
 	</Scenario>
 
+	<Scenario
+		id="translated"
+		title="Translated"
+		description={"A Polish form that sets its own messages with `data-form--message-*` attributes on the `<form>`, so every field inside it uses them. The count has plural forms, picked by the form's `lang` with `Intl.PluralRules`. The error prefix is read before each inline error by screen readers."}
+		expect={[
+			"Sending empty reads `Podaj Imię` and `Podaj E-mail` beside the fields, and the status reads `Popraw formularz`.",
+			"Each inline error starts with a visually hidden `Błąd:`.",
+			"The count reads `Pozostało 25 znaków`, then `Pozostały 22 znaki` after three letters and `Pozostał 1 znak` one short of the limit.",
+		]}
+	>
+		<form
+			data-form="translated"
+			lang="pl"
+			method="post"
+			action="/mock/forms/echo"
+			class="form-stack"
+			data-form--message-required="Podaj {label}"
+			data-form--message-error-prefix="Błąd:"
+			data-form--message-invalid="Popraw formularz"
+			data-form--message-submitting="Wysyłanie…"
+			data-form--message-success="Dziękujemy, formularz został wysłany."
+		>
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="name" class="form-field">
+				<label class="label" for="translated-name">Imię</label>
+				<input class="input" id="translated-name" name="name" autocomplete="given-name" required />
+				<p class="error-text" data-form--error="name"></p>
+			</div>
+			<div data-form--field="email" class="form-field">
+				<label class="label" for="translated-email">E-mail</label>
+				<input class="input" id="translated-email" name="email" type="email" autocomplete="email" required />
+				<p class="error-text" data-form--error="email"></p>
+			</div>
+			<div data-form--field="nickname" class="form-field">
+				<label class="label" for="translated-nickname">Pseudonim</label>
+				<input class="input" id="translated-nickname" name="nickname" maxlength="25" />
+				<p
+					class="hint"
+					data-form--count="nickname"
+					data-form--message-remaining="Pozostało {count} znaków"
+					data-form--message-remaining-few="Pozostały {count} znaki"
+					data-form--message-remaining-one="Pozostał {count} znak"
+				>
+					Możesz wpisać do 25 znaków
+				</p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Wyślij</button>
+			</div>
+		</form>
+	</Scenario>
+
 	<script>
 		import "../../scripts/forms/validation";
 	</script>

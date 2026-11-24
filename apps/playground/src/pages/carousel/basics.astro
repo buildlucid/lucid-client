@@ -169,6 +169,52 @@ const exclude = ["aria-label", "id", "role", "aria-roledescription", "style", "d
 		</section>
 	</Scenario>
 
+	<Scenario
+		id="translated"
+		title="Translated"
+		description="A French carousel that sets its own text with `data-carousel--message-*` attributes. Its arrows are icon-only with no `aria-label`, so the library names them from the `prev` and `next` messages, and its dots container becomes a group named from the `markers` message."
+		expect={[
+			"The arrows are named `Diapositive précédente` and `Diapositive suivante`.",
+			"The dots container has `role=\"group\"` and `aria-label=\"Choisir une diapositive\"`, and each dot is named such as `Aller à la diapositive 2`.",
+			"Slides are `1 sur 5` and so on, with the role description `diapositive`, and the status reads `Diapositive 2 sur 5` after you move.",
+		]}
+	>
+		<section
+			lang="fr"
+			data-carousel
+			aria-label="À la une"
+			id="basics-translated"
+			class="space-y-3"
+			data-carousel--message-carousel-role="carrousel"
+			data-carousel--message-slide-role="diapositive"
+			data-carousel--message-slide="{n} sur {count}"
+			data-carousel--message-marker="Aller à la diapositive {n}"
+			data-carousel--message-markers="Choisir une diapositive"
+			data-carousel--message-status="Diapositive {n} sur {count}"
+			data-carousel--message-prev="Diapositive précédente"
+			data-carousel--message-next="Diapositive suivante"
+		>
+			<div data-carousel--track class="carousel-track">
+				{five.map((hue, index) => (
+					<div class="carousel-panel" style={`--hue: ${hue}`}>Diapositive {index + 1}</div>
+				))}
+			</div>
+			<div class="flex items-center justify-between gap-3">
+				<button class="carousel-arrow" data-carousel--action="prev">
+					<Fragment set:html={prevIcon} />
+				</button>
+				<div class="carousel-dots" data-carousel--markers id="basics-translated-dots">
+					<template><button class="carousel-dot"></button></template>
+				</div>
+				<button class="carousel-arrow" data-carousel--action="next">
+					<Fragment set:html={nextIcon} />
+				</button>
+			</div>
+			<p data-carousel--status class="readout min-h-9"></p>
+			<AttributeReadout target="#basics-translated-dots" exclude={["id", "class"]} label="Dots container attributes" />
+		</section>
+	</Scenario>
+
 	<script>
 		import "../../scripts/carousel/basics";
 	</script>

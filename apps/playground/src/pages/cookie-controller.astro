@@ -82,18 +82,21 @@ const gatePill =
 	<Scenario
 		id="banner-dialog"
 		title="Banner and details dialog"
-		description="The banner is a `data-cookie--alert` element and the settings are a native `<dialog data-cookie--details>`, which the library opens with `showModal()`. Their markup lives here so the panel below shows the wiring; they render over the page."
+		description="The banner is a `data-cookie--alert` element and the settings are a native `<dialog data-cookie--details>`, which the library opens with `showModal()`. Their markup lives here so the panel below shows the wiring; they render over the page. The `data-cookie--status` element below confirms each choice."
 		expect={[
+			"The banner is a `region` named by its heading, with no `role=\"alert\"` or `aria-live`, so it isn't read out when it appears.",
 			"The banner shows until you accept, reject or save. `Close` hides it for this page view only.",
 			"`Settings` opens the dialog with the toggles set to the saved choices. Essential is checked and disabled.",
 			"`Escape` and `Close` discard unsaved toggle changes. `Save choices` keeps them.",
-			"Focus moves into the dialog when it opens and returns to the button that opened it.",
+			"Focus moves into the dialog when it opens and returns to the button that opened it, including the banner's `Settings` once the banner shows again.",
+			"After a choice, the status says what was chosen. A choice made in the banner moves focus to the status, as the banner is gone.",
 		]}
 	>
 		<p class="text-[13px] text-muted">
 			The banner and dialog render over the page. Open the dialog from here:
 		</p>
 		<button type="button" class="btn mt-3" data-cookie--action="details">Cookie settings</button>
+		<p data-cookie--status class="readout mt-3 min-h-9"></p>
 
 		<div
 			data-cookie--alert
