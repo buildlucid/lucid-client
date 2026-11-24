@@ -12,8 +12,8 @@ export type StorageOptions = {
 };
 
 export type Messages = {
-	/** The `aria-label` of a `data-cookie--alert` element without a name. Defaults to `"Cookie consent"` */
-	alert: string;
+	/** The `aria-label` of a `data-cookie--banner` element without a name. Defaults to `"Cookie consent"` */
+	banner: string;
 	/** The `aria-label` of a `data-cookie--details` element without a name. Defaults to `"Cookie settings"` */
 	details: string;
 	/** Written to `data-cookie--status` after every category is accepted. `""` writes nothing. */
@@ -104,7 +104,7 @@ export type CookieState = {
 
 export type Elements = {
 	details: HTMLElement | null;
-	alert: HTMLElement | null;
+	banner: HTMLElement | null;
 	categoryCheckboxes: NodeListOf<HTMLInputElement>;
 	actionDetails: NodeListOf<Element>;
 	statuses: NodeListOf<HTMLElement>;

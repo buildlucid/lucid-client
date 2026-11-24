@@ -7,7 +7,7 @@ const { value } = C.attributes.action;
 /**
  * Runs the action for a clicked `data-cookie--action` element.
  * - `accept` and `reject` only update one category when the element also has a `data-cookie--category` attribute
- * - `dismiss` closes the alert when it is inside the alert, otherwise it closes the details element
+ * - `dismiss` closes the banner when it is inside the banner, otherwise it closes the details element
  */
 const onActionClick = (event: Event) => {
 	if (!(event.target instanceof Element)) return;
@@ -33,8 +33,8 @@ const onActionClick = (event: Event) => {
 			lib.toggleDetails();
 			break;
 		case value.dismiss:
-			// Inside the alert it closes the alert, anywhere else it closes the details element.
-			if (target.closest(`[${C.attributes.alert}]`)) lib.closeAlert();
+			// Inside the banner it closes the banner, anywhere else it closes the details element.
+			if (target.closest(`[${C.attributes.banner}]`)) lib.closeBanner();
 			else lib.closeDetails();
 			break;
 	}

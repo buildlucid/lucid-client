@@ -22,18 +22,18 @@ const dialog = `
 	</dialog>
 `;
 
-const alert = `
-	<div data-cookie--alert hidden>
+const bannerMarkup = `
+	<div data-cookie--banner hidden>
 		<button id="accept" data-cookie--action="accept">Accept</button>
 		<button id="settings" data-cookie--action="details">Settings</button>
 	</div>
 `;
 
 describe("accessibility", () => {
-	it("makes the alert a named region rather than an alert", () => {
-		document.body.innerHTML = dialog + alert;
+	it("makes the banner a named region rather than an alert", () => {
+		document.body.innerHTML = dialog + bannerMarkup;
 		cookieController.init();
-		const banner = $("[data-cookie--alert]");
+		const banner = $("[data-cookie--banner]");
 		expect(banner.getAttribute("role")).toBe("region");
 		expect(banner.getAttribute("aria-label")).toBe("Cookie consent");
 		expect(banner.hasAttribute("aria-live")).toBe(false);
@@ -42,7 +42,7 @@ describe("accessibility", () => {
 
 	it("keeps the markup's own roles and names", () => {
 		document.body.innerHTML = `${dialog.replace("<dialog data-cookie--details", '<dialog data-cookie--details aria-labelledby="title"')}<h2 id="title">Settings</h2>
-			<aside data-cookie--alert aria-label="Cookies on Example"></aside>`;
+			<aside data-cookie--banner aria-label="Cookies on Example"></aside>`;
 		cookieController.init();
 		expect($("aside").hasAttribute("role")).toBe(false);
 		expect($("aside").getAttribute("aria-label")).toBe("Cookies on Example");
@@ -50,7 +50,7 @@ describe("accessibility", () => {
 	});
 
 	it("names a <dialog> without making it modal itself, and leaves its triggers alone", () => {
-		document.body.innerHTML = dialog + alert;
+		document.body.innerHTML = dialog + bannerMarkup;
 		cookieController.init();
 		const details = $("dialog");
 		expect(details.hasAttribute("role")).toBe(false);
@@ -63,23 +63,23 @@ describe("accessibility", () => {
 	});
 
 	it("translates its names with the messages passed to init", () => {
-		document.body.innerHTML = dialog + alert;
+		document.body.innerHTML = dialog + bannerMarkup;
 		cookieController.init({
-			messages: { alert: "Consentement aux cookies", details: "Paramètres" },
+			messages: { banner: "Consentement aux cookies", details: "Paramètres" },
 		});
-		expect($("[data-cookie--alert]").getAttribute("aria-label")).toBe(
+		expect($("[data-cookie--banner]").getAttribute("aria-label")).toBe(
 			"Consentement aux cookies",
 		);
 		expect($("dialog").getAttribute("aria-label")).toBe("Paramètres");
 	});
 
 	it("removes what it added on destroy", () => {
-		document.body.innerHTML = `${dialog}${alert}<p data-cookie--status>Ready</p>`;
+		document.body.innerHTML = `${dialog}${bannerMarkup}<p data-cookie--status>Ready</p>`;
 		cookieController.init();
 		click("#accept");
 		cookieController.destroy();
 		for (const element of document.querySelectorAll(
-			"[data-cookie--alert], dialog, [data-cookie--status]",
+			"[data-cookie--banner], dialog, [data-cookie--status]",
 		)) {
 			for (const name of [
 				"role",
@@ -109,20 +109,20 @@ describe("accessibility", () => {
 });
 
 describe("focus", () => {
-	it("gives focus back to a trigger in the alert once the details close", () => {
-		document.body.innerHTML = dialog + alert;
+	it("gives focus back to a trigger in the banner once the details close", () => {
+		document.body.innerHTML = dialog + bannerMarkup;
 		cookieController.init();
 		const settings = $("#settings");
 		settings.focus();
 		click("#settings");
-		expect($("[data-cookie--alert]").hidden).toBe(true);
+		expect($("[data-cookie--banner]").hidden).toBe(true);
 		click("#close");
-		expect($("[data-cookie--alert]").hidden).toBe(false);
+		expect($("[data-cookie--banner]").hidden).toBe(false);
 		expect(document.activeElement).toBe(settings);
 	});
 
 	it("moves focus to the status once a decision hides what held it", () => {
-		document.body.innerHTML = `${dialog}${alert}<p data-cookie--status></p>`;
+		document.body.innerHTML = `${dialog}${bannerMarkup}<p data-cookie--status></p>`;
 		cookieController.init();
 		const status = $("[data-cookie--status]");
 		expect(status.getAttribute("role")).toBe("status");
@@ -165,7 +165,7 @@ describe("focus", () => {
 
 describe("status messages", () => {
 	it("uses the status element's own messages, then init's", () => {
-		document.body.innerHTML = `${dialog}${alert}
+		document.body.innerHTML = `${dialog}${bannerMarkup}
 			<p data-cookie--status data-cookie--message-saved="Préférences enregistrées."></p>`;
 		cookieController.init({ messages: { accepted: "Cookies acceptés." } });
 		const status = $("[data-cookie--status]");

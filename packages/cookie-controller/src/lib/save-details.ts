@@ -5,7 +5,7 @@ import lib from "./index.js";
 /**
  * Saves the checkbox choices in the details element
  * - Fires the onConsentChange save callback
- * - Closes the details and alert elements, and writes the status
+ * - Closes the details and banner elements, and writes the status
  */
 const saveDetails = () => {
 	for (const element of S.elements?.categoryCheckboxes ?? []) {

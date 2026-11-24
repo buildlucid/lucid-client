@@ -5,7 +5,7 @@ import lib from "./index.js";
 
 /**
  * Initialises the library
- * - The details element is required. The alert element is optional, so a site can show its own banner from onConsentChange
+ * - The details element is required. The banner element is optional, so a site can show its own banner from onConsentChange
  */
 const initialise = (initOptions?: Partial<Options>) => {
 	lib.destroy();
@@ -26,7 +26,7 @@ const initialise = (initOptions?: Partial<Options>) => {
 
 	S.elements = lib.getElements();
 	S.abortController = new AbortController();
-	S.alertClosed = false;
+	S.bannerClosed = false;
 	S.warnings = new Set();
 
 	if (!S.elements.details) {
@@ -39,7 +39,7 @@ const initialise = (initOptions?: Partial<Options>) => {
 	lib.setAttributes();
 
 	lib.detailsState.set(false);
-	lib.alertState.set(!S.state.decided);
+	lib.bannerState.set(!S.state.decided);
 	lib.registerEvents();
 
 	S.initialised = true;

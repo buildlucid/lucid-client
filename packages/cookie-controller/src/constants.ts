@@ -6,14 +6,14 @@ export default {
 	defaultExpires: 180,
 	ids: {
 		details: "cookie-details",
-		alert: "cookie-alert",
+		banner: "cookie-banner",
 	},
 	/**
 	 * Every attribute follows the suite's `data-{namespace}--{specifier}` grammar, with `cookie` as the namespace
 	 */
 	attributes: {
 		details: "data-cookie--details",
-		alert: "data-cookie--alert",
+		banner: "data-cookie--banner",
 		status: "data-cookie--status",
 		/** The prefix of an element's own messages, such as `data-cookie--message-saved` */
 		message: "data-cookie--message",
@@ -39,7 +39,7 @@ export default {
 	repeatDelay: 100,
 	/** The text the library writes, in English */
 	messages: {
-		alert: "Cookie consent",
+		banner: "Cookie consent",
 		details: "Cookie settings",
 		accepted: "You've accepted all cookies.",
 		rejected: "You've rejected optional cookies.",

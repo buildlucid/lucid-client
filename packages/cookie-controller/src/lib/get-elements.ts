@@ -5,7 +5,7 @@ import C from "../constants.js";
  */
 const getElements = () => ({
 	details: document.querySelector<HTMLElement>(`[${C.attributes.details}]`),
-	alert: document.querySelector<HTMLElement>(`[${C.attributes.alert}]`),
+	banner: document.querySelector<HTMLElement>(`[${C.attributes.banner}]`),
 	categoryCheckboxes: document.querySelectorAll<HTMLInputElement>(
 		`input[type="checkbox"][${C.attributes.cookieCategory}]`,
 	),

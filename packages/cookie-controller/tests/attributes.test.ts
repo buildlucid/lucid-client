@@ -3,17 +3,17 @@ import cookieController from "../src/index.js";
 import { click, detailsMarkup } from "./utils.js";
 
 describe("attributes", () => {
-	it("marks the alert and details elements with their open state", () => {
-		document.body.innerHTML = `${detailsMarkup}<div data-cookie--alert></div>`;
+	it("marks the banner and details elements with their open state", () => {
+		document.body.innerHTML = `${detailsMarkup}<div data-cookie--banner></div>`;
 		cookieController.init();
 
-		const alert = document.querySelector("[data-cookie--alert]");
+		const banner = document.querySelector("[data-cookie--banner]");
 		const details = document.querySelector("[data-cookie--details]");
-		expect(alert?.getAttribute("data-cookie--alert")).toBe("true");
+		expect(banner?.getAttribute("data-cookie--banner")).toBe("true");
 		expect(details?.getAttribute("data-cookie--details")).toBe("false");
 
 		cookieController.openDetails();
-		expect(alert?.getAttribute("data-cookie--alert")).toBe("false");
+		expect(banner?.getAttribute("data-cookie--banner")).toBe("false");
 		expect(details?.getAttribute("data-cookie--details")).toBe("true");
 	});
 

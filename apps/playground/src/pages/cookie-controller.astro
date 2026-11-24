@@ -82,7 +82,7 @@ const gatePill =
 	<Scenario
 		id="banner-dialog"
 		title="Banner and details dialog"
-		description="The banner is a `data-cookie--alert` element and the settings are a native `<dialog data-cookie--details>`, which the library opens with `showModal()`. Their markup lives here so the panel below shows the wiring; they render over the page. The `data-cookie--status` element below confirms each choice."
+		description="The banner is a `data-cookie--banner` element and the settings are a native `<dialog data-cookie--details>`, which the library opens with `showModal()`. Their markup lives here so the panel below shows the wiring; they render over the page. The `data-cookie--status` element below confirms each choice."
 		expect={[
 			"The banner is a `region` named by its heading, with no `role=\"alert\"` or `aria-live`, so it isn't read out when it appears.",
 			"The banner shows until you accept, reject or save. `Close` hides it for this page view only.",
@@ -99,14 +99,14 @@ const gatePill =
 		<p data-cookie--status class="readout mt-3 min-h-9"></p>
 
 		<div
-			data-cookie--alert
+			data-cookie--banner
 			hidden
-			aria-labelledby="cookie-alert-title"
+			aria-labelledby="cookie-banner-title"
 			class="fixed inset-x-4 bottom-16 z-40 lg:left-[calc(15.5rem+2rem)] xl:right-[calc(21rem+2rem)] xl:bottom-6"
 		>
 			<div class="mx-auto max-w-2xl rounded-xl border border-line-strong/70 bg-panel/95 p-5 shadow-2xl shadow-black/50 backdrop-blur">
 				<div class="flex items-start justify-between gap-4">
-					<h2 id="cookie-alert-title" class="text-[15px] font-semibold">We use cookies</h2>
+					<h2 id="cookie-banner-title" class="text-[15px] font-semibold">We use cookies</h2>
 					<button type="button" class="btn btn-ghost btn-sm -mt-1 -mr-2" data-cookie--action="dismiss">Close</button>
 				</div>
 				<p class="mt-1.5 text-[13px] leading-6 text-muted">

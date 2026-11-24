@@ -1,8 +1,8 @@
 import acceptAll from "./accept-all.js";
 import activateElements from "./activate-elements.js";
-import alertState from "./alert-state.js";
 import { addAttribute, restoreAttributes } from "./attributes.js";
-import closeAlert from "./close-alert.js";
+import bannerState from "./banner-state.js";
+import closeBanner from "./close-banner.js";
 import closeDetails from "./close-details.js";
 import confirm, { isShown } from "./confirm.js";
 import destroy from "./destroy.js";
@@ -42,7 +42,7 @@ const lib = {
 	message,
 	confirm,
 	isShown,
-	alertState,
+	bannerState,
 	detailsState,
 	onConsentChange,
 	rejectAccept,
@@ -52,7 +52,7 @@ const lib = {
 	openDetails,
 	closeDetails,
 	toggleDetails,
-	closeAlert,
+	closeBanner,
 	registerEvents,
 	initialise,
 	refresh,

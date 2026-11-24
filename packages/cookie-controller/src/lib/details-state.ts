@@ -17,7 +17,7 @@ const setDetailsState = (modalState: boolean) => {
 			document.activeElement instanceof HTMLElement
 				? document.activeElement
 				: null;
-		lib.alertState.set(false);
+		lib.bannerState.set(false);
 	}
 	details.setAttribute(C.attributes.details, modalState ? "true" : "false");
 	details.toggleAttribute("hidden", !modalState);

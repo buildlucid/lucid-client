@@ -5,7 +5,7 @@ import lib from "./index.js";
 /**
  * Updates the consent for individual cookie categories
  * - Unlisted categories keep their saved value, or stay off if the visitor has not decided yet
- * - Saves the decision, closes the alert, fires the onConsentChange update callback and writes the status
+ * - Saves the decision, closes the banner, fires the onConsentChange update callback and writes the status
  * - Leaves the details modal open, updating its checkboxes for the changed categories
  */
 const updateConsent = (categories: Record<string, boolean>) => {
@@ -42,7 +42,7 @@ const updateConsent = (categories: Record<string, boolean>) => {
 		if (key && updated.includes(key)) element.checked = next[key] === true;
 	}
 
-	lib.alertState.set(false);
+	lib.bannerState.set(false);
 	lib.onConsentChange("update");
 	lib.confirm("update");
 };

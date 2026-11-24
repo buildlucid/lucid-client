@@ -143,8 +143,8 @@ type Options = {
 | `destroy()` | Removes all event listeners and the accessibility attributes the library added. |
 | `getConsent()` | Returns the consent for every category, for example `{ analytics: false, marketing: true, essential: true }`. |
 | `getConsent(category)` | Returns whether a category is consented. `"essential"` is always `true`, and unknown categories return `undefined`. |
-| `updateConsent(categories)` | Updates individual categories, for example `{ marketing: true }`. Other categories keep their saved value, or stay off if the visitor has not decided yet. Saves the decision, closes the alert and fires `onConsentChange` with the `update` type. |
-| `acceptAll()` / `rejectAll()` | Accepts or rejects all categories, then closes the alert and details elements. |
+| `updateConsent(categories)` | Updates individual categories, for example `{ marketing: true }`. Other categories keep their saved value, or stay off if the visitor has not decided yet. Saves the decision, closes the banner and fires `onConsentChange` with the `update` type. |
+| `acceptAll()` / `rejectAll()` | Accepts or rejects all categories, then closes the banner and details elements. |
 | `saveDetails()` | Saves the checkbox choices in the details element, then closes it. |
 | `openDetails()` | Opens the details element with its checkboxes set to the saved choices. |
 | `closeDetails()` | Closes the details element without saving, discarding unsaved checkbox edits. |
@@ -155,7 +155,7 @@ Each method has a matching `data-cookie--action` value: `accept`, `reject`, `sav
 
 ### HTML Markup
 
-On each page, include one `data-cookie--details` element and, optionally, one `data-cookie--alert` element. Leave the alert out to show your own banner from `onConsentChange` instead. With the `data-cookie--action` attributes, you can add as many as you like.
+On each page, include one `data-cookie--details` element and, optionally, one `data-cookie--banner` element. Leave it out to show your own banner from `onConsentChange` instead. With the `data-cookie--action` attributes, you can add as many as you like.
 
 ```html
 <dialog data-cookie--details aria-label="Cookie settings" hidden>
@@ -184,7 +184,7 @@ On each page, include one `data-cookie--details` element and, optionally, one `d
   <button data-cookie--action="save">Save My Preferences</button>
 </dialog>
 
-<div data-cookie--alert aria-label="Cookies on Example" hidden>
+<div data-cookie--banner aria-label="Cookies on Example" hidden>
   <button data-cookie--action="accept">Accept All</button>
   <button data-cookie--action="reject">Reject</button>
   <button data-cookie--action="details">Details</button>
@@ -202,8 +202,8 @@ Use a native `<dialog>` for the details element to get modal focus management an
 
 A `dismiss` action closes whichever element it is in:
 
-- Inside the `data-cookie--alert` element, it hides the alert for the current page without saving a decision. No consent is given, and the alert shows again on the next page until the visitor chooses.
-- Anywhere else, it closes the details element and discards unsaved checkbox edits. Visitors who have yet to decide return to the alert, unless they closed it on this page.
+- Inside the `data-cookie--banner` element, it hides the banner for the current page without saving a decision. No consent is given, and the banner shows again on the next page until the visitor chooses.
+- Anywhere else, it closes the details element and discards unsaved checkbox edits. Visitors who have yet to decide return to the banner, unless they closed it on this page.
 
 Version 1.0.0 asks visitors who have a 0.1.0 preference cookie to choose again, since that format also saved unsaved checkbox edits.
 
@@ -273,22 +273,22 @@ The `essential` category is always consented, and it always lists the `CookieCon
 
 #### Dynamic Markup
 
-Action elements work as soon as they are added to the page. If the `data-cookie--details` or `data-cookie--alert` elements, the category checkboxes, or consent gated scripts and media are added or replaced after `init`, such as after a client side navigation, call `refresh()`.
+Action elements work as soon as they are added to the page. If the `data-cookie--details` or `data-cookie--banner` elements, the category checkboxes, or consent gated scripts and media are added or replaced after `init`, such as after a client side navigation, call `refresh()`.
 
 ## Accessibility
 
 The library follows GOV.UK's [cookie banner](https://design-system.service.gov.uk/components/cookie-banner/) pattern and fills in what the markup leaves out. Anything you set yourself is kept, and `destroy` removes what the library added.
 
-- A `div` alert gets `role="region"`, and an alert without a name gets `aria-label="Cookie consent"`, so it can be found as a landmark. It doesn't take focus or read itself out when it appears.
+- A `div` banner gets `role="region"`, and a banner without a name gets `aria-label="Cookie consent"`, so it can be found as a landmark. It doesn't take focus or read itself out when it appears.
 - A `<dialog>` details element opens with `showModal()`, which keeps focus inside it until it closes, and Escape closes it without saving. Any other element gets `role="dialog"` and `tabindex="-1"`, takes focus when it opens and closes with Escape, but isn't modal.
 - A details element without a name gets `aria-label="Cookie settings"`, and `details` actions get `aria-controls`.
-- Closing the details element gives focus back to the element that opened it, once the alert it may be in is showing again.
+- Closing the details element gives focus back to the element that opened it, once the banner it may be in is showing again.
 - `data-cookie--status` elements become polite live regions, and say what was chosen after each decision, such as "Your cookie preferences have been saved." When a decision hides the element that had focus, focus moves to the first status element rather than being lost.
 
 Your markup and CSS still need to:
 
-- Put the alert at the start of the `<body>`, so it is the first thing keyboard and screen reader users reach.
-- Keep a sticky or fixed alert from covering focused content (WCAG 2.4.11). Leave it in the page flow, or add `scroll-padding` the height of the alert.
+- Put the banner at the start of the `<body>`, so it is the first thing keyboard and screen reader users reach.
+- Keep a sticky or fixed banner from covering focused content (WCAG 2.4.11). Leave it in the page flow, or add `scroll-padding` the height of the banner.
 - Keep the status in the page from the start rather than `display: none`, so screen readers know of it before it is written to. A visible message, as GOV.UK shows, also shows sighted keyboard users where focus went.
 - Give every category checkbox a `<label>`. Use checkboxes or radios rather than `role="switch"`, as a switch suggests a choice takes effect straight away, and these take effect on Save.
 - Give Accept and Reject the same prominence, and show a focus style on every control.
@@ -302,7 +302,7 @@ Translate or reword the text the library writes. `init` sets the messages:
 ```typescript
 cookieController.init({
   messages: {
-    alert: "Consentement aux cookies",
+    banner: "Consentement aux cookies",
     details: "Paramètres des cookies",
     accepted: "Vous avez accepté tous les cookies.",
     rejected: "Vous avez refusé les cookies facultatifs.",
@@ -318,11 +318,11 @@ A status element can set its own with `data-cookie--message-{name}` attributes, 
 <p data-cookie--status data-cookie--message-saved="Vos préférences ont été enregistrées."></p>
 ```
 
-`alert` and `details` are only used for elements without an `aria-label` or `aria-labelledby`, so on a translated page, name them in the markup. An empty message passed to `init` writes nothing.
+`banner` and `details` are only used for elements without an `aria-label` or `aria-labelledby`, so on a translated page, name them in the markup. An empty message passed to `init` writes nothing.
 
 | Message | Default | Used for |
 | --- | --- | --- |
-| `alert` | `Cookie consent` | The alert's name, when it has none. |
+| `banner` | `Cookie consent` | The banner's name, when it has none. |
 | `details` | `Cookie settings` | The details element's name, when it has none. |
 | `accepted` | `You've accepted all cookies.` | The status after `accept`. |
 | `rejected` | `You've rejected optional cookies.` | The status after `reject`. |

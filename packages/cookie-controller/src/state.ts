@@ -7,8 +7,8 @@ const S: {
 	abortController: AbortController;
 	elements: Elements | null;
 	opener: HTMLElement | null;
-	/** Set when the alert is closed without a decision. Only lasts for the current page. */
-	alertClosed: boolean;
+	/** Set when the banner is closed without a decision. Only lasts for the current page. */
+	bannerClosed: boolean;
 	initialised: boolean;
 	/** The attributes the library added, which destroy removes again */
 	added: Array<[Element, string, string]>;
@@ -39,7 +39,7 @@ const S: {
 	abortController: new AbortController(),
 	elements: null,
 	opener: null,
-	alertClosed: false,
+	bannerClosed: false,
 	initialised: false,
 	added: [],
 	statusNodes: new Map(),

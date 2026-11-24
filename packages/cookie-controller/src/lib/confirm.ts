@@ -32,7 +32,7 @@ const write = (status: HTMLElement, text: string) => {
 };
 
 /**
- * Confirms a decision once it has closed the alert or details element
+ * Confirms a decision once it has closed the banner or details element
  * - Writes the decision's message to every `data-cookie--status` element
  * - When the decision hid the element that held focus, focus moves to the first status element, as GOV.UK's cookie banner does, rather than being lost
  */

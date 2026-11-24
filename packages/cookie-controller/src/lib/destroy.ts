@@ -5,7 +5,7 @@ import lib from "./index.js";
  * Destroys the cookie controller instance
  * - Removes all event listeners, and the accessibility attributes the library added
  * - Puts back the content of status elements it wrote to
- * - The alert and details elements are left showing or hidden as they were
+ * - The banner and details elements are left showing or hidden as they were
  */
 const destroy = () => {
 	S.abortController.abort();

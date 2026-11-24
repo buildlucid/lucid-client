@@ -16,14 +16,14 @@ const isGeneric = (element: Element) =>
 /**
  * Adds the accessibility attributes the markup leaves out. Anything the
  * markup sets itself is kept, and `restoreAttributes` removes what was added.
- * - The alert is a named region, as GOV.UK's cookie banner is, so it isn't read out when it appears and can be found as a landmark
+ * - The banner is a named region, as GOV.UK's cookie banner is, so it isn't read out when it appears and can be found as a landmark
  * - The details element is named, and is a dialog when it isn't a `<dialog>` already
  * - Status elements are polite live regions that can take focus once a decision closes what held it
  */
 const setAttributes = () => {
 	const elements = S.elements;
 	if (!elements) return;
-	const { alert, details } = elements;
+	const { banner, details } = elements;
 
 	if (details) {
 		lib.addAttribute(details, "id", C.ids.details);
@@ -35,11 +35,11 @@ const setAttributes = () => {
 		if (!named(details))
 			lib.addAttribute(details, "aria-label", lib.message("details"));
 	}
-	if (alert) {
-		lib.addAttribute(alert, "id", C.ids.alert);
-		if (isGeneric(alert)) lib.addAttribute(alert, "role", "region");
-		if (!named(alert))
-			lib.addAttribute(alert, "aria-label", lib.message("alert"));
+	if (banner) {
+		lib.addAttribute(banner, "id", C.ids.banner);
+		if (isGeneric(banner)) lib.addAttribute(banner, "role", "region");
+		if (!named(banner))
+			lib.addAttribute(banner, "aria-label", lib.message("banner"));
 	}
 
 	for (const status of elements.statuses) {
