@@ -1,0 +1,75 @@
+{
+	"name": "@lucidclient/forms",
+	"version": "0.1.0",
+	"private": false,
+	"description": "Bring your own markup forms that work without JavaScript, enhanced with accessible validation, error summaries, in-place sending, character counts, file drop zones and captcha support.",
+	"type": "module",
+	"types": "./dist/index.d.ts",
+	"main": "dist/index.cjs",
+	"module": "dist/index.js",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		},
+		"./files": {
+			"types": "./dist/files.d.ts",
+			"import": "./dist/files.js",
+			"require": "./dist/files.cjs"
+		},
+		"./turnstile": {
+			"types": "./dist/turnstile.d.ts",
+			"import": "./dist/turnstile.js",
+			"require": "./dist/turnstile.cjs"
+		},
+		"./recaptcha": {
+			"types": "./dist/recaptcha.d.ts",
+			"import": "./dist/recaptcha.js",
+			"require": "./dist/recaptcha.cjs"
+		}
+	},
+	"scripts": {
+		"dev": "vp pack --watch"
+	},
+	"devDependencies": {
+		"happy-dom": "^20.11.1",
+		"vite-plus": "1.7.0",
+		"typescript": "^7.0.2"
+	},
+	"author": "Proto Digital",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ProtoDigitalUK/lucid_client",
+		"directory": "packages/forms"
+	},
+	"keywords": [
+		"forms",
+		"form-validation",
+		"progressive-enhancement",
+		"accessibility",
+		"error-summary",
+		"file-upload",
+		"captcha",
+		"turnstile",
+		"recaptcha",
+		"javascript",
+		"typescript",
+		"frontend",
+		"minimal",
+		"lightweight",
+		"lucid-client",
+		"lucid"
+	],
+	"homepage": "https://lucidjs.build/forms",
+	"engines": {
+		"node": ">=24 <27"
+	},
+	"volta": {
+		"node": "26.13.1"
+	}
+}
