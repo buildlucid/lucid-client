@@ -2,7 +2,7 @@
 	"name": "@lucidclient/speculate",
 	"version": "1.1.2",
 	"private": false,
-	"description": "A lightweight library to handle speculate rules for prefetching and prerendering documents, with added support for data fetching on intent.",
+	"description": "Prefetch and prerender links from HTML attributes, using Speculation Rules where the browser supports them and falling back to prefetching on intent where it doesn't.",
 	"type": "module",
 	"types": "./dist/index.d.ts",
 	"main": "dist/index.cjs",
@@ -13,7 +13,10 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js",
+			"import": {
+				"development": "./dist/dev/index.js",
+				"default": "./dist/index.js"
+			},
 			"require": "./dist/index.cjs"
 		}
 	},
@@ -37,7 +40,6 @@
 		"prefetch",
 		"prerender",
 		"speculation rules",
-		"prefetch data",
 		"lucid-client",
 		"lucid"
 	],

@@ -6,6 +6,7 @@ import { targetLinks } from "../../scripts/speculate-links";
 const matrix = targetLinks.filter((link) => link.id <= 10);
 const scrollLink = targetLinks.find((link) => link.id === 11)!;
 const controlLink = targetLinks.find((link) => link.id === 12)!;
+const lateLink = targetLinks.find((link) => link.id === 13)!;
 
 const supportRows = [
 	["rules", "Speculation Rules"],
@@ -19,18 +20,15 @@ const supportRows = [
 
 const statusClass =
 	"text-xs text-subtle data-[speculated=true]:text-emerald-300";
-const sectionClass =
-	"pt-6 text-[11px] font-semibold tracking-[0.08em] text-subtle uppercase first:pt-0";
 ---
 
 <Playground title="Speculate">
 	<Fragment slot="intro">
 		<p>
-			<code>speculateLinks()</code> prefetches or prerenders links from their
+			<code>speculate.init()</code> prefetches or prerenders links from their
 			<code>data-speculate</code> attributes, using Speculation Rules where the browser supports them
 			and <code>&lt;link rel="prefetch"&gt;</code> or a low-priority
-			<code>fetch</code> where it doesn't. <code>Speculator</code> prefetches
-			data when a visitor shows intent.
+			<code>fetch</code> where it doesn't.
 		</p>
 		<p>
 			Every link goes to a target page that reports how it was loaded. The
@@ -38,8 +36,6 @@ const sectionClass =
 			sends cache headers.
 		</p>
 	</Fragment>
-
-	<h2 class={sectionClass}>Link speculation</h2>
 
 	<Scenario
 		id="support"
@@ -71,11 +67,11 @@ const sectionClass =
 	<Scenario
 		id="links"
 		title="Every action and trigger"
-		description="One link per action and trigger. `Resolves to` is what Speculate uses in this browser after its fallbacks; `Speculated` updates when a rule, prefetch link or fetch appears for the link."
+		description="One link per action and trigger. `Resolves to` is what Speculate uses in this browser after its fallbacks; `Added` shows the rule, prefetch link or fetch Speculate added for the link. A rule only registers the link: the browser decides when to speculate it from its eagerness."
 		expect={[
-			"With Speculation Rules, every row except the `visible` ones is speculated on load, as Speculate adds a rule and the browser applies the eagerness.",
+			"With Speculation Rules, every row except the `visible` ones gets its rule once the browser is idle, in one rule set. `immediate` rows are speculated straight away. On desktop the others wait for hover or a press, as their eagerness says; Chrome on Android can also start `eager` and `moderate` ones from what is in view.",
 			"The `visible` rows stay `Waiting` until the table scrolls into view, then they are speculated.",
-			"Without Speculation Rules, `prerender` resolves to `prefetch` and every trigger except `visible` resolves to `moderate`, which waits for hover, focus or touch.",
+			"Without Speculation Rules, `prerender` resolves to `prefetch` and every trigger except `visible` resolves to `moderate`: resting the pointer on a link for 200ms, pressing it or focusing it prefetches it, and moving off it sooner doesn't.",
 			"Opening a prerendered link shows `Prerendered` on the target page; a prefetched one shows `Prefetched`.",
 		]}
 	>
@@ -86,7 +82,7 @@ const sectionClass =
 						<th class="px-1 pb-2 font-medium">Link</th>
 						<th class="px-1 pb-2 font-medium">Attribute</th>
 						<th class="px-1 pb-2 font-medium">Resolves to</th>
-						<th class="px-1 pb-2 font-medium">Speculated</th>
+						<th class="px-1 pb-2 font-medium">Added</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -144,12 +140,59 @@ const sectionClass =
 	</Scenario>
 
 	<Scenario
+		id="refresh"
+		title="Links added after init"
+		description={`\`Add link\` adds Target ${lateLink.id}, which uses \`${lateLink.markup}\`, after \`init\`. \`refresh()\` picks it up.`}
+		expect={[
+			`With Speculation Rules, Target ${lateLink.id} stays \`Waiting\` once it is added, and is speculated after \`Refresh\`, in a rule set of its own.`,
+			`Without Speculation Rules, \`immediate\` falls back to \`moderate\`, which reads intent from the whole page, so Target ${lateLink.id} is prefetched on hover without \`Refresh\`.`,
+			"Pressing `Refresh` again adds nothing, as the same rule is only added once.",
+		]}
+	>
+		<div class="space-y-3">
+			<div class="flex flex-wrap items-center gap-2">
+				<button class="btn" data-late-add>Add link</button>
+				<button class="btn btn-ghost" data-late-refresh>Refresh</button>
+				<span class="ml-auto text-xs text-subtle">
+					Target {lateLink.id}:
+					<span class={statusClass} data-status={lateLink.id}>Waiting</span>
+				</span>
+			</div>
+			<p class="min-h-6 text-sm" data-late-slot></p>
+			<template data-late-template>
+				<a href={lateLink.href} {...lateLink.attributes}>Target {lateLink.id}</a>
+			</template>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="skipped"
+		title="Links it leaves out"
+		description={`Each of these has \`data-speculate="immediate"\`, but can't be speculated. The development build warns about each one in the console, apart from the links to this page.`}
+		expect={[
+			"None of them appear in the head view below.",
+			"The console warns that the first link goes to another origin, the second opens in another tab or window, the third downloads a file and the button isn't a link.",
+			"The link to this page and its `#links` hash are left out without a warning.",
+		]}
+	>
+		<ul class="space-y-2 text-sm">
+			<li><a href="https://example.com/" data-speculate="immediate">Another origin</a></li>
+			<li><a href="/speculate/target/1?tab=new" target="_blank" data-speculate="immediate">A new tab</a></li>
+			<li><a href="/favicon.svg" download data-speculate="immediate">A download</a></li>
+			<li><button class="btn btn-sm" data-speculate="immediate">A button</button></li>
+			<li><a href="/speculate" data-speculate="immediate">This page</a></li>
+			<li><a href="/speculate#links" data-speculate="immediate">This page, with a hash</a></li>
+		</ul>
+	</Scenario>
+
+	<Scenario
 		id="injected"
 		title="What Speculate adds to the head"
-		description={'A live view of the `<script type="speculationrules">` and `<link rel="prefetch">` elements Speculate adds, marked with `gen-speculate`. `destroy()` removes them.'}
+		description={'A live view of the `<script type="speculationrules">` and `<link rel="prefetch">` elements Speculate adds, marked with `data-speculate--generated`. `destroy()` removes them.'}
 		expect={[
-			"The view lists one element per speculated link.",
-			"`Destroy` empties the view and resets every `Speculated` status to `Waiting`.",
+			"With Speculation Rules, the links set up together share one script, and `visible` links that scroll into view together share another.",
+			"Without Speculation Rules, there is one `<link rel=\"prefetch\">` per prefetched page.",
+			"`Destroy` empties the view and resets every `Added` status to `Waiting`.",
 			"`Initialise again` adds them back.",
 		]}
 		markup={false}
@@ -170,150 +213,6 @@ const sectionClass =
 				</span>
 			</div>
 			<pre class="readout max-h-80 overflow-auto" data-injected>Nothing injected yet.</pre>
-		</div>
-	</Scenario>
-
-	<h2 class={sectionClass}>Data prefetching</h2>
-
-	<Scenario
-		id="pagination"
-		title="Pagination with intent prefetching"
-		description="Six page buttons share one `Speculator`. Hovering a button prefetches its page after `hoverDelay`, clicking it calls `onClick` with the result, and `fetch` waits for the latency below. Page 1 always returns an error."
-		expect={[
-			"Page 2 is prefetched on load (see the log and the cache), because the optimistic option is on.",
-			"Hovering a page for a moment logs `fetch() called` with the reason `hover`; clicking it afterwards logs `served from the cache` almost immediately.",
-			"Clicking a page you haven't hovered waits for the latency before `onClick` runs.",
-			"Page 1 shows its error, and the log shows `onClick` as a warning.",
-			"Clicking page 1 again fetches again: its error isn't cached, so it leaves the cache once it settles.",
-			"The cache never holds more than `maxSize` entries; the oldest is evicted first.",
-		]}
-	>
-		<div class="space-y-4" data-paginator>
-			<div class="flex flex-wrap gap-2">
-				{
-					[1, 2, 3, 4, 5, 6].map((page) => (
-						<button class="btn w-20" data-page={page}>
-							Page {page}
-						</button>
-					))
-				}
-			</div>
-			<label class="flex items-center gap-3 text-sm">
-				<span class="label w-16">Latency</span>
-				<input type="range" min="0" max="3000" step="100" value="800" class="flex-1 accent-(--color-accent)" data-option="latency" />
-				<output class="w-16 text-right font-mono text-xs text-muted" data-option-output="latency">800ms</output>
-			</label>
-			<pre class="readout min-h-24 data-[error=true]:text-rose-300" data-page-output>Hover or click a page.</pre>
-			<pg-cache class="block space-y-1.5">
-				<p class="flex items-center justify-between text-[11px] font-medium tracking-wide text-subtle uppercase">
-					Cache
-					<span class="font-mono normal-case tracking-normal" data-cache-summary></span>
-				</p>
-				<div class="overflow-hidden rounded-md border border-line">
-					<table class="w-full text-left font-mono text-xs text-muted">
-						<thead class="bg-raised/60 text-subtle">
-							<tr>
-								<th class="px-3 py-1.5 font-medium">key</th>
-								<th class="px-3 py-1.5 font-medium">age</th>
-								<th class="px-3 py-1.5 font-medium">promise</th>
-								<th class="px-3 py-1.5 font-medium">status</th>
-							</tr>
-						</thead>
-						<tbody data-cache-rows></tbody>
-					</table>
-				</div>
-			</pg-cache>
-		</div>
-	</Scenario>
-
-	<Scenario
-		id="options"
-		title="Cache size, staleness and optimistic prefetching"
-		description="These options are read when a `Speculator` is created, so `Recreate` destroys the pagination one and creates a new one with them. The optimistic strategy prefetches page 2 when idle, if its `condition` returns true."
-		expect={[
-			"With `maxSize` 2, prefetching a third page evicts the oldest entry from the cache above.",
-			"With a short `staleTime`, entries turn `stale`, and the next hover or click fetches again.",
-			"Recreating with the optimistic box unticked doesn't prefetch page 2.",
-		]}
-		markup={false}
-	>
-		<div class="flex flex-wrap items-end gap-4">
-			<label class="space-y-1.5">
-				<span class="label">maxSize</span>
-				<input type="number" min="1" max="10" value="3" class="input w-24" data-option="max-size" />
-			</label>
-			<label class="space-y-1.5">
-				<span class="label">staleTime (ms)</span>
-				<input type="number" min="0" step="1000" value="15000" class="input w-32" data-option="stale-time" />
-			</label>
-			<label class="flex items-center gap-2 pb-2 text-sm">
-				<input type="checkbox" class="check" checked data-option="optimistic" />
-				Prefetch page 2 optimistically
-			</label>
-			<button class="btn btn-primary ml-auto" data-speculator-action="recreate">Recreate</button>
-		</div>
-	</Scenario>
-
-	<Scenario
-		id="methods"
-		title="Public methods"
-		description="Each button calls a method on the pagination `Speculator`. Watch the cache in the pagination scenario."
-		expect={[
-			"`prefetch(page 3)` fetches page 3 once; pressing it again resolves from the cache without another `fetch() called`.",
-			"`prefetchAll()` fetches every page that isn't cached, and the cache ends up with `maxSize` entries.",
-			"`clearCache(page 3)` removes only page 3; `clearCache()` empties the cache.",
-			"`destroy()` empties the cache and stops hover and click handling; `refresh()` brings them back and re-runs the optimistic prefetch.",
-		]}
-		markup={false}
-	>
-		<div class="flex flex-wrap gap-2">
-			<button class="btn" data-speculator-action="prefetch-3">prefetch(page 3)</button>
-			<button class="btn" data-speculator-action="prefetch-all">prefetchAll()</button>
-			<button class="btn" data-speculator-action="clear-3">clearCache(page 3)</button>
-			<button class="btn" data-speculator-action="clear-all">clearCache()</button>
-			<button class="btn" data-speculator-action="refresh">refresh()</button>
-			<button class="btn btn-danger" data-speculator-action="destroy">destroy()</button>
-		</div>
-	</Scenario>
-
-	<Scenario
-		id="hover-intent"
-		title="Hover intent and hoverDelay"
-		description="A `Speculator` with no `hoverDelay` option. The log shows how long after the pointer arrived each fetch started."
-		expect={[
-			"Resting on a button logs a fetch about 200ms, the default `hoverDelay`, after the pointer arrived.",
-			"Passing quickly over a button and off it logs that the pointer left before the delay, and no fetch follows.",
-		]}
-	>
-		<div class="flex flex-wrap items-center gap-2">
-			{
-				[7, 8, 9].map((page) => (
-					<button class="btn w-20" data-hover-page={page}>
-						Page {page}
-					</button>
-				))
-			}
-			<button class="btn btn-ghost ml-auto" data-hover-reset>Clear cache</button>
-		</div>
-	</Scenario>
-
-	<Scenario
-		id="nested-markup"
-		title="Triggers with nested markup"
-		description="These buttons wrap their label in a `<span>`. The log shows the element `getCacheKey` receives on each hover and click."
-		expect={[
-			"Hovering or clicking the label passes the button to `getCacheKey` and `fetch`, the same as its padding.",
-			"Clicking the label logs `onClick received page` with the button's page, never an error.",
-		]}
-	>
-		<div class="flex flex-wrap gap-2">
-			{
-				[4, 5].map((page) => (
-					<button class="btn px-5 py-3" data-nested-page={page}>
-						<span class="font-medium">Page <strong>{page}</strong></span>
-					</button>
-				))
-			}
 		</div>
 	</Scenario>
 

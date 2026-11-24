@@ -2,143 +2,146 @@
 
 > Part of the Lucid Client suite
 
-A library for optimising page loads and data fetching through prefetching and prerendering. Provides two main features:
-1. Link prefetching/preloading using the Speculation Rules API (with fallbacks for browsers that dont support it yet).
-2. Data prefetching for dynamic content (like pagination, tabs or dynamic lists).
+Prefetch and prerender the pages your links go to, so they load quicker or show straight away. Links are set up with `data-speculate` attributes, and use the [Speculation Rules API](https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API) where the browser supports it, falling back to prefetching on intent where it doesn't.
 
 ## Features
-- **Speculation Rules for Links**
-    - Prefetch or prerender documents using the Speculation Rule API.
-    - Fallback to `<link rel="prefetch">` or `fetch` for broader browser support.
-    - Support for `visible`, `immediate`, `eager`, `moderate` and `conservative` triggers.
-- **Data Prefetching**
-    - Prefetch data when user intent is detected.
-    - Configurable caching with limits and staleness.
-    - Optimistic prefetching strategies.
-    - Full TypeScript support.
 
-## Installation
+- Attribute Driven: Choose what happens to each link, and when, with `data-speculate--*` attributes.
+- Speculation Rules: Prefetch or prerender with the browser's own `immediate`, `eager`, `moderate` and `conservative` eagerness.
+- Visible Trigger: Speculate a link once it scrolls into view.
+- Fallbacks: Prefetch with `<link rel="prefetch">` or a low priority `fetch` in browsers without Speculation Rules, when the pointer rests on a link, or it is pressed or focused.
+- Kind to Connections: Does nothing for visitors who are offline, saving data or on a 2G or 3G connection.
+- Safe Links Only: Links to other origins, new tabs and downloads are left out, and the same rule or prefetch is never added twice.
+- Dynamic Markup: Call `refresh()` to pick up links added or changed after `init`.
+- Development Warnings: Markup mistakes are pointed out while you develop, and left out of production builds.
 
-To install the Lucid Speculate library, run the following command:
+## Getting Started
+
+### Installation
 
 ```bash
 npm install @lucidclient/speculate
 ```
 
-### Link Speculation
-
-#### Basic Usage
+### Usage
 
 ```typescript
-import { speculateLinks } from "@lucidclient/speculate";
+import speculate from "@lucidclient/speculate";
 
-speculateLinks();
-
-// Cleanup when needed
-const destroy = speculateLinks();
-destroy();
+speculate.init();
 ```
-
-#### Configuring Links
 
 ```html
-<a href="/page-1" data-speculate="visible">Prefetch in viewport</a>
-<a href="/page-2" data-speculate--prefetch="moderate">Prefetch on interaction</a>
-<a href="/page-3" data-speculate--prerender="visible">Prerender in viewport</a>
+<a href="/pricing" data-speculate>Prefetched when the visitor shows intent</a>
+<a href="/blog" data-speculate="visible">Prefetched once it scrolls into view</a>
+<a href="/signup" data-speculate--prerender="moderate">Prerendered when the visitor shows intent</a>
 ```
 
-The specifier is the action and the value is the trigger. `data-speculate` on its own prefetches, like `data-speculate--prefetch`, and an empty or unknown trigger uses `moderate`. A link with both actions is prerendered.
+The library needs no CSS. On a site with a Content Security Policy, see [Content Security Policy](#content-security-policy).
 
-Aside from the `visible` trigger, the others are based on the [Speculation Rule Eagerness](https://developer.chrome.com/docs/web-platform/prerender-pages#eagerness) values and are used only when Speculation Rules are supported. 
+## Markup
 
-When Speculation Rules are not supported, the only valid triggers are `visible` and `moderate`. The `moderate` trigger being a fallback for the remaining triggers. The `prerender` action is ONLY supported with Speculation Rules and will fallback to the `prefetch` action when not supported.
+### Attributes
 
-#### Browser Support
+The specifier is the action, and the value is the trigger.
 
-##### Chrome
+| Attribute | Description |
+| --- | --- |
+| `data-speculate` | Prefetches the link. |
+| `data-speculate--prefetch` | Prefetches the link. The same as `data-speculate`. |
+| `data-speculate--prerender` | Prerenders the link, and adds a prefetch as another candidate the browser can use. Wins when a link also has a prefetch attribute. |
 
-Chrome supports Speculation Rules, allowing for both prefetching and prerendering as intended. Chrome will always use the Speculation Rules API.
+### Triggers
 
-##### Firefox
+| Trigger | Description |
+| --- | --- |
+| `visible` | Once the link scrolls into view. |
+| `immediate` | Straight away. |
+| `eager` | Sooner than `moderate`, such as on a short hover. |
+| `moderate` | The default. When the visitor shows intent, such as resting the pointer on the link or pressing it. |
+| `conservative` | When the link is pressed. |
 
-Firefox does not support the Speculations API, but does support `<link rel="prefetch">`, however this requires cache headers (such as Cache-Control, Expires, or ETag) to function properly.
+An empty or unknown trigger uses `moderate`. Apart from `visible`, these are the Speculation Rules [eagerness](https://developer.chrome.com/docs/web-platform/prerender-pages#eagerness) levels, and the browser decides exactly when each one fires.
 
-##### Safari
+## How It Works
 
-Safari doesn't support either the Speculation Rules API or `<link rel="prefetch">`. Instead, it uses a low-priority fetch, which requires cache headers (such as Cache-Control, Expires, or ETag) to function properly.
+### With Speculation Rules
 
-### Data Prefetching
+Links are added to a `<script type="speculationrules">` in `<head>` once the browser is idle, and the browser waits for their trigger. Links that come into view together, or are picked up by the same `refresh()`, share one script.
 
-#### Basic Usage
+A rule is only added once for each action, eagerness and URL, so a link already in a rule set isn't added again. The same URL can still have rules with different eagerness, such as one link to it with `eager` and another with `moderate`. URLs keep their hash, as the browser matches the full URL when the visitor hovers a link or follows it.
+
+Rules are for URLs rather than links, so the browser can act on any link to a URL with a rule. With a `data-speculate--prerender="eager"` link to `/pricing` in the header, hovering a footer link to `/pricing` without the attribute can prerender it too.
+
+### Content Security Policy
+
+The rule sets are inline scripts. With a Content Security Policy that limits `script-src`, add `'inline-speculation-rules'` so they can run:
+
+```text
+Content-Security-Policy: script-src 'self' 'inline-speculation-rules'
+```
+
+Without it, the browser blocks the rule sets and nothing is speculated. The browser still reports Speculation Rules as supported, so the library can't fall back to prefetching.
+
+### Without Speculation Rules
+
+Prerendering needs Speculation Rules, so prerender links are prefetched instead. `visible` links are prefetched once they scroll into view, and every other trigger works like `moderate`:
+
+- Resting the pointer on a link for `hoverDelay`, 200ms by default, prefetches it. Moving off it first cancels.
+- Pressing or focusing a link prefetches it straight away.
+
+The page is prefetched with `<link rel="prefetch">`, or a low priority `fetch` where that isn't supported. Each page is only prefetched once, ignoring the hash. Both only help when the page is sent with cache headers, such as `Cache-Control`, as the browser reads it from its HTTP cache when the visitor follows the link.
+
+### Links that aren't speculated
+
+- Links that aren't http or https, such as `mailto:`, and links to another origin.
+- Links with a `target` other than `_self`, or that inherit one from `<base target>`, as they open in another tab or window.
+- Links with `download`.
+- Links to the current page, ignoring the hash. Links to the same path with a different query, such as `?page=2`, are kept.
+
+The development build warns about each of these, apart from links to the current page.
+
+### Connections
+
+On `init`, the library does nothing when the visitor is offline, has Save-Data turned on, or is on a 2G or 3G connection. The development build says why.
+
+### What to speculate
+
+Prefetching and prerendering run the page's server code, and prerendering runs its scripts too. Only speculate pages that are safe to load without being visited, so not a sign out link or one that adds to a basket. See Chrome's guide to [prerendering pages](https://developer.chrome.com/docs/web-platform/prerender-pages) for how analytics and other scripts behave in a prerendered page.
+
+## API
 
 ```typescript
-import { Speculator } from "@lucidclient/speculate";
+import speculate from "@lucidclient/speculate";
 
-// A basic pagination example
-const paginator = new Speculator({
-    elements: document.querySelectorAll(".pagination-link"),
-    // these will fire ASAP
-    optimistic: [
-        {
-            elements: document.querySelector(".next-page"),
-            // condition: () => hasNextPage
-        },
-        {
-            elements: document.querySelector(".prev-page"),
-            // condition: () => hasPrevPage
-        },
-    ],
-    getCacheKey: (element) => {
-        return element.getAttribute("data-page");
-    },
-    fetch: async (element) => {
-        const page = element.getAttribute("data-page");
-        const response = await fetch(`/api/posts?page=${page}`);
-        const posts = await response.json();
+speculate.init({ hoverDelay: 100 });
 
-        return {
-            data: posts,
-            error: undefined,
-        };
-    },
-    onClick: async (e, data) => {
-        // set loading state
+// After adding links, such as after a client side navigation
+speculate.refresh();
 
-        // handle error case
-        if (data.error) {
-        }
-
-        // add filter/sort state to URL query params
-        // replace posts in DOM
-        // rebuild pagination
-
-        // optimistically prefetch the next/prev pages again
-        paginator.prefetch(document.querySelector(".next-page"));
-        paginator.prefetch(document.querySelector(".prev-page"));
-
-        // reset loading state
-        // etc...
-    },
-});
+speculate.destroy();
 ```
 
-Note for additional DOM event handlers other than `onClick` you can register these yourself and fetch the prefetched data via the `prefetch` public method. You may want to do this to handle `enter` and `space` `keydown` events for instance.
+| Method | Description |
+| --- | --- |
+| `init(options?)` | Sets up every link once the browser is idle. Calling it again starts over. |
+| `refresh()` | Picks up links added or changed since `init`, and stops watching `visible` links that left the page. Rules already added stay until `destroy()`. |
+| `destroy()` | Stops speculating, removes the rule sets and prefetch links the library added and cancels prefetches in flight. |
 
-#### Intent and Caching
+| Option | Default | Description |
+| --- | --- | --- |
+| `hoverDelay` | `200` | How long the pointer rests on a `moderate` link before it is prefetched, in milliseconds. Only used without Speculation Rules, as browsers with them wait for their own hover. |
 
-- Hovering a target element for `hoverDelay` (200ms by default) prefetches its data. Leaving the element before the delay cancels it.
-- Clicking a target element prefetches its data if it isn't cached, then calls `onClick` with the result.
-- The element passed to `getCacheKey`, `fetch` and `onClick`'s result is always the target element, even when the pointer is over markup inside it, such as a `<span>` label.
-- Calls made while a fetch is in flight share it. Successful results are cached until they are older than `staleTime`, while results with an `error`, including a `fetch` that throws, are not kept, so the next intent fetches again.
+Without Speculation Rules, intent is read from the whole page, so a `moderate` link added after `init` works without `refresh()`. With them, and for `visible` links, call `refresh()`.
 
-#### Configuration Options
+### Development Build
 
-To see the available config, checkout the `SpeculatorConfig` type [here](https://github.com/buildlucid/lucid-client/blob/master/packages/speculate/src/types.d.ts).
+The library warns about markup it can't work with, such as attributes on an element that isn't a link, an unknown trigger, or a link it can't speculate. Warnings only log in the development build, which bundlers such as Vite and webpack pick through the `development` export condition while you develop. Production builds leave them out.
 
-#### Public Methods
+## Browser Support
 
-- refresh(): void
-- destroy(): void
-- prefetch(element: Element): Promise<IntentResult<T, D>>
-- prefetchAll(elements: Element[] | NodeListOf<Element>): Promise<IntentResult<T, D>[]>
-- clearCache(element?: Element): void
+- Chrome and Edge support Speculation Rules, so links are prefetched or prerendered as their trigger says.
+- Firefox supports `<link rel="prefetch">`, which needs cache headers to help.
+- Safari supports neither, so links are prefetched with a low priority `fetch`, which needs cache headers to help.
+
+Support for Speculation Rules is growing, and the library uses it in any browser that reports it through `HTMLScriptElement.supports("speculationrules")`.

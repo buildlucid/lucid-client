@@ -41,13 +41,13 @@ const nav: NavGroup[] = [
 		package: speculate.name,
 		version: speculate.version,
 		description:
-			"Speculation Rules for links with fallbacks, and intent-based data prefetching.",
+			"Speculation Rules for links, with fallbacks for browsers without them.",
 		pages: [
 			{
 				title: "Speculate",
 				href: "/speculate",
 				description:
-					"Every link action and trigger, how the target page loaded, and the Speculator cache.",
+					"Every link action and trigger, links added after init, links it leaves out, and how the target page loaded.",
 			},
 		],
 	},

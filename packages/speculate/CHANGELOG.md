@@ -5,13 +5,28 @@
 ## Breaking Changes
 
 - Links are configured with `data-speculate` attributes instead of `rel`, following the suite's `data-{namespace}--{specifier}` grammar. `rel="prefetch:visible"` is now `data-speculate--prefetch="visible"`, or `data-speculate="visible"`, and `rel="prerender:moderate"` is now `data-speculate--prerender="moderate"`. `rel` is left to the tokens browsers, validators and SEO plugins expect, and `rel` values are no longer read.
+- The library is a default export with `init`, `refresh` and `destroy`, like the rest of the suite. `speculateLinks()` is now `speculate.init()`, and `destroy` is a method rather than the function `speculateLinks` returned.
+- Removed `Speculator`, so the library is only about links.
+- The speculation rules and prefetch links the library adds are marked with `data-speculate--generated` instead of `gen-speculate`.
+- Messages about the connection only log in the development build, which bundlers pick through the `development` export condition.
+
+## Features
+
+- Added `refresh()`, which picks up links added or changed after `init`, such as after a client side navigation, and stops watching `visible` links that left the page. Rules already added stay until `destroy()`.
+- Added the `hoverDelay` option. Without Speculation Rules, a `moderate` link is prefetched once the pointer rests on it for 200ms, and moving off it first cancels, rather than on every pass of the pointer.
+- Without Speculation Rules, pressing a link prefetches it, and intent is read from the whole page, so `moderate` links added after `init` work without a refresh.
+- Links that are set up together share one Speculation Rules script, rather than each having its own, and a rule an earlier script has for the same action, eagerness and URL isn't added again.
+- The development build warns about speculate attributes on an element that isn't a link, an unknown trigger, and links that can't be speculated: links to another origin or that aren't http or https, links that open in another tab or window, downloads and links without an `href`.
 
 ## Patch Changes
 
-- `Speculator` now uses the target element for hover and click intent, so markup inside a target, such as a `<span>` label, no longer passes the inner element to `getCacheKey`, `fetch` and `onClick`.
-- Moving the pointer off a target before `hoverDelay` cancels its prefetch.
-- `hoverDelay` now defaults to 200ms, as documented. It was 100ms.
-- Results with an error are no longer cached, so the next intent fetches again. Calls made while a fetch is in flight still share it.
+- Touching markup inside a link, such as a `<span>` label, prefetches it. It was ignored.
+- Rules keep the link's hash, as the browser matches the full URL, and the same link is only added once. Fallback prefetches leave the hash out, so links to one page with different hashes share a prefetch. A link with a hash was speculated again every time before.
+- Links to the current path with a different query, such as `?page=2`, are speculated. They were skipped as the current page.
+- `destroy()` before the browser is idle stops the links from being set up afterwards.
+- A fallback `fetch` that fails, or is cancelled by `destroy()`, no longer causes an unhandled promise rejection.
+- Importing the library no longer reads the DOM, so it can be imported where there is no DOM, such as during server rendering.
+- Links with a `target` other than `_self`, or one inherited from `<base target>`, links with `download`, and links that aren't http or https are no longer speculated. Only `_blank` was left out before.
 
 ## v1.1.2
 

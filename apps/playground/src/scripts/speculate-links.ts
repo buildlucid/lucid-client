@@ -25,7 +25,7 @@ export type TargetLink = {
 const TRIGGER_NOTES: Record<SpeculationTrigger, string> = {
 	visible: "When the link scrolls into view",
 	immediate: "As soon as the rule is added",
-	eager: "As soon as possible, slightly behind immediate",
+	eager: "On a short hover on desktop, sooner than moderate",
 	moderate: "On hover (about 200ms) or pointerdown",
 	conservative: "On pointerdown or touchstart",
 };
@@ -65,6 +65,15 @@ export const targetLinks: TargetLink[] = [
 		action: null,
 		trigger: null,
 		note: "No data-speculate attribute, so it is never speculated",
+	},
+	{
+		id: 13,
+		href: "/speculate/target/13",
+		attributes: { "data-speculate--prefetch": "immediate" },
+		markup: 'data-speculate--prefetch="immediate"',
+		action: "prefetch",
+		trigger: "immediate",
+		note: "Added after init, and picked up by refresh()",
 	},
 ];
 

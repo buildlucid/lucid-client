@@ -1,2 +1,13 @@
-export { default as speculateLinks } from "./libs/speculate-links.js";
-export { default as Speculator } from "./libs/speculator.js";
+import lib from "./lib/index.js";
+
+export type {
+	Options,
+	SpeculationAction,
+	SpeculationTrigger,
+} from "./types.js";
+
+export default {
+	init: lib.initialise,
+	refresh: lib.refresh,
+	destroy: lib.destroy,
+};
