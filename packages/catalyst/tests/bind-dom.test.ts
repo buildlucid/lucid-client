@@ -23,7 +23,7 @@ describe("bind reaction", () => {
 				></button>
 			</div>
 		`;
-		Catalyst.start({ reactions: [bind] });
+		Catalyst.init({ reactions: [bind] });
 		const button = document.querySelector("button");
 
 		expect(button?.hasAttribute("disabled")).toBe(false);
@@ -45,7 +45,7 @@ describe("bind reaction", () => {
 				<svg data-bind--viewBox="$box"></svg>
 			</div>
 		`;
-		Catalyst.start({ reactions: [bind] });
+		Catalyst.init({ reactions: [bind] });
 		expect(document.querySelector("svg")?.getAttribute("viewBox")).toBe(
 			"0 0 10 10",
 		);
@@ -60,7 +60,7 @@ describe("dom reaction", () => {
 				<svg><text data-dom--text="$label"></text></svg>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 		expect(document.querySelector("span")?.textContent).toBe("");
 
 		setStoreState("d", "label", "Hello");
@@ -75,7 +75,7 @@ describe("dom reaction", () => {
 				<div data-dom--htm="$content">fallback</div>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 		expect(document.querySelector("[data-dom--htm]")?.textContent).toBe(
 			"fallback",
 		);
@@ -90,7 +90,7 @@ describe("dom reaction", () => {
 				<input type="checkbox" data-dom--checked="$newsletter" />
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 		const box = document.querySelector<HTMLInputElement>("input");
 		if (!box) throw new Error("Missing checkbox");
 		expect(box.checked).toBe(false);
@@ -116,7 +116,7 @@ describe("dom reaction", () => {
 			</div>
 		`;
 		const interests = defineStore({ state: { picked: ["docs"] as string[] } });
-		Catalyst.start({ stores: { interests }, reactions: [dom] });
+		Catalyst.init({ stores: { interests }, reactions: [dom] });
 		// happy-dom's selectedOptions goes stale, so read each option instead.
 		const selected = () =>
 			Array.from(document.querySelector("select")?.options ?? [])
@@ -151,7 +151,7 @@ describe("dom reaction", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { address }, reactions: [bind, dom, loop] });
+		Catalyst.init({ stores: { address }, reactions: [bind, dom, loop] });
 		const select = document.querySelector("select");
 		await settle();
 		expect(select?.value).toBe("wales");
@@ -186,7 +186,7 @@ describe("server-rendered markup", () => {
 			subtree: true,
 		});
 
-		Catalyst.start({ stores: { card }, reactions: [bind, dom] });
+		Catalyst.init({ stores: { card }, reactions: [bind, dom] });
 		await settle();
 		records.push(...observer.takeRecords());
 		observer.disconnect();
@@ -217,7 +217,7 @@ describe("unchanged values", () => {
 				markup: () => (state.count > 0 ? "<b>Active</b>" : ""),
 			}),
 		});
-		Catalyst.start({ stores: { badge }, reactions: [dom] });
+		Catalyst.init({ stores: { badge }, reactions: [dom] });
 		const paragraph = document.querySelector("p") as HTMLParagraphElement;
 		const bold = paragraph.firstElementChild;
 
@@ -236,7 +236,7 @@ describe("removed loop items", () => {
 			</ul>
 		`;
 		const list = defineStore({ state: { items: ["a"] } });
-		Catalyst.start({ stores: { list }, reactions: [dom, loop] });
+		Catalyst.init({ stores: { list }, reactions: [dom, loop] });
 		const item = document.querySelector("li") as HTMLLIElement;
 
 		getStore("list")?.setState((state) => {

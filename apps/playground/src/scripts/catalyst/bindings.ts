@@ -1,5 +1,5 @@
 import { defineStore } from "@lucidclient/catalyst";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 // --------------------------------------------------------
@@ -185,7 +185,7 @@ const misconfigured = defineStore({
 	state: { label: "A label" },
 });
 
-startCatalyst({
+initCatalyst({
 	stores: {
 		dataAttribute,
 		booleans,

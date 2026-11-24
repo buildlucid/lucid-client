@@ -3,7 +3,7 @@ import type { StoreActions, StoreDefinition } from "../types/index.js";
 /**
  * Declares a store. State, computed values and actions are inferred from the
  * definition, so no generic types are needed. Register it with
- * `Catalyst.start({ stores: { scope: definition } })`.
+ * `Catalyst.init({ stores: { scope: definition } })`.
  */
 const defineStore = <
 	S extends object = {},

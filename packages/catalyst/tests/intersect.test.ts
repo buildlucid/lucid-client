@@ -80,7 +80,7 @@ describe("intersect reaction", () => {
 			</div>
 		`;
 		const { calls, definition } = recorder();
-		Catalyst.start({ stores: { s: definition }, reactions: [intersect] });
+		Catalyst.init({ stores: { s: definition }, reactions: [intersect] });
 		const image = document.querySelector("#image");
 
 		// Starting out of view isn't leaving.
@@ -105,7 +105,7 @@ describe("intersect reaction", () => {
 			</div>
 		`;
 		const { calls, definition } = recorder();
-		Catalyst.start({ stores: { s: definition }, reactions: [intersect] });
+		Catalyst.init({ stores: { s: definition }, reactions: [intersect] });
 
 		const once = document.querySelector("#once");
 		report(once, 1);
@@ -130,7 +130,7 @@ describe("intersect reaction", () => {
 			<div data-store="s"><p data-intersect--soon.constructor="@enter"></p></div>
 		`;
 		const { calls, definition } = recorder();
-		Catalyst.start({ stores: { s: definition }, reactions: [intersect] });
+		Catalyst.init({ stores: { s: definition }, reactions: [intersect] });
 		const p = document.querySelector("p");
 		expect(catalystWarnings()).toContainEqual(
 			expect.stringContaining('unknown modifier "soon"'),

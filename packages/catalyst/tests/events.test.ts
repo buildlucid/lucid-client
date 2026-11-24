@@ -48,7 +48,7 @@ describe("event modifiers", () => {
 			</div>
 		`;
 		const { definition, received } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 
 		const event = click(document.querySelector("#link"));
 		expect(event.defaultPrevented).toBe(true);
@@ -65,7 +65,7 @@ describe("event modifiers", () => {
 			</div>
 		`;
 		const { definition, received } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 
 		click(document.querySelector("#once"));
 		click(document.querySelector("#once"));
@@ -89,7 +89,7 @@ describe("event modifiers", () => {
 			></div>
 		`;
 		const { definition, received } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 
 		key(document, "Enter");
 		key(document, "k");
@@ -115,7 +115,7 @@ describe("event modifiers", () => {
 			</div>
 		`;
 		const { definition, received } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 
 		click(document.querySelector("#shift"));
 		expect(received).toHaveLength(0);
@@ -140,7 +140,7 @@ describe("event modifiers", () => {
 			</div>
 		`;
 		const { definition, received } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 		const input = document.querySelector("#search");
 
 		const first = new Event("input");
@@ -169,7 +169,7 @@ describe("event modifiers", () => {
 			<div data-store="c"><input data-events--input.debounce="@hit" /></div>
 		`;
 		const { definition, received } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 
 		document.querySelector("input")?.dispatchEvent(new Event("input"));
 		document.body.innerHTML = "";
@@ -185,7 +185,7 @@ describe("event modifiers", () => {
 			</div>
 		`;
 		const { definition, received } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 
 		click(document.querySelector("#inside"));
 		click(document.querySelector("#menu"));
@@ -219,7 +219,7 @@ describe("event modifiers", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { popup }, reactions: [events] });
+		Catalyst.init({ stores: { popup }, reactions: [events] });
 
 		// The toggle closes the open popup, and the outside click keeps it closed
 		// rather than the toggle opening it again afterwards.
@@ -255,7 +255,7 @@ describe("event modifiers", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { popup }, reactions: [bind, events] });
+		Catalyst.init({ stores: { popup }, reactions: [bind, events] });
 
 		click(document.querySelector("#open"));
 		await settle();
@@ -288,7 +288,7 @@ describe("event modifiers", () => {
 				</div>
 			`;
 			const { definition, received } = counter();
-			Catalyst.start({ stores: { c: definition }, reactions: [events] });
+			Catalyst.init({ stores: { c: definition }, reactions: [events] });
 
 			const event = click(document.querySelector("a"));
 			// The default is prevented straight away, and the action waits for
@@ -330,7 +330,7 @@ describe("event modifier edge cases", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { popup }, reactions: [conditional, events] });
+		Catalyst.init({ stores: { popup }, reactions: [conditional, events] });
 
 		click(document.querySelector("#open"));
 		await settle();
@@ -355,7 +355,7 @@ describe("event modifier edge cases", () => {
 				<div data-store="c"><button data-events--click.transition="@hit"></button></div>
 			`;
 			const { definition, received } = counter();
-			Catalyst.start({ stores: { c: definition }, reactions: [events] });
+			Catalyst.init({ stores: { c: definition }, reactions: [events] });
 			click(document.querySelector("button"));
 			Catalyst.destroy();
 			updates[0]?.();
@@ -371,7 +371,7 @@ describe("event modifier edge cases", () => {
 			<div data-store="c" data-events--window.touchmove.prevent="@hit"></div>
 		`;
 		const { definition } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 		expect(add).toHaveBeenCalledWith("touchmove", expect.any(Function), {
 			capture: false,
 			passive: false,
@@ -391,7 +391,7 @@ describe("event modifier edge cases", () => {
 				ping: (_event: Event, { item }: LoopItem<string>) => items.push(item),
 			}),
 		});
-		Catalyst.start({ stores: { list }, reactions: [events, loop] });
+		Catalyst.init({ stores: { list }, reactions: [events, loop] });
 		document.dispatchEvent(new Event("ping"));
 		expect(items).toEqual(["a", "b"]);
 
@@ -411,7 +411,7 @@ describe("event modifier edge cases", () => {
 				<div data-store="c"><input data-events--input.once.debounce="@hit" /></div>
 			`;
 			const { definition, received } = counter();
-			Catalyst.start({ stores: { c: definition }, reactions: [events] });
+			Catalyst.init({ stores: { c: definition }, reactions: [events] });
 			const input = document.querySelector("input");
 			const first = new Event("input");
 			const last = new Event("input");
@@ -434,7 +434,7 @@ describe("event modifier edge cases", () => {
 			<div data-store="c" id="panel" data-events--outside.click="@hit"></div>
 		`;
 		const { definition, received } = counter();
-		Catalyst.start({ stores: { c: definition }, reactions: [events] });
+		Catalyst.init({ stores: { c: definition }, reactions: [events] });
 		const event = new MouseEvent("click", { bubbles: true });
 		document.querySelector("#page")?.dispatchEvent(event);
 		document.querySelector("#panel")?.dispatchEvent(event);
@@ -461,7 +461,7 @@ describe("event modifier edge cases", () => {
 				<div data-store="gallery"><button data-events--click.transition="@hit"></button></div>
 			`;
 			const { definition } = counter();
-			Catalyst.start({ stores: { gallery: definition }, reactions: [events] });
+			Catalyst.init({ stores: { gallery: definition }, reactions: [events] });
 			click(document.querySelector("button"));
 			expect(calls[0]).toMatchObject({ types: ["gallery"] });
 		} finally {

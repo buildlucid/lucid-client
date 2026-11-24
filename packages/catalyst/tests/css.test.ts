@@ -11,7 +11,7 @@ describe("css reaction", () => {
 		document.body.innerHTML = `
 			<div data-store="player" data-state--progress="30" data-css--progress="$progress"></div>
 		`;
-		Catalyst.start({ reactions: [css] });
+		Catalyst.init({ reactions: [css] });
 		expect(property("[data-store]", "--progress")).toBe("30");
 
 		setStoreState("player", "progress", 75);
@@ -30,7 +30,7 @@ describe("css reaction", () => {
 		document.body.innerHTML = `
 			<div data-store="values"><div data-css--value="$value"></div></div>
 		`;
-		Catalyst.start({ stores: { values }, reactions: [css] });
+		Catalyst.init({ stores: { values }, reactions: [css] });
 
 		const cases: Array<[unknown, string]> = [
 			["red", "red"],
@@ -57,7 +57,7 @@ describe("css reaction", () => {
 		document.body.innerHTML = `
 			<div data-store="values"><div data-css--value="$value"></div></div>
 		`;
-		Catalyst.start({ stores: { values }, reactions: [css] });
+		Catalyst.init({ stores: { values }, reactions: [css] });
 
 		setStoreState("values", "value", { color: "red" });
 		await settle();
@@ -94,7 +94,7 @@ describe("css reaction", () => {
 				></div>
 			</div>
 		`;
-		Catalyst.start({ stores: { theme }, reactions: [css] });
+		Catalyst.init({ stores: { theme }, reactions: [css] });
 		expect(property("[data-css--accent]", "--accent")).toBe(
 			"oklch(0.7 0.1 200)",
 		);
@@ -120,7 +120,7 @@ describe("css reaction", () => {
 				</ul>
 			</div>
 		`;
-		Catalyst.start({ stores: { list }, reactions: [css, loop] });
+		Catalyst.init({ stores: { list }, reactions: [css, loop] });
 		const indexes = () =>
 			Array.from(document.querySelectorAll("li"), (item) =>
 				item.style.getPropertyValue("--index"),
@@ -141,7 +141,7 @@ describe("css reaction", () => {
 				<svg data-css--color="$color"></svg>
 			</div>
 		`;
-		Catalyst.start({ reactions: [css] });
+		Catalyst.init({ reactions: [css] });
 		expect(
 			document.querySelector("svg")?.style.getPropertyValue("--color"),
 		).toBe("tomato");
@@ -154,7 +154,7 @@ describe("css reaction", () => {
 				<div id="added" data-css--size="$size"></div>
 			</div>
 		`;
-		Catalyst.start({ reactions: [css] });
+		Catalyst.init({ reactions: [css] });
 		const rendered = document.querySelector<HTMLElement>("#rendered");
 		expect(rendered?.style.getPropertyValue("--size")).toBe("2rem");
 		expect(rendered?.style.getPropertyValue("color")).toBe("red");
@@ -188,7 +188,7 @@ describe("css reaction", () => {
 		const foreign = document.createElementNS("urn:example", "thing");
 		foreign.setAttribute("data-css--size", "$size");
 		document.querySelector("[data-store]")?.append(foreign);
-		Catalyst.start({ reactions: [css] });
+		Catalyst.init({ reactions: [css] });
 
 		expect(catalystWarnings()).toEqual([
 			"[Catalyst] CSS directives require a custom property name specifier.",
@@ -210,9 +210,9 @@ describe("css reaction", () => {
 				<div data-css--size="$size"></div>
 			</div>
 		`;
-		Catalyst.start({ debug: true, reactions: [] });
+		Catalyst.init({ debug: true, reactions: [] });
 		expect(catalystWarnings()).toContain(
-			'[Catalyst] Found "data-css--size" but the css reaction isn\'t registered. Add css to Catalyst.start({ reactions }).',
+			'[Catalyst] Found "data-css--size" but the css reaction isn\'t registered. Add css to Catalyst.init({ reactions }).',
 		);
 	});
 });

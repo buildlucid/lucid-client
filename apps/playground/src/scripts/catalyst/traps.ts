@@ -1,5 +1,5 @@
 import { defineStore } from "@lucidclient/catalyst";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 const log = createLogger("traps");
@@ -168,7 +168,7 @@ const drawer = defineStore({
 	}),
 });
 
-startCatalyst({
+initCatalyst({
 	stores: {
 		basicModal: modal,
 		autofocusModal: modal,

@@ -51,7 +51,7 @@ const rows = defineStore({
 	}),
 });
 
-Catalyst.start({
+Catalyst.init({
 	stores: { rows },
 	reactions: [bind, dom, events, loop],
 });

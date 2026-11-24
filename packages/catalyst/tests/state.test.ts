@@ -32,7 +32,7 @@ describe("parseStateString", () => {
 });
 
 describe("state attributes", () => {
-	it("does not rewrite state attributes on start", async () => {
+	it("does not rewrite state attributes on init", async () => {
 		document.body.innerHTML = `
 			<div
 				data-store="s"
@@ -43,7 +43,7 @@ describe("state attributes", () => {
 				<span data-dom--text="$name"></span>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 		await settle();
 
 		const root = document.querySelector("[data-store]");
@@ -68,7 +68,7 @@ describe("state attributes", () => {
 		const seeded = defineStore({
 			state: { userName: "Grace", count: 0, code: "", untouched: true },
 		});
-		Catalyst.start({ stores: { seeded }, reactions: [dom] });
+		Catalyst.init({ stores: { seeded }, reactions: [dom] });
 		await settle();
 
 		const root = document.querySelector("[data-store]");
@@ -87,7 +87,7 @@ describe("state attributes", () => {
 			<div data-store="typed" data-state--label="ready" data-state--count="1"></div>
 		`;
 		const typed = defineStore({ state: { label: "ready", count: 1 } });
-		Catalyst.start({ stores: { typed } });
+		Catalyst.init({ stores: { typed } });
 
 		const root = document.querySelector("[data-store]");
 		root?.setAttribute("data-state--label", "42");
@@ -101,7 +101,7 @@ describe("state attributes", () => {
 
 	it("does not recreate a removed state attribute", async () => {
 		document.body.innerHTML = `<div data-store="r" data-state--value="x"></div>`;
-		Catalyst.start();
+		Catalyst.init();
 		const root = document.querySelector("[data-store]");
 		root?.removeAttribute("data-state--value");
 		await settle();
@@ -117,7 +117,7 @@ describe("state attributes", () => {
 			</div>
 		`;
 		const profile = defineStore({ state: { userName: "Grace" } });
-		Catalyst.start({ stores: { profile }, reactions: [dom] });
+		Catalyst.init({ stores: { profile }, reactions: [dom] });
 		await settle();
 
 		const root = document.querySelector("[data-store]");
@@ -136,7 +136,7 @@ describe("state attributes", () => {
 	it("updates an attribute when nested state changes", async () => {
 		document.body.innerHTML = `<div data-store="nested" data-state--tags='["a"]'></div>`;
 		const nested = defineStore({ state: { tags: [] as string[] } });
-		Catalyst.start({ stores: { nested } });
+		Catalyst.init({ stores: { nested } });
 
 		getStore("nested")?.setState((state) => {
 			(state.tags as string[]).push("b");
@@ -154,7 +154,7 @@ describe("state attributes", () => {
 			</div>
 		`;
 		const late = defineStore({ state: { label: "default" } });
-		Catalyst.start({ stores: { late }, reactions: [dom] });
+		Catalyst.init({ stores: { late }, reactions: [dom] });
 		expect(document.querySelector("span")?.textContent).toBe("default");
 
 		const root = document.querySelector("[data-store]");
@@ -175,7 +175,7 @@ describe("state attributes", () => {
 			</div>
 		`;
 		const declared = defineStore({ state: { label: "default" } });
-		Catalyst.start({ stores: { declared }, reactions: [dom] });
+		Catalyst.init({ stores: { declared }, reactions: [dom] });
 		const root = document.querySelector("[data-store]");
 
 		// No sync: the observer picks the attribute up on its own.
@@ -191,7 +191,7 @@ describe("state attributes", () => {
 	it("warns when a lowercased attribute cannot match camelCase state", () => {
 		document.body.innerHTML = `<div data-store="case" data-state--userName="Ada"></div>`;
 		const caseStore = defineStore({ state: { userName: "Grace" } });
-		Catalyst.start({ stores: { case: caseStore } });
+		Catalyst.init({ stores: { case: caseStore } });
 
 		expect(catalystWarnings()).toContainEqual(
 			expect.stringContaining('Use "data-state--user-name" instead.'),

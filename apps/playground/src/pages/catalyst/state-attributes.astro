@@ -203,7 +203,7 @@ const typedRows = [
 
 	<Scenario
 		id="late-attributes"
-		title="Attributes added after start"
+		title="Attributes added after init"
 		description="`known` is declared in the definition but has no attribute until you add one, and an attribute added later for declared state is kept in sync both ways straight away. `late` isn't declared, so its attribute is picked up by the next `Catalyst.sync`."
 		expect={[
 			"On load, the log warns that state `late` can't be found, because nothing declares it yet.",

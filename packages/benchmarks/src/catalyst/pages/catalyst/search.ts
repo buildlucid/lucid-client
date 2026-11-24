@@ -12,7 +12,7 @@ const search = defineStore({
 	}),
 });
 
-Catalyst.start({
+Catalyst.init({
 	stores: { search },
 	reactions: [dom, loop, model],
 });

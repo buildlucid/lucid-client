@@ -1,5 +1,5 @@
 import { refsReaction } from "../core/refs/index.js";
-import type { CatalystStartOptions } from "../types/index.js";
+import type { CatalystInitOptions } from "../types/index.js";
 import Catalyst from "./catalyst.js";
 import DEFAULT_OPTIONS from "./constants.js";
 import { debug, warn } from "./log.js";
@@ -12,23 +12,23 @@ import { syncTarget } from "./sync.js";
 /** Reactions every application gets, because stores depend on them. */
 const CORE_REACTIONS = [refsReaction];
 
-let pendingStart = false;
+let pendingInit = false;
 
-const start = (options?: CatalystStartOptions) => {
-	if (Catalyst.started) {
-		if (__DEV__) warn("Catalyst has already been started.");
+const init = (options?: CatalystInitOptions) => {
+	if (Catalyst.initialised) {
+		if (__DEV__) warn("Catalyst has already been initialised.");
 		return;
 	}
 
 	// Scripts in <head> without `defer` run before <body> exists.
 	if (!document.body) {
-		if (pendingStart) return;
-		pendingStart = true;
+		if (pendingInit) return;
+		pendingInit = true;
 		document.addEventListener(
 			"DOMContentLoaded",
 			() => {
-				pendingStart = false;
-				start(options);
+				pendingInit = false;
+				init(options);
 			},
 			{ once: true },
 		);
@@ -52,13 +52,13 @@ const start = (options?: CatalystStartOptions) => {
 				DEFAULT_OPTIONS.attributes.specifierSeparator,
 		},
 	};
-	Catalyst.startOptions = options;
-	// Kept across restarts, like registered stores and reactions.
+	Catalyst.initOptions = options;
+	// Kept when Catalyst is initialised again, like registered stores and reactions.
 	if (options?.persistence) Catalyst.persistence = options.persistence;
 
 	registerStores(options?.stores);
 	for (const reaction of [...CORE_REACTIONS, ...(options?.reactions ?? [])]) {
-		// A restart passes the reactions it already registered. Any other
+		// Initialising again passes the reactions it already registered. Any other
 		// reaction reusing a name or attribute is refused with a warning.
 		if (Catalyst.reactions.get(reaction.name) === reaction) continue;
 		registerReaction(reaction);
@@ -72,12 +72,12 @@ const start = (options?: CatalystStartOptions) => {
 	);
 
 	createRuntimeOwner();
-	Catalyst.started = true;
+	Catalyst.initialised = true;
 	// Observe before the first sync so removals made while it runs are seen.
 	Catalyst.removalObserver = registerRemovalObserver();
 	syncTarget(document.body);
 	flushUpdates();
-	if (__DEV__) debug("Library started.");
+	if (__DEV__) debug("Library initialised.");
 };
 
-export default start;
+export default init;

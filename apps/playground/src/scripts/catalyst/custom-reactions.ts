@@ -2,7 +2,7 @@ import Catalyst, { defineStore } from "@lucidclient/catalyst";
 import { stringifyState } from "@lucidclient/catalyst/helpers";
 import type { Reaction } from "@lucidclient/catalyst/types";
 import { createEffect } from "solid-js";
-import { allReactions, startCatalyst } from "../../lib/catalyst";
+import { allReactions, initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 const log = createLogger("reactions");
@@ -269,7 +269,7 @@ const clocks = defineStore({
 	}),
 });
 
-startCatalyst({
+initCatalyst({
 	stores: { literal, options, progress, basket, clocks },
 	reactions: [
 		...allReactions,

@@ -15,7 +15,7 @@ export type CatalystAttributeOptions = {
 /** Store definitions keyed by the `data-store` scope they apply to. */
 export type CatalystStores = Record<string, AnyStoreDefinition>;
 
-export type CatalystStartOptions = {
+export type CatalystInitOptions = {
 	debug?: boolean;
 	stores?: CatalystStores;
 	reactions?: Reaction[];
@@ -32,7 +32,7 @@ export type CatalystAddOptions = {
 };
 
 export type CatalystApi = {
-	start: (options?: CatalystStartOptions) => void;
+	init: (options?: CatalystInitOptions) => void;
 	add: (options: CatalystAddOptions) => void;
 	destroy: () => void;
 	refresh: (targetStore?: string) => void;

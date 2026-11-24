@@ -14,9 +14,9 @@ const RESERVED_ATTRIBUTES = new Set([
 ]);
 
 const registerReaction = (reaction: Reaction) => {
-	if (Catalyst.started) {
+	if (Catalyst.initialised) {
 		if (__DEV__)
-			warn("Reactions must be registered before Catalyst.start() is called.");
+			warn("Reactions must be registered before Catalyst.init() is called.");
 		return;
 	}
 	if (Catalyst.reactions.has(reaction.name)) {

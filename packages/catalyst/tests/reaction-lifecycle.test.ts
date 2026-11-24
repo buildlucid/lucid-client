@@ -22,7 +22,7 @@ describe("reaction lifecycle", () => {
 			}),
 		});
 
-		Catalyst.start({ stores: { dynamic }, reactions: [bind, events] });
+		Catalyst.init({ stores: { dynamic }, reactions: [bind, events] });
 		const target = document.querySelector("#target");
 		if (!(target instanceof HTMLElement)) throw new Error("Missing target");
 		target.innerHTML = `
@@ -84,7 +84,7 @@ describe("reaction lifecycle", () => {
 			},
 		};
 
-		Catalyst.start({ reactions: [reaction] });
+		Catalyst.init({ reactions: [reaction] });
 		expect(values).toEqual(["$key"]);
 
 		element?.setAttribute("data-inspect--value", "is-active");
@@ -104,7 +104,7 @@ describe("reaction lifecycle", () => {
 		`;
 		let firstRuns = 0;
 		let secondRuns = 0;
-		Catalyst.start({
+		Catalyst.init({
 			stores: {
 				first: defineStore({
 					actions: () => ({
@@ -129,7 +129,7 @@ describe("reaction lifecycle", () => {
 		expect(secondRuns).toBe(1);
 	});
 
-	it("can restart without registering reactions or stores again", async () => {
+	it("can be initialised again without registering reactions or stores again", async () => {
 		const restartable = defineStore({ state: { label: "ready" } });
 		document.body.innerHTML = `
 			<div data-store="restartable">
@@ -137,7 +137,7 @@ describe("reaction lifecycle", () => {
 			</div>
 		`;
 
-		Catalyst.start({ stores: { restartable }, reactions: [dom] });
+		Catalyst.init({ stores: { restartable }, reactions: [dom] });
 		await settle();
 		expect(document.querySelector("span")?.textContent).toBe("ready");
 		setStoreState("restartable", "label", "changed");
@@ -150,7 +150,7 @@ describe("reaction lifecycle", () => {
 				<span data-dom--text="$label"></span>
 			</div>
 		`;
-		Catalyst.start();
+		Catalyst.init();
 		await settle();
 
 		expect(document.querySelector("span")?.textContent).toBe("ready");
@@ -161,7 +161,7 @@ describe("reaction lifecycle", () => {
 		const setup = vi.fn();
 		const cookie: Reaction = { name: "cookie", attribute: "cookie", setup };
 
-		Catalyst.start({ reactions: [cookie] });
+		Catalyst.init({ reactions: [cookie] });
 
 		expect(setup).not.toHaveBeenCalled();
 		expect(catalystWarnings()).toContainEqual(
@@ -180,7 +180,7 @@ describe("reaction lifecycle", () => {
 			setup,
 		};
 
-		Catalyst.start({ reactions: [carousel] });
+		Catalyst.init({ reactions: [carousel] });
 
 		expect(catalystWarnings()).toContainEqual(
 			expect.stringContaining(
@@ -194,7 +194,7 @@ describe("reaction lifecycle", () => {
 		const setup = vi.fn();
 		const form: Reaction = { name: "form", attribute: "form", setup };
 
-		Catalyst.start({ reactions: [form] });
+		Catalyst.init({ reactions: [form] });
 
 		expect(catalystWarnings()).toContainEqual(
 			expect.stringContaining(
@@ -211,7 +211,7 @@ describe("reaction lifecycle", () => {
 			setup: () => undefined,
 		};
 
-		Catalyst.start({ reactions: [bind, impostor] });
+		Catalyst.init({ reactions: [bind, impostor] });
 
 		expect(catalystWarnings()).toContainEqual(
 			expect.stringContaining('A reaction named "bind" is already registered.'),
@@ -220,7 +220,7 @@ describe("reaction lifecycle", () => {
 		// Restarting with the reactions already registered doesn't warn.
 		Catalyst.destroy();
 		const before = catalystWarnings().length;
-		Catalyst.start({ reactions: [bind] });
+		Catalyst.init({ reactions: [bind] });
 		expect(catalystWarnings()).toHaveLength(before);
 	});
 });

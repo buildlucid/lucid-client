@@ -86,7 +86,7 @@ export type CatalystPersistenceOptions = {
 
 /**
  * Saves and restores state values. Create it with `persistence()` from
- * `@lucidclient/catalyst/persistence` and pass it to `Catalyst.start`, so pages
+ * `@lucidclient/catalyst/persistence` and pass it to `Catalyst.init`, so pages
  * that don't persist state don't include it.
  */
 export type Persistence = {

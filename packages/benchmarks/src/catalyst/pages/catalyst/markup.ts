@@ -8,7 +8,7 @@ const cards = buildCards(INSERT_COUNT);
 const html = cards.map(cardMarkup).join("");
 const app = document.querySelector("#app")!;
 
-Catalyst.start({ stores: cardStores(cards), reactions: [bind, dom, events] });
+Catalyst.init({ stores: cardStores(cards), reactions: [bind, dom, events] });
 
 defineHarness({
 	insert: () => {

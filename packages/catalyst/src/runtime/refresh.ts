@@ -9,8 +9,9 @@ import { syncTarget } from "./sync.js";
  * page that reference a rebuilt store re-initialise against the new one.
  */
 const refresh = (targetStore?: string) => {
-	if (!Catalyst.started) {
-		if (__DEV__) warn("Catalyst must be started before it can be refreshed.");
+	if (!Catalyst.initialised) {
+		if (__DEV__)
+			warn("Catalyst must be initialised before it can be refreshed.");
 		return;
 	}
 

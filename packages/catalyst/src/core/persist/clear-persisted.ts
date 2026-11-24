@@ -8,9 +8,11 @@ import { removeStored } from "./persist-value.js";
  * is saved again the next time it changes.
  */
 const clearPersisted = (scope?: string) => {
-	if (!Catalyst.started) {
+	if (!Catalyst.initialised) {
 		if (__DEV__)
-			warn("Catalyst must be started before persisted state can be cleared.");
+			warn(
+				"Catalyst must be initialised before persisted state can be cleared.",
+			);
 		return;
 	}
 

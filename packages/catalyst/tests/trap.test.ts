@@ -23,7 +23,7 @@ describe("trap reaction", () => {
 			</main>
 			<footer id="footer"></footer>
 		`;
-		Catalyst.start({ reactions: [trap] });
+		Catalyst.init({ reactions: [trap] });
 		const trigger = document.querySelector<HTMLElement>("#trigger");
 		trigger?.focus();
 
@@ -56,7 +56,7 @@ describe("trap reaction", () => {
 			state: { open: false },
 			computed: ({ state }) => ({ closed: () => !state.open }),
 		});
-		Catalyst.start({ stores: { shown }, reactions: [trap, bind] });
+		Catalyst.init({ stores: { shown }, reactions: [trap, bind] });
 		document.querySelector<HTMLElement>("#opener")?.focus();
 
 		// Records whether the dialog was still hidden when focus arrived.
@@ -79,7 +79,7 @@ describe("trap reaction", () => {
 				<div id="dialog" data-trap="$open"></div>
 			</div>
 		`;
-		Catalyst.start({ reactions: [trap] });
+		Catalyst.init({ reactions: [trap] });
 		await setState("t", "open", true);
 		await setState("t", "open", false);
 
@@ -98,7 +98,7 @@ describe("trap reaction", () => {
 				<div id="inner" data-trap="$inner"><button id="inner-button">Done</button></div>
 			</div>
 		`;
-		Catalyst.start({ reactions: [trap] });
+		Catalyst.init({ reactions: [trap] });
 
 		await setState("t", "outer", true);
 		expect(isInert("#page")).toBe(true);
@@ -130,7 +130,7 @@ describe("trap reaction", () => {
 				<nav id="menu" data-trap--both="$open"><a href="/">Home</a></nav>
 			</header>
 		`;
-		Catalyst.start({ reactions: [trap] });
+		Catalyst.init({ reactions: [trap] });
 		expect(isInert("#menu")).toBe(true);
 
 		await setState("nav", "open", true);

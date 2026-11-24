@@ -1,6 +1,6 @@
 import Catalyst, { defineStore } from "@lucidclient/catalyst";
 import type { LoopItem } from "@lucidclient/catalyst/types";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 const log = createLogger("classes");
@@ -82,7 +82,7 @@ const misconfiguredClasses = defineStore({
 	state: { count: 3, on: true },
 });
 
-startCatalyst({
+initCatalyst({
 	stores: { oneClass, lists, tabs, restore, misconfiguredClasses },
 });
 

@@ -84,7 +84,7 @@ describe("defineStore types", () => {
 
 		const empty = defineStore({});
 
-		expectTypeOf(Catalyst.start).toBeCallableWith({
+		expectTypeOf(Catalyst.init).toBeCallableWith({
 			stores: { nav, factory, empty, alias: nav },
 		});
 	});
@@ -142,7 +142,7 @@ describe("defineStore types", () => {
 			}),
 		});
 
-		expectTypeOf(Catalyst.start).toBeCallableWith({
+		expectTypeOf(Catalyst.init).toBeCallableWith({
 			stores: { prefs, factory },
 			attributes: { persist: "save" },
 			persistence: persistence({

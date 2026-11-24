@@ -1,5 +1,5 @@
 import { defineStore } from "@lucidclient/catalyst";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 const log = createLogger("dialogs");
@@ -114,4 +114,4 @@ const misconfiguredDialogs = defineStore({
 	}),
 });
 
-startCatalyst({ stores: { confirm, tip, faq, misconfiguredDialogs } });
+initCatalyst({ stores: { confirm, tip, faq, misconfiguredDialogs } });

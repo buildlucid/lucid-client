@@ -39,8 +39,8 @@ const destroy = () => {
 		Catalyst.stores.clear();
 		Catalyst.storesByElement.clear();
 		Catalyst.reportedReactions.clear();
-		Catalyst.started = false;
-		Catalyst.startOptions = undefined;
+		Catalyst.initialised = false;
+		Catalyst.initOptions = undefined;
 		Catalyst.options = DEFAULT_OPTIONS;
 	}
 	if (__DEV__) debug("Library destroyed.");

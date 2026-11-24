@@ -1,7 +1,7 @@
 import type { Accessor, Owner } from "solid-js";
 import type {
 	AnyStoreDefinition,
-	CatalystStartOptions,
+	CatalystInitOptions,
 	Directive,
 	Reaction,
 	StateSetter,
@@ -86,10 +86,10 @@ export type DirectiveRegistration = {
 
 export type CatalystRuntime = {
 	options: ResolvedCatalystOptions;
-	startOptions?: CatalystStartOptions;
-	started: boolean;
+	initOptions?: CatalystInitOptions;
+	initialised: boolean;
 	reactions: Map<string, Reaction>;
-	/** Registered reactions by full attribute name, such as `data-bind`. Built by `start`. */
+	/** Registered reactions by full attribute name, such as `data-bind`. Built by `init`. */
 	reactionAttributes: Map<string, Reaction>;
 	stores: Map<string, RuntimeStore>;
 	storesByElement: Map<Element, RuntimeStore>;
@@ -99,7 +99,7 @@ export type CatalystRuntime = {
 	scopeDependents: Map<string, Set<DirectiveRegistration>>;
 	/** First-party reactions already reported as missing while debugging. */
 	reportedReactions: Set<string>;
-	/** Saves and restores state, when `Catalyst.start` was given `persistence()`. */
+	/** Saves and restores state, when `Catalyst.init` was given `persistence()`. */
 	persistence?: Persistence;
 	removalObserver?: MutationObserver;
 };

@@ -266,7 +266,7 @@ const nav: NavGroup[] = [
 				title: "Dynamic markup",
 				href: "/catalyst/dynamic-markup",
 				description:
-					"sync, disposal on removal, refresh, destroy and start, Catalyst.add and data-ignore.",
+					"sync, disposal on removal, refresh, destroy and init, Catalyst.add and data-ignore.",
 			},
 			{
 				title: "Custom reactions",

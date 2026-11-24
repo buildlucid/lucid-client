@@ -13,7 +13,7 @@ describe("class reaction", () => {
 				<nav id="nav" class="menu" data-class--is-open="$open"></nav>
 			</div>
 		`;
-		Catalyst.start({ reactions: [classes] });
+		Catalyst.init({ reactions: [classes] });
 		expect(classNames("#nav")).toEqual(["menu"]);
 
 		setStoreState("c", "open", true);
@@ -34,7 +34,7 @@ describe("class reaction", () => {
 		const c = defineStore({
 			state: { classes: "active bold" as unknown },
 		});
-		Catalyst.start({ stores: { c }, reactions: [classes] });
+		Catalyst.init({ stores: { c }, reactions: [classes] });
 		expect(classNames("#tab")).toEqual(["tab", "active", "bold"]);
 
 		setStoreState("c", "classes", ["active", "big wide"]);
@@ -71,7 +71,7 @@ describe("class reaction", () => {
 				}),
 			}),
 		});
-		Catalyst.start({ stores: { list }, reactions: [classes, loop] });
+		Catalyst.init({ stores: { list }, reactions: [classes, loop] });
 		const items = () =>
 			Array.from(document.querySelectorAll("li"), (li) => li.className);
 		expect(items()).toEqual(["", "selected"]);
@@ -87,7 +87,7 @@ describe("class reaction", () => {
 				<p id="p" class="shown" data-class--shown="$on" data-class--extra="true"></p>
 			</div>
 		`;
-		Catalyst.start({ reactions: [classes] });
+		Catalyst.init({ reactions: [classes] });
 		expect(classNames("#p")).toEqual([]);
 
 		const p = document.querySelector("#p");
@@ -107,7 +107,7 @@ describe("class reaction", () => {
 				<p data-class="$count"></p>
 			</div>
 		`;
-		Catalyst.start({ reactions: [classes] });
+		Catalyst.init({ reactions: [classes] });
 		await settle();
 		expect(catalystWarnings()).toContainEqual(
 			expect.stringContaining("must resolve to a string"),
@@ -123,7 +123,7 @@ describe("class reaction", () => {
 		const c = defineStore({
 			state: { classes: "base extra" as string | null },
 		});
-		Catalyst.start({ stores: { c }, reactions: [classes] });
+		Catalyst.init({ stores: { c }, reactions: [classes] });
 		expect(classNames("#p")).toEqual(["base", "extra"]);
 
 		setStoreState("c", "classes", null);
@@ -140,7 +140,7 @@ describe("class reaction", () => {
 		const c = defineStore({
 			state: { list: "foo" as string | null, active: true },
 		});
-		Catalyst.start({ stores: { c }, reactions: [classes] });
+		Catalyst.init({ stores: { c }, reactions: [classes] });
 		expect(classNames("#p")).toEqual(["foo"]);
 
 		setStoreState("c", "list", null);
@@ -161,7 +161,7 @@ describe("class reaction", () => {
 		const c = defineStore({
 			state: { selected: true, extra: "selected" as string | null },
 		});
-		Catalyst.start({ stores: { c }, reactions: [classes] });
+		Catalyst.init({ stores: { c }, reactions: [classes] });
 		expect(classNames("#p")).toEqual(["selected"]);
 
 		getStore("c")?.setState((state) => {

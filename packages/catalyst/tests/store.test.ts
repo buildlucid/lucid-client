@@ -31,7 +31,7 @@ describe("defineStore", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { counter }, reactions: [bind, dom, events] });
+		Catalyst.init({ stores: { counter }, reactions: [bind, dom, events] });
 
 		expect(document.querySelector("#count")?.textContent).toBe("1");
 		expect(document.querySelector("#double")?.textContent).toBe("2");
@@ -62,7 +62,7 @@ describe("defineStore", () => {
 				},
 			}),
 		});
-		Catalyst.start({ stores: { memo }, reactions: [dom] });
+		Catalyst.init({ stores: { memo }, reactions: [dom] });
 		expect(document.querySelector("#a")?.textContent).toBe("ADA");
 		expect(computations).toBe(1);
 
@@ -86,7 +86,7 @@ describe("defineStore", () => {
 				label: () => Promise.resolve(`Hello ${state.name}`),
 			}),
 		});
-		Catalyst.start({ stores: { greeting }, reactions: [dom] });
+		Catalyst.init({ stores: { greeting }, reactions: [dom] });
 		await settle();
 		expect(document.querySelector("span")?.textContent).toBe("Hello Ada");
 
@@ -114,7 +114,7 @@ describe("defineStore", () => {
 				actions.read();
 			},
 		});
-		Catalyst.start({ stores: { derived } });
+		Catalyst.init({ stores: { derived } });
 		expect(seen).toBe("Ada Lovelace");
 		expect(fromAction).toBe("Ada Lovelace");
 		expect(Object.keys(getStore("derived")?.state ?? {})).toEqual([
@@ -139,7 +139,7 @@ describe("defineStore", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { login: dialog, signup: dialog } });
+		Catalyst.init({ stores: { login: dialog, signup: dialog } });
 
 		getStore("login")?.actions.open?.();
 		await settle();
@@ -163,7 +163,7 @@ describe("defineStore", () => {
 		const factory = defineStore({
 			state: () => ({ origin: new Point(0, 0) }),
 		});
-		Catalyst.start({ stores: { factory } });
+		Catalyst.init({ stores: { factory } });
 		expect(getStore("factory")?.state.origin).toBeInstanceOf(Point);
 	});
 
@@ -177,7 +177,7 @@ describe("defineStore", () => {
 				},
 			}),
 		});
-		Catalyst.start({ stores: { direct } });
+		Catalyst.init({ stores: { direct } });
 		getStore("direct")?.actions.write?.();
 		expect(getStore("direct")?.state.count).toBe(0);
 		expect(catalystWarnings()).toContainEqual(
@@ -190,7 +190,7 @@ describe("defineStore", () => {
 		const shadow = defineStore({
 			computed: () => ({ label: () => "computed" }),
 		});
-		Catalyst.start({ stores: { shadow } });
+		Catalyst.init({ stores: { shadow } });
 		expect(getStore("shadow")?.state.label).toBe("computed");
 		expect(catalystWarnings()).toContainEqual(
 			expect.stringContaining('The computed value "label" on store "shadow"'),
@@ -216,7 +216,7 @@ describe("store init", () => {
 				return () => events.push("cleanup");
 			},
 		});
-		Catalyst.start({ stores: { lifecycle }, reactions: [dom] });
+		Catalyst.init({ stores: { lifecycle }, reactions: [dom] });
 		await settle();
 		expect(document.querySelector("span")?.textContent).toBe("ready");
 		expect(events).toEqual(["init"]);
@@ -237,7 +237,7 @@ describe("store init", () => {
 				};
 			},
 		});
-		Catalyst.start({ stores: { async: asyncStore } });
+		Catalyst.init({ stores: { async: asyncStore } });
 		await settle();
 		Catalyst.destroy();
 		expect(cleanups).toBe(1);

@@ -10,7 +10,7 @@ import {
 /**
  * Solid 2 owns a `createRoot` by whatever owner is current, and refuses to
  * create an ownerless root inside an effect callback. Every Catalyst root is
- * therefore parented to one runtime owner, created when Catalyst starts. Roots
+ * therefore parented to one runtime owner, created when Catalyst is initialised. Roots
  * are still disposed individually; disposing the runtime owner is the final
  * sweep performed by `destroy`.
  */
@@ -82,7 +82,7 @@ export const runEffectCallback = (
 };
 
 /**
- * Applies queued reactive updates synchronously so `start`, `sync` and
+ * Applies queued reactive updates synchronously so `init`, `sync` and
  * `refresh` leave the DOM bound when they return. Flushing is a no-op inside
  * an effect callback, so it is skipped there.
  */

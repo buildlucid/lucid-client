@@ -31,7 +31,7 @@ const counter = defineStore({
     }),
 });
 
-Catalyst.start({
+Catalyst.init({
     stores: { counter },
     reactions: [events, dom],
 });
@@ -56,7 +56,7 @@ behavior it uses. Catalyst exports `bind`, `classes`, `conditional`, `css`,
 `@lucidclient/catalyst/reactions`. Refs and store effects are part of the core
 and need no reaction.
 
-`start` waits for `DOMContentLoaded` when it runs before `<body>` exists, and
+`Catalyst.init` waits for `DOMContentLoaded` when it runs before `<body>` exists, and
 returns with every binding applied.
 
 ## Stores
@@ -107,11 +107,11 @@ export const nav = defineStore({
 });
 ```
 
-Register stores when starting Catalyst. Each key is the `data-store` scope the
+Register stores when initialising Catalyst. Each key is the `data-store` scope the
 definition applies to:
 
 ```ts
-Catalyst.start({
+Catalyst.init({
     stores: { nav },
     reactions: [bind, dom, events],
 });
@@ -168,7 +168,7 @@ choice for that. Actions receive `state`, `setState` and `refs`.
 
 ### Effects
 
-Store effects run for as long as the store exists, starting after `init`.
+Store effects run for as long as the store exists, starting after its `init`.
 Create each one with the `effect` helper, which follows Solid 2's two-phase
 `createEffect`: the first function is tracked, so every state value it reads
 re-runs the effect, and the second receives its result untracked and is where
@@ -262,7 +262,7 @@ ways straight away. An attribute for undeclared state is picked up by the next
 
 Wrap a state value in `persisted()` to save it to storage and restore it when
 the page loads again. Persistence is imported from its own entry point, so pages
-that don't persist state don't include it. Pass `persistence()` to `start` to
+that don't persist state don't include it. Pass `persistence()` to `Catalyst.init` to
 turn it on:
 
 ```ts
@@ -280,7 +280,7 @@ export const prefs = defineStore({
     },
 });
 
-Catalyst.start({
+Catalyst.init({
     stores: { prefs },
     persistence: persistence(),
 });
@@ -355,7 +355,7 @@ stored values again. `clearPersisted(scope)`, from
 every running store's without a scope, such as when a user logs out. State keeps
 its current values and is saved again the next time it changes.
 
-Server-rendered markup shows its own values until Catalyst starts. For a value
+Server-rendered markup shows its own values until Catalyst is initialised. For a value
 that must not flash, such as a theme, save it in a cookie with an adapter so the
 server can render it, or apply it with an inline script in `<head>`.
 
@@ -374,7 +374,7 @@ const memoryAdapter: StorageAdapter = {
     remove: (key) => memory.delete(key),
 };
 
-Catalyst.start({
+Catalyst.init({
     stores: { prefs },
     persistence: persistence({
         prefix: "catalyst:",
@@ -410,7 +410,7 @@ the first store.
 If any part of a definition throws, the error is logged and the store is still
 created from its HTML state, so the rest of the page keeps working.
 
-Stores loaded after `start`, for example from a code-split module, are added
+Stores loaded after `Catalyst.init`, for example from a code-split module, are added
 with `Catalyst.add`. A store whose element is already on the page is rebuilt
 with its definition:
 
@@ -1058,9 +1058,9 @@ Catalyst.destroy();
 `refresh` rebuilds a store, or every store, from scratch, restoring its
 persisted values from storage again. Directives elsewhere
 on the page that reference a rebuilt store, such as `dialog:$open`, are bound to
-the new store. `destroy` resets the running instance so it can be started again,
+the new store. `destroy` resets the running instance so it can be initialised again,
 even if a store's cleanup throws. Registered stores and reactions remain
-available, so `Catalyst.start()` can be called again without them.
+available, so `Catalyst.init()` can be called again without them.
 
 `data-ignore` keeps Catalyst out of an element and everything inside it, such
 as a third-party widget or markup that shows Catalyst's own attributes as code.
@@ -1078,7 +1078,7 @@ otherwise it could wire up your actions.
 ## Configuration
 
 ```ts
-Catalyst.start({
+Catalyst.init({
     debug: true,
     stores: { nav, counter },
     reactions: [events, dom],
@@ -1126,7 +1126,7 @@ const classList: Reaction = {
     },
 };
 
-Catalyst.start({ reactions: [classList] });
+Catalyst.init({ reactions: [classList] });
 ```
 
 ```html

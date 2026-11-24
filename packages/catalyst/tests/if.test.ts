@@ -16,7 +16,7 @@ describe("if reaction", () => {
 				</div>
 			</div>
 		`;
-		Catalyst.start({ reactions: [conditional, dom] });
+		Catalyst.init({ reactions: [conditional, dom] });
 		const rendered = () =>
 			Array.from(
 				document.querySelector("#if")?.children ?? [],
@@ -56,7 +56,7 @@ describe("if reaction", () => {
 			actions: () => ({ press: () => calls.push("press") }),
 			init: () => () => calls.push("cleanup"),
 		});
-		Catalyst.start({ stores: { inner }, reactions: [conditional, events] });
+		Catalyst.init({ stores: { inner }, reactions: [conditional, events] });
 		const first = document.querySelector("button");
 		expect(getStore("inner")).toBeDefined();
 
@@ -90,7 +90,7 @@ describe("if reaction", () => {
 				],
 			},
 		});
-		Catalyst.start({ stores: { list }, reactions: [conditional, dom, loop] });
+		Catalyst.init({ stores: { list }, reactions: [conditional, dom, loop] });
 		const spans = () =>
 			Array.from(document.querySelectorAll("span"), (span) => span.textContent);
 		expect(spans()).toEqual(["One"]);
@@ -107,7 +107,7 @@ describe("if reaction", () => {
 		document.body.innerHTML = `
 			<div data-store="c" data-state--open="true"><div data-if="$open"></div></div>
 		`;
-		Catalyst.start({ reactions: [conditional] });
+		Catalyst.init({ reactions: [conditional] });
 		expect(catalystWarnings()).toContainEqual(
 			expect.stringContaining("requires a direct template child"),
 		);

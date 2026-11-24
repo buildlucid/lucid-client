@@ -45,7 +45,7 @@ const reportUnregisteredReaction = (attributeName: string) => {
 		}
 		Catalyst.reportedReactions.add(name);
 		warn(
-			`Found "${attributeName}" but the ${name} reaction isn't registered. Add ${name} to Catalyst.start({ reactions }).`,
+			`Found "${attributeName}" but the ${name} reaction isn't registered. Add ${name} to Catalyst.init({ reactions }).`,
 		);
 		return;
 	}
@@ -118,7 +118,7 @@ type AttributeMatch = { reaction: Reaction; specifier: string } | null;
 
 /**
  * Attribute names already matched to a reaction, kept for the reactions map
- * `start` builds, since names such as `data-dom--text` repeat on every item.
+ * `init` builds, since names such as `data-dom--text` repeat on every item.
  */
 const matches = new WeakMap<
 	Map<string, Reaction>,

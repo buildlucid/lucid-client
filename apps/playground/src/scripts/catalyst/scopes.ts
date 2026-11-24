@@ -1,5 +1,5 @@
 import Catalyst, { defineStore } from "@lucidclient/catalyst";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 const log = createLogger("scopes");
@@ -89,7 +89,7 @@ const late = defineStore({
 	},
 });
 
-startCatalyst({
+initCatalyst({
 	stores: { outer, inner, innermost, profile, toolbar, duplicate, late },
 });
 
@@ -105,7 +105,7 @@ document
 		if (!slot || slot.querySelector("[data-store='late']")) return;
 		added += 1;
 		slot.innerHTML = `
-			<div data-store="late" data-state--message="Added after start (${added})" class="flex items-center gap-3 rounded-md bg-raised px-3 py-2">
+			<div data-store="late" data-state--message="Added after init (${added})" class="flex items-center gap-3 rounded-md bg-raised px-3 py-2">
 				<span class="text-sm" data-dom--text="$message"></span>
 				<span class="ml-auto font-mono text-xs text-subtle">pings <span data-dom--text="$pings"></span></span>
 			</div>`;

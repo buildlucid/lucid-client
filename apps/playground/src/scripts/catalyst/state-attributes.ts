@@ -1,5 +1,5 @@
 import Catalyst, { defineStore } from "@lucidclient/catalyst";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 /** "number · 3", "string · \"007\"", "array · [false,\"world\"]" */
@@ -96,7 +96,7 @@ const reverse = defineStore({
 });
 
 // --------------------------------------------------------
-// Attributes added after start
+// Attributes added after init
 
 const late = defineStore({
 	state: { known: "declared default" },
@@ -133,7 +133,7 @@ const styled = defineStore({
 	}),
 });
 
-startCatalyst({
+initCatalyst({
 	stores: { inferred, typed, naming, writes, reverse, late, styled },
 });
 

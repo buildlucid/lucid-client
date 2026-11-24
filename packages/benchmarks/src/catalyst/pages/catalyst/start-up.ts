@@ -12,6 +12,6 @@ defineHarness({
 		document.querySelector("#app")!.innerHTML = cards.map(cardMarkup).join("");
 	},
 	start: () => {
-		Catalyst.start({ stores, reactions: [bind, dom, events] });
+		Catalyst.init({ stores, reactions: [bind, dom, events] });
 	},
 });

@@ -29,7 +29,7 @@ describe("store effects", () => {
 			}),
 		});
 
-		Catalyst.start({ stores: { effects } });
+		Catalyst.init({ stores: { effects } });
 		expect(runs).toEqual([{ value: 0, isInitial: true, previous: undefined }]);
 
 		setStoreState("effects", "count", 1);
@@ -71,7 +71,7 @@ describe("store effects", () => {
 			},
 		});
 
-		Catalyst.start({ stores: { ordered } });
+		Catalyst.init({ stores: { ordered } });
 		await settle();
 		expect(events).toEqual(["init", "effect:true", "close", "effect:false"]);
 	});
@@ -101,7 +101,7 @@ describe("store effects", () => {
 			}),
 		});
 
-		Catalyst.start({ stores: { cleanups: cleanupsStore } });
+		Catalyst.init({ stores: { cleanups: cleanupsStore } });
 		setStoreState("cleanups", "count", 1);
 		await settle();
 		expect(runs).toEqual([0, 1]);
@@ -138,7 +138,7 @@ describe("store effects", () => {
 			}),
 		});
 
-		Catalyst.start({ stores: { failing } });
+		Catalyst.init({ stores: { failing } });
 		setStoreState("failing", "count", 1);
 		await settle();
 
@@ -169,7 +169,7 @@ describe("store effects", () => {
 			}),
 		});
 
-		Catalyst.start({ stores: { reads } });
+		Catalyst.init({ stores: { reads } });
 		setStoreState("reads", "label", "second");
 		setStoreState("reads", "trigger", 1);
 		await settle();
@@ -182,7 +182,7 @@ describe("store effects", () => {
 
 	it("warns about effects not created with the effect helper", () => {
 		document.body.innerHTML = `<div data-store="invalid"></div>`;
-		Catalyst.start({
+		Catalyst.init({
 			stores: {
 				invalid: { effects: () => ({ broken: (() => {}) as never }) },
 			},

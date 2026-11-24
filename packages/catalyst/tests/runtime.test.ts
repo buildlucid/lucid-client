@@ -35,9 +35,9 @@ describe("runtime robustness", () => {
 		});
 
 		expect(() =>
-			Catalyst.start({ stores: { broken }, reactions: [dom] }),
+			Catalyst.init({ stores: { broken }, reactions: [dom] }),
 		).not.toThrow();
-		expect(Runtime.started).toBe(true);
+		expect(Runtime.initialised).toBe(true);
 		expect(Runtime.removalObserver).toBeDefined();
 		expect(document.querySelector("#broken")?.textContent).toBe("html state");
 		expect(document.querySelector("#healthy")?.textContent).toBe("ok");
@@ -47,7 +47,7 @@ describe("runtime robustness", () => {
 		allowConsoleErrors();
 		document.body.innerHTML = `<div data-store="c1"></div><div data-store="c2"></div>`;
 		let secondCleanedUp = false;
-		Catalyst.start({
+		Catalyst.init({
 			stores: {
 				c1: defineStore({
 					init: () => () => {
@@ -63,7 +63,7 @@ describe("runtime robustness", () => {
 		});
 
 		expect(() => Catalyst.destroy()).not.toThrow();
-		expect(Runtime.started).toBe(false);
+		expect(Runtime.initialised).toBe(false);
 		expect(Runtime.stores.size).toBe(0);
 		expect(secondCleanedUp).toBe(true);
 	});
@@ -74,7 +74,7 @@ describe("runtime robustness", () => {
 			<span data-dom--text="a:$label"></span>
 			<button data-ref="a:#trigger"></button>
 		`;
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 		Catalyst.refresh("a");
 
 		expect(getStore("a")?.refs.get("trigger")).toBe(
@@ -90,7 +90,7 @@ describe("runtime robustness", () => {
 			<span data-dom--text="late:$label"></span>
 			<div id="host"></div>
 		`;
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 		expect(document.querySelector("span")?.textContent).not.toBe("ready");
 
 		const host = document.querySelector("#host");
@@ -107,7 +107,7 @@ describe("runtime robustness", () => {
 				<span data-dom--text="$value"></span>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 
 		expect(document.querySelector("span")?.textContent).not.toBe("first");
 		expect(catalystWarnings()).toContainEqual(
@@ -133,7 +133,7 @@ describe("runtime robustness", () => {
 				},
 			}),
 		});
-		Catalyst.start({ stores: { dup }, reactions: [dom, events] });
+		Catalyst.init({ stores: { dup }, reactions: [dom, events] });
 
 		expect(document.querySelector("#first")?.textContent).toBe("first");
 		expect(document.querySelector("#second")?.textContent).toBe("server text");
@@ -160,7 +160,7 @@ describe("runtime robustness", () => {
 				},
 			}),
 		});
-		Catalyst.start({ stores: { late }, reactions: [dom, events] });
+		Catalyst.init({ stores: { late }, reactions: [dom, events] });
 		const span = document.querySelector("span");
 		const button = document.querySelector("button");
 		const host = document.querySelector("#host");
@@ -202,7 +202,7 @@ describe("runtime robustness", () => {
 				() =>
 					cleanups.push(state.label),
 		});
-		Catalyst.start({ stores: { injected }, reactions: [dom] });
+		Catalyst.init({ stores: { injected }, reactions: [dom] });
 		const slot = document.querySelector("#slot");
 		if (!slot) throw new Error("Missing slot");
 
@@ -231,7 +231,7 @@ describe("runtime robustness", () => {
 				cleanups += 1;
 			},
 		});
-		Catalyst.start({ stores: { before }, reactions: [dom] });
+		Catalyst.init({ stores: { before }, reactions: [dom] });
 
 		const root = document.querySelector("[data-store]");
 		root?.setAttribute("data-store", "after");
@@ -243,14 +243,14 @@ describe("runtime robustness", () => {
 		expect(document.querySelector("span")?.textContent).toBe("value");
 	});
 
-	it("adds stores after start and rebuilds a store already on the page", async () => {
+	it("adds stores after init and rebuilds a store already on the page", async () => {
 		document.body.innerHTML = `
 			<div data-store="early" data-state--label="from markup">
 				<span data-dom--text="$label"></span>
 				<button data-events--click="@shout"></button>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom, events] });
+		Catalyst.init({ reactions: [dom, events] });
 		expect(document.querySelector("span")?.textContent).toBe("from markup");
 
 		Catalyst.add({
@@ -273,7 +273,7 @@ describe("runtime robustness", () => {
 
 	it("warns when a different definition is registered for a scope", () => {
 		const first = defineStore({});
-		Catalyst.start({ stores: { taken: first } });
+		Catalyst.init({ stores: { taken: first } });
 		Catalyst.add({ stores: { taken: first } });
 		expect(catalystWarnings()).toEqual([]);
 
@@ -291,16 +291,16 @@ describe("runtime robustness", () => {
 				<span data-dom--text="$items"></span>
 			</div>
 		`;
-		Catalyst.start({ debug: true, reactions: [dom] });
+		Catalyst.init({ debug: true, reactions: [dom] });
 		const reports = catalystWarnings().filter((message) =>
 			message.includes("reaction isn't registered"),
 		);
 		expect(reports).toEqual([
-			'[Catalyst] Found "data-loop" but the loop reaction isn\'t registered. Add loop to Catalyst.start({ reactions }).',
+			'[Catalyst] Found "data-loop" but the loop reaction isn\'t registered. Add loop to Catalyst.init({ reactions }).',
 		]);
 
 		Catalyst.destroy();
-		Catalyst.start({ reactions: [loop] });
+		Catalyst.init({ reactions: [loop] });
 		expect(
 			catalystWarnings().filter((message) =>
 				message.includes("reaction isn't registered"),
@@ -308,28 +308,28 @@ describe("runtime robustness", () => {
 		).toHaveLength(1);
 	});
 
-	it("waits for the body when started too early", () => {
+	it("waits for the body when initialised too early", () => {
 		const body = document.body;
 		body.innerHTML = `<div data-store="deferred" data-state--label="ready"><span data-dom--text="$label"></span></div>`;
 		body.remove();
 
-		Catalyst.start({ reactions: [dom] });
-		expect(Runtime.started).toBe(false);
+		Catalyst.init({ reactions: [dom] });
+		expect(Runtime.initialised).toBe(false);
 
 		document.documentElement.append(body);
 		document.dispatchEvent(new Event("DOMContentLoaded"));
-		expect(Runtime.started).toBe(true);
+		expect(Runtime.initialised).toBe(true);
 		expect(document.querySelector("span")?.textContent).toBe("ready");
 	});
 
-	it("applies bindings before start and sync return", () => {
+	it("applies bindings before init and sync return", () => {
 		document.body.innerHTML = `
 			<div data-store="now" data-state--label="ready">
 				<span data-dom--text="$label"></span>
 				<button data-events--click="@missing"></button>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom, events] });
+		Catalyst.init({ reactions: [dom, events] });
 		expect(document.querySelector("span")?.textContent).toBe("ready");
 	});
 });
@@ -345,7 +345,7 @@ describe("data-ignore", () => {
 				</div>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 		expect(document.querySelector("#bound")?.textContent).toBe("Ada");
 		expect(document.querySelector("#ignored")?.textContent).toBe("Kept");
 		expect(getStore("nested")).toBeUndefined();
@@ -363,7 +363,7 @@ describe("data-ignore", () => {
 				<p id="ignored" c:ignore c:dom--text="$name">Kept</p>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom], attributes: { prefix: "c:" } });
+		Catalyst.init({ reactions: [dom], attributes: { prefix: "c:" } });
 		expect(document.querySelector("#bound")?.textContent).toBe("Ada");
 		expect(document.querySelector("#ignored")?.textContent).toBe("Kept");
 	});
@@ -374,7 +374,7 @@ describe("data-ignore", () => {
 				<p data-skip data-dom--text="$name">Kept</p>
 			</div>
 		`;
-		Catalyst.start({ reactions: [dom], attributes: { ignore: "skip" } });
+		Catalyst.init({ reactions: [dom], attributes: { ignore: "skip" } });
 		expect(document.querySelector("p")?.textContent).toBe("Kept");
 	});
 });
@@ -396,7 +396,7 @@ describe("data-ignore in rendered markup", () => {
 				</div>
 			</div>
 		`;
-		Catalyst.start({ reactions: [conditional, dom, loop] });
+		Catalyst.init({ reactions: [conditional, dom, loop] });
 		expect(document.querySelector(".bound")?.textContent).toBe("1");
 		expect(document.querySelector(".ignored")?.textContent).toBe("Kept");
 		expect(document.querySelector("[data-if] p")?.textContent).toBe("Kept");

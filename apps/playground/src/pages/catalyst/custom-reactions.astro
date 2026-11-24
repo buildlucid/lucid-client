@@ -9,7 +9,7 @@ import Playground from "../../layouts/Playground.astro";
 			A reaction is a <code>name</code>, an <code>attribute</code> and a
 			<code>setup</code> function. It receives the same directive data as the
 			first-party reactions and is registered with
-			<code>Catalyst.start({"{"} reactions {"}"})</code>.
+			<code>Catalyst.init({"{"} reactions {"}"})</code>.
 		</p>
 		<p>
 			This page registers <code>classList</code>, <code>toggleClass</code>
@@ -170,7 +170,7 @@ import Playground from "../../layouts/Playground.astro";
 		]}
 		markup={false}
 	>
-		<pre class="readout">{`Catalyst.start({
+		<pre class="readout">{`Catalyst.init({
   reactions: [
     ...allReactions, classList, toggleClass, cssVar, inspect, clock,
     { name: "classListCopy", attribute: "class-list", setup },

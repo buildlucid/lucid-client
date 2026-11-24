@@ -1,6 +1,6 @@
 import { defineStore } from "@lucidclient/catalyst";
 import type { LoopItem } from "@lucidclient/catalyst/types";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -357,7 +357,7 @@ const misconfigured = defineStore({
 	}),
 });
 
-startCatalyst({
+initCatalyst({
 	stores: {
 		elementEvents,
 		globalTargets,

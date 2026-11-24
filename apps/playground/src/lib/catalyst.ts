@@ -12,7 +12,7 @@ import {
 	trap,
 	uid,
 } from "@lucidclient/catalyst/reactions";
-import type { CatalystStartOptions } from "@lucidclient/catalyst/types";
+import type { CatalystInitOptions } from "@lucidclient/catalyst/types";
 
 /** Every first-party reaction. Pages pass their own list to test fewer. */
 export const allReactions = [
@@ -30,11 +30,11 @@ export const allReactions = [
 ];
 
 /**
- * Starts Catalyst in debug mode with every first-party reaction, unless the
- * page passes its own. Each page starts only its own stores.
+ * Initialises Catalyst in debug mode with every first-party reaction, unless the
+ * page passes its own. Each page registers only its own stores.
  */
-export const startCatalyst = (options: CatalystStartOptions = {}) => {
-	Catalyst.start({
+export const initCatalyst = (options: CatalystInitOptions = {}) => {
+	Catalyst.init({
 		debug: true,
 		reactions: allReactions,
 		...options,

@@ -36,7 +36,7 @@ describe("store state", () => {
 				},
 			}),
 		});
-		Catalyst.start({ stores: { profile } });
+		Catalyst.init({ stores: { profile } });
 
 		getStore("profile")?.actions.rename?.();
 		expect(seen).toEqual([2, "Grace", 0, "Ada", 2, "Grace"]);
@@ -58,7 +58,7 @@ describe("store state", () => {
 				copy: () => structuredClone(snapshot(state.items)),
 			}),
 		});
-		Catalyst.start({ stores: { list }, reactions: [dom, loop] });
+		Catalyst.init({ stores: { list }, reactions: [dom, loop] });
 		const [, second, third] = Array.from(document.querySelectorAll("li"));
 
 		getStore("list")?.actions.removeFirst?.();
@@ -83,7 +83,7 @@ describe("store state", () => {
 				save: () => structuredClone(snapshot(state)),
 			}),
 		});
-		Catalyst.start({ stores: { form } });
+		Catalyst.init({ stores: { form } });
 
 		expect(getStore("form")?.actions.save?.()).toEqual({
 			seats: 2,
@@ -118,7 +118,7 @@ describe("store state", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { list }, reactions: [dom, loop] });
+		Catalyst.init({ stores: { list }, reactions: [dom, loop] });
 		const actions = getStore("list")?.actions;
 
 		actions?.splice?.();
@@ -160,7 +160,7 @@ describe("store state", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { tags }, reactions: [bind, dom] });
+		Catalyst.init({ stores: { tags }, reactions: [bind, dom] });
 		const actions = getStore("tags")?.actions;
 		const has = () => document.querySelector("#has")?.getAttribute("data-has");
 
@@ -187,7 +187,7 @@ describe("store state", () => {
 				},
 			}),
 		});
-		Catalyst.start({ stores: { list } });
+		Catalyst.init({ stores: { list } });
 
 		getStore("list")?.actions.write?.();
 		flush();
@@ -211,7 +211,7 @@ describe("store state", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { values } });
+		Catalyst.init({ stores: { values } });
 		const store = getStore("values");
 
 		expect(store?.state.format).toBe(format);

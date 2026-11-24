@@ -1,5 +1,5 @@
 import Catalyst, { defineStore } from "@lucidclient/catalyst";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 // --------------------------------------------------------
@@ -155,7 +155,7 @@ const misconfigured = defineStore({
 	state: { size: "2rem" },
 });
 
-startCatalyst({
+initCatalyst({
 	stores: {
 		progress,
 		theme,

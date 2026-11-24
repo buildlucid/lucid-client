@@ -1,6 +1,6 @@
 import Catalyst, { defineStore } from "@lucidclient/catalyst";
 import type { Reaction } from "@lucidclient/catalyst/types";
-import { allReactions, startCatalyst } from "../../lib/catalyst";
+import { allReactions, initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 // --------------------------------------------------------
@@ -288,7 +288,7 @@ const refreshControls = defineStore({
 });
 
 // --------------------------------------------------------
-// destroy() and start()
+// destroy() and init()
 
 const lifecycleLog = createLogger("lifecycle");
 const lifecycleCounter = defineStore({
@@ -353,7 +353,7 @@ const ignoreHost = defineStore({
 	}),
 });
 
-startCatalyst({
+initCatalyst({
 	stores: {
 		ignoreHost,
 		injector,
@@ -392,16 +392,16 @@ for (const button of document.querySelectorAll<HTMLButtonElement>(
 				Catalyst.destroy();
 				renderStatus(false);
 				break;
-			case "start":
+			case "init":
 				lifecycleLog.info(
-					"Catalyst.start({ debug: true }), with no stores or reactions",
+					"Catalyst.init({ debug: true }), with no stores or reactions",
 				);
-				Catalyst.start({ debug: true });
+				Catalyst.init({ debug: true });
 				renderStatus(true);
 				break;
-			case "start-again":
-				lifecycleLog.info("Catalyst.start() while it is already running");
-				Catalyst.start({ debug: true });
+			case "init-again":
+				lifecycleLog.info("Catalyst.init() while it is already running");
+				Catalyst.init({ debug: true });
 				break;
 		}
 	});

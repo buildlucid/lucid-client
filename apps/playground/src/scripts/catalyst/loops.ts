@@ -1,6 +1,6 @@
 import { defineStore } from "@lucidclient/catalyst";
 import type { LoopItem } from "@lucidclient/catalyst/types";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 type Link = { title: string; url: string };
@@ -301,7 +301,7 @@ const misconfigured = defineStore({
 	},
 });
 
-startCatalyst({
+initCatalyst({
 	stores: {
 		basic,
 		filtered,

@@ -6,7 +6,7 @@ import Playground from "../../layouts/Playground.astro";
 <Playground title="Dynamic markup">
 	<Fragment slot="intro">
 		<p>
-			Markup added after <code>start</code> needs <code>Catalyst.sync</code>,
+			Markup added after <code>init</code> needs <code>Catalyst.sync</code>,
 			removed markup is disposed automatically, and <code>refresh</code>,
 			<code>destroy</code> and <code>add</code> rebuild stores at runtime.
 		</p>
@@ -19,7 +19,7 @@ import Playground from "../../layouts/Playground.astro";
 	<Scenario
 		id="sync-injected"
 		title="sync on injected markup"
-		description="`injector` replaces the contents of its `#slot` ref with a new `injected` store. The `injected` definition is registered at start, before its element exists. A store whose markup was just removed is disposed by the next `sync`, so its replacement can be synced in the same task."
+		description="`injector` replaces the contents of its `#slot` ref with a new `injected` store. The `injected` definition is registered at init, before its element exists. A store whose markup was just removed is disposed by the next `sync`, so its replacement can be synced in the same task."
 		expect={[
 			"`Inject only` adds the markup but nothing in it works: no count, the button does nothing and the probe count stays at 0.",
 			"`Sync slot` then wires it up: `injected` init runs, the count shows 0 and the button counts.",
@@ -160,20 +160,20 @@ import Playground from "../../layouts/Playground.astro";
 	</Scenario>
 
 	<Scenario
-		id="destroy-start"
-		title="destroy() then start()"
-		description="These buttons are plain JavaScript, so they work while Catalyst is destroyed. `Start again` calls `Catalyst.start({ debug: true })` with no stores or reactions: the ones registered earlier are reused."
+		id="destroy-init"
+		title="destroy() then init()"
+		description="These buttons are plain JavaScript, so they work while Catalyst is destroyed. `Init again` calls `Catalyst.init({ debug: true })` with no stores or reactions: the ones registered earlier are reused."
 		expect={[
 			"`Destroy` logs the cleanup of every store on the page, the probe total drops to 0 and the counter stops responding.",
-			"`Start again` recreates every store and everything works again, including the probe reaction. The counter has no state attribute, so it is back to 0; stores with state attributes, such as `refreshB`, keep their attribute value.",
-			"`Start while running` logs a warning that Catalyst has already been started.",
+			"`Init again` recreates every store and everything works again, including the probe reaction. The counter has no state attribute, so it is back to 0; stores with state attributes, such as `refreshB`, keep their attribute value.",
+			"`Init while running` logs a warning that Catalyst has already been initialised.",
 		]}
 	>
 		<div class="space-y-4">
 			<div class="flex flex-wrap items-center gap-2">
 				<button class="btn btn-danger" data-lifecycle="destroy">Destroy</button>
-				<button class="btn" data-lifecycle="start">Start again</button>
-				<button class="btn btn-ghost" data-lifecycle="start-again">Start while running</button>
+				<button class="btn" data-lifecycle="init">Init again</button>
+				<button class="btn btn-ghost" data-lifecycle="init-again">Init while running</button>
 				<span class="badge ml-auto data-[running=false]:border-rose-400/30 data-[running=false]:text-rose-300 data-[running=true]:border-emerald-400/30 data-[running=true]:text-emerald-300" data-lifecycle-status>running</span>
 			</div>
 			<div data-store="lifecycleCounter" class="flex items-center gap-3 rounded-md bg-raised px-3 py-2">

@@ -23,7 +23,7 @@ describe("uid reaction", () => {
 			</ul>
 		`;
 		const faq = defineStore({ state: { items: [1, 2] } });
-		Catalyst.start({ stores: { faq }, reactions: [loop, uid] });
+		Catalyst.init({ stores: { faq }, reactions: [loop, uid] });
 
 		const label = document.querySelector("label");
 		const [first, second] = Array.from(document.querySelectorAll("input"));
@@ -51,7 +51,7 @@ describe("uid reaction", () => {
 				<p data-uid="$name"></p>
 			</div>
 		`;
-		Catalyst.start({ reactions: [uid] });
+		Catalyst.init({ reactions: [uid] });
 		const p = document.querySelector("p");
 		expect(p?.id).toMatch(/^catalyst-note-/);
 
@@ -73,7 +73,7 @@ describe("uid reaction", () => {
 			${taken}
 			<div data-store="a"><p class="target" data-uid="taken"></p></div>
 		`;
-		Catalyst.start({ reactions: [uid] });
+		Catalyst.init({ reactions: [uid] });
 		const id = document.querySelector(".target")?.id ?? "";
 		expect(id).toBe("catalyst-taken-201");
 	});

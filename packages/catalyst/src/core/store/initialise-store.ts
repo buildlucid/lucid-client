@@ -102,7 +102,7 @@ const warnPersistenceDisabled = (
 		);
 	if (!marked) return;
 	warn(
-		`Store "${key}" persists state, but persistence isn't enabled, so it won't be saved. Pass persistence() from "@lucidclient/catalyst/persistence" to Catalyst.start.`,
+		`Store "${key}" persists state, but persistence isn't enabled, so it won't be saved. Pass persistence() from "@lucidclient/catalyst/persistence" to Catalyst.init.`,
 	);
 };
 

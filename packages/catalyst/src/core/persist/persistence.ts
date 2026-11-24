@@ -21,7 +21,7 @@ export type PersistenceConfig = {
 /**
  * Saves `persisted()` state and `data-persist` keys to storage, and restores
  * them when the page loads again. Pass it to Catalyst when starting:
- * `Catalyst.start({ persistence: persistence() })`.
+ * `Catalyst.init({ persistence: persistence() })`.
  */
 const persistence = (options: CatalystPersistenceOptions = {}): Persistence => {
 	const config: PersistenceConfig = {

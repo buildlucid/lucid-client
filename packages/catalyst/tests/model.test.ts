@@ -28,7 +28,7 @@ describe("model reaction", () => {
 		const profile = defineStore({
 			state: { name: "Ada", details: { bio: "" } },
 		});
-		Catalyst.start({ stores: { profile }, reactions: [model] });
+		Catalyst.init({ stores: { profile }, reactions: [model] });
 		expect(field("#name").value).toBe("Ada");
 
 		type(field("#name"), "Grace");
@@ -50,7 +50,7 @@ describe("model reaction", () => {
 			</div>
 		`;
 		const fruit = defineStore({ state: { value: "apple" } });
-		Catalyst.start({ stores: { fruit }, reactions: [model] });
+		Catalyst.init({ stores: { fruit }, reactions: [model] });
 
 		type(field("input"), "typed by user");
 		await settle();
@@ -86,7 +86,7 @@ describe("model reaction", () => {
 				tags: ["b"] as string[],
 			},
 		});
-		Catalyst.start({ stores: { prefs }, reactions: [model] });
+		Catalyst.init({ stores: { prefs }, reactions: [model] });
 		const state = () => getStore("prefs")?.state;
 		const selected = (select: HTMLSelectElement) =>
 			Array.from(select.options)
@@ -139,7 +139,7 @@ describe("model reaction", () => {
 		const invoice = defineStore({
 			state: { lines: [{ qty: 1 }, { qty: 2 }] },
 		});
-		Catalyst.start({ stores: { invoice }, reactions: [loop, model] });
+		Catalyst.init({ stores: { invoice }, reactions: [loop, model] });
 
 		const inputs = document.querySelectorAll("input");
 		const second = inputs[1];
@@ -162,7 +162,7 @@ describe("model reaction", () => {
 		const report = defineStore({
 			state: { title: "Quarterly report", flags: ["a"] as string[] },
 		});
-		Catalyst.start({ stores: { report }, reactions: [model] });
+		Catalyst.init({ stores: { report }, reactions: [model] });
 
 		type(field("#title"), "Edited");
 		field("#a").click();
@@ -186,7 +186,7 @@ describe("model reaction", () => {
 			</form>
 		`;
 		const plans = defineStore({ state: { plan: "pro", size: "m" } });
-		Catalyst.start({ stores: { plans }, reactions: [model] });
+		Catalyst.init({ stores: { plans }, reactions: [model] });
 		expect(field("#pro").checked).toBe(true);
 		expect(field("#size-m").checked).toBe(true);
 
@@ -208,7 +208,7 @@ describe("model reaction", () => {
 			</div>
 		`;
 		const picker = defineStore({ state: { picked: ["kept"] as string[] } });
-		Catalyst.start({
+		Catalyst.init({
 			stores: { first: picker, second: picker },
 			reactions: [model],
 		});
@@ -236,7 +236,7 @@ describe("model reaction", () => {
 			computed: ({ state }) => ({ upper: () => state.label.toUpperCase() }),
 			actions: () => ({ action: () => "value" }),
 		});
-		Catalyst.start({ stores: { bad }, reactions: [bind, loop, model] });
+		Catalyst.init({ stores: { bad }, reactions: [bind, loop, model] });
 		type(field("#computed"), "B");
 		await settle();
 
@@ -268,7 +268,7 @@ describe("model modifiers", () => {
 				<input id="name" data-model--trim="$name" />
 			</div>
 		`;
-		Catalyst.start({ reactions: [model] });
+		Catalyst.init({ reactions: [model] });
 
 		type(field("#lazy"), "typed");
 		await settle();
@@ -293,7 +293,7 @@ describe("model modifiers", () => {
 				<input data-model--debounce.300ms="$query" />
 			</div>
 		`;
-		Catalyst.start({ reactions: [model] });
+		Catalyst.init({ reactions: [model] });
 		const input = field("input");
 
 		type(input, "a");
@@ -321,7 +321,7 @@ describe("debounced models in forms", () => {
 				<input data-model--debounce="$query" />
 			</form>
 		`;
-		Catalyst.start({ reactions: [model] });
+		Catalyst.init({ reactions: [model] });
 		const form = field<HTMLFormElement>("form");
 		let submitted: unknown;
 		form.addEventListener("submit", (event) => {
@@ -341,7 +341,7 @@ describe("model toggles", () => {
 				<dialog data-model="$open"><button>Close</button></dialog>
 			</div>
 		`;
-		Catalyst.start({ reactions: [model] });
+		Catalyst.init({ reactions: [model] });
 		const dialog = field<HTMLDialogElement>("dialog");
 		expect(dialog.open).toBe(false);
 
@@ -361,7 +361,7 @@ describe("model toggles", () => {
 				<details data-model="$open"><summary>More</summary></details>
 			</div>
 		`;
-		Catalyst.start({ reactions: [model] });
+		Catalyst.init({ reactions: [model] });
 		const details = field<HTMLDetailsElement>("details");
 		expect(details.open).toBe(true);
 
@@ -384,7 +384,7 @@ describe("model toggle edge cases", () => {
 		`;
 		// happy-dom doesn't match `:modal`, so showModal is watched instead.
 		const showModal = vi.spyOn(HTMLDialogElement.prototype, "showModal");
-		Catalyst.start({ reactions: [model] });
+		Catalyst.init({ reactions: [model] });
 		await settle();
 		const dialog = field<HTMLDialogElement>("dialog");
 		expect(showModal).toHaveBeenCalledTimes(1);

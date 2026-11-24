@@ -11,7 +11,7 @@ describe("store state and refs", () => {
 			</div>
 		`;
 
-		Catalyst.start({ reactions: [bind] });
+		Catalyst.init({ reactions: [bind] });
 		await settle();
 		const root = document.querySelector('[data-store="state"]');
 		const link = document.querySelector("a");
@@ -38,7 +38,7 @@ describe("store state and refs", () => {
 			</div>
 		`;
 
-		Catalyst.start({ reactions: [dom] });
+		Catalyst.init({ reactions: [dom] });
 		await settle();
 		expect(document.querySelector("#movable")?.textContent).toBe("Outer");
 		expect(document.querySelector("#inner")?.textContent).toBe("Inner");
@@ -83,7 +83,7 @@ describe("store state and refs", () => {
 			},
 		});
 
-		Catalyst.start({ stores: { refs } });
+		Catalyst.init({ stores: { refs } });
 		const inputs = Array.from(document.querySelectorAll("input"));
 		expect(button).toBe(document.querySelector("button"));
 		expect(cross).toBe(document.querySelector("#cross-ref"));

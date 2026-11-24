@@ -31,10 +31,10 @@ const runUpdate = (call: Update | { update: Update } | undefined) => {
 	else call?.update();
 };
 
-const start = () => {
+const setup = () => {
 	document.body.innerHTML = `<p data-store="page" data-dom--text="$title"></p>`;
 	const page = defineStore({ state: { title: "Before" } });
-	Catalyst.start({ stores: { page }, reactions: [dom] });
+	Catalyst.init({ stores: { page }, reactions: [dom] });
 	const setTitle = (title: string) =>
 		getStore("page")?.setState((state) => {
 			state.title = title;
@@ -51,7 +51,7 @@ describe("viewTransition", () => {
 
 	it("applies the update's state changes before the new page is captured", () => {
 		const { calls, transition } = stubTransitions();
-		const { setTitle, text } = start();
+		const { setTitle, text } = setup();
 
 		const result = viewTransition(() => setTitle("After"));
 		expect(result).toBe(transition);
@@ -62,7 +62,7 @@ describe("viewTransition", () => {
 	});
 
 	it("runs the update straight away without support or with reduced motion", () => {
-		const { setTitle, text } = start();
+		const { setTitle, text } = setup();
 		expect(viewTransition(() => setTitle("No support"))).toBeUndefined();
 		expect(text()).toBe("No support");
 
@@ -77,7 +77,7 @@ describe("viewTransition", () => {
 
 	it("passes types where the browser supports them", () => {
 		const { calls } = stubTransitions();
-		start();
+		setup();
 		viewTransition(() => {}, { types: ["forward"] });
 		expect(typeof calls[0]).toBe("function");
 
@@ -101,7 +101,7 @@ describe("viewTransition", () => {
 	it("logs an update that throws and still applies what it changed", () => {
 		allowConsoleErrors();
 		const { calls } = stubTransitions();
-		const { setTitle, text } = start();
+		const { setTitle, text } = setup();
 		viewTransition(() => {
 			setTitle("Partly");
 			throw new Error("failed");
@@ -113,7 +113,7 @@ describe("viewTransition", () => {
 	it("reports an async update's rejection", async () => {
 		allowConsoleErrors();
 		const errors = vi.spyOn(console, "error");
-		start();
+		setup();
 		viewTransition(async () => {
 			throw new Error("async failure");
 		});

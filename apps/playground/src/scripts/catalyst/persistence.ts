@@ -4,7 +4,7 @@ import {
 	persisted,
 	persistence,
 } from "@lucidclient/catalyst/persistence";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 // --------------------------------------------------------
@@ -93,7 +93,7 @@ const tabs = defineStore({
 	}),
 });
 
-startCatalyst({
+initCatalyst({
 	persistence: persistence(),
 	stores: {
 		prefs,

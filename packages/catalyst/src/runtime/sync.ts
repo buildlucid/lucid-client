@@ -124,7 +124,7 @@ const collectTarget = (target: Element, options?: TargetsOptions) => {
  * before the next, so stores start once every target's refs are registered.
  */
 export const syncTargets = (targets: Element[], options?: TargetsOptions) => {
-	if (!Catalyst.started || targets.length === 0) return;
+	if (!Catalyst.initialised || targets.length === 0) return;
 	noteSync();
 
 	const collect = () =>
@@ -169,8 +169,8 @@ export const syncTarget = (target: Element, options?: SyncOptions) => {
 };
 
 const sync = (target: Element, options?: SyncOptions) => {
-	if (!Catalyst.started) {
-		if (__DEV__) warn("Catalyst must be started before it can sync.");
+	if (!Catalyst.initialised) {
+		if (__DEV__) warn("Catalyst must be initialised before it can sync.");
 		return;
 	}
 	syncTarget(target, options);

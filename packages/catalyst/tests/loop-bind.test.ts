@@ -41,7 +41,7 @@ describe("bindings rendered by loops", () => {
 			}),
 		});
 
-		Catalyst.start({ stores: { links }, reactions: [loop, bind, dom, events] });
+		Catalyst.init({ stores: { links }, reactions: [loop, bind, dom, events] });
 		await settle();
 
 		let anchors = Array.from(document.querySelectorAll("ul > li > a"));
@@ -130,7 +130,7 @@ describe("bindings rendered by loops", () => {
 			},
 		});
 
-		Catalyst.start({ stores: { navigation }, reactions: [loop, bind, dom] });
+		Catalyst.init({ stores: { navigation }, reactions: [loop, bind, dom] });
 		await settle();
 
 		const groups = Array.from(document.querySelectorAll("#groups > li"));
@@ -186,7 +186,7 @@ describe("bindings rendered by loops", () => {
 			actions: ({ state }) => ({ getItems: () => state.items }),
 		});
 
-		Catalyst.start({
+		Catalyst.init({
 			stores: { "action-loop": actionLoop },
 			reactions: [loop, dom],
 		});
@@ -246,7 +246,7 @@ describe("bindings rendered by loops", () => {
 			},
 		});
 
-		Catalyst.start({ stores: { tree }, reactions: [loop, bind, dom] });
+		Catalyst.init({ stores: { tree }, reactions: [loop, bind, dom] });
 		await settle();
 		const link = document.querySelector("li[data-group]");
 		expect(link?.textContent).toBe("Link");
@@ -296,7 +296,7 @@ describe("actions inside loops", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { rows }, reactions: [events, loop] });
+		Catalyst.init({ stores: { rows }, reactions: [events, loop] });
 
 		const pickButtons = () =>
 			Array.from(
@@ -335,7 +335,7 @@ describe("actions inside loops", () => {
 					`${indexOne}. ${item.title} × ${item.qty}`,
 			}),
 		});
-		Catalyst.start({ stores: { lines }, reactions: [dom, loop] });
+		Catalyst.init({ stores: { lines }, reactions: [dom, loop] });
 		const texts = () =>
 			Array.from(document.querySelectorAll("li"), (li) => li.textContent);
 		expect(texts()).toEqual(["1. a × 1", "2. b × 2"]);
@@ -366,7 +366,7 @@ describe("loop updates", () => {
 		const keyed = defineStore({
 			state: { items: [{ title: "One" }, { title: "Two" }] as Item[] },
 		});
-		Catalyst.start({ stores: { keyed }, reactions: [loop, bind, dom] });
+		Catalyst.init({ stores: { keyed }, reactions: [loop, bind, dom] });
 
 		const [firstOne, firstTwo] = Array.from(document.querySelectorAll("li"));
 		getStore("keyed")?.setState((state) => {
@@ -403,7 +403,7 @@ describe("loop updates", () => {
 			</div>
 		`;
 		const tags = defineStore({ state: { items: ["a", "b"] } });
-		Catalyst.start({ stores: { tags }, reactions: [loop, dom] });
+		Catalyst.init({ stores: { tags }, reactions: [loop, dom] });
 
 		const list = document.querySelector("ul") as HTMLUListElement;
 		const paragraph = document.querySelector("p") as HTMLParagraphElement;
@@ -424,7 +424,7 @@ describe("loop updates", () => {
 		const list = defineStore({
 			state: { items: [] as string[] },
 		});
-		Catalyst.start({ stores: { list }, reactions: [loop, dom] });
+		Catalyst.init({ stores: { list }, reactions: [loop, dom] });
 		const store = getStore("list");
 		const write = async (items: string[]) => {
 			store?.setState((state) => {
@@ -472,7 +472,7 @@ describe("loop updates", () => {
 			</ul>
 		`;
 		const list = defineStore({ state: { items: [] as string[] } });
-		Catalyst.start({ stores: { list }, reactions: [loop, bind, dom] });
+		Catalyst.init({ stores: { list }, reactions: [loop, bind, dom] });
 		const store = getStore("list");
 		const seen = new Map<string, Element>();
 		const orders = [
@@ -530,7 +530,7 @@ describe("loop updates", () => {
 					}),
 			}),
 		});
-		Catalyst.start({ stores: { mutable }, reactions: [loop, dom] });
+		Catalyst.init({ stores: { mutable }, reactions: [loop, dom] });
 		const [first] = Array.from(document.querySelectorAll("li"));
 
 		getStore("mutable")?.actions.add?.("Two");
@@ -556,7 +556,7 @@ describe("loop updates", () => {
 		const nullable = defineStore({
 			state: { items: [1, 2] as number[] | null },
 		});
-		Catalyst.start({ stores: { nullable }, reactions: [loop] });
+		Catalyst.init({ stores: { nullable }, reactions: [loop] });
 		expect(document.querySelectorAll("li")).toHaveLength(2);
 
 		setStoreState("nullable", "items", null);
@@ -581,7 +581,7 @@ describe("loop updates", () => {
 				void state.count;
 			},
 		});
-		Catalyst.start({ stores: { list, child }, reactions: [loop] });
+		Catalyst.init({ stores: { list, child }, reactions: [loop] });
 
 		const childStore = getStore("child");
 		setStoreState("child", "count", 5);
@@ -609,7 +609,7 @@ describe("loop updates", () => {
 				},
 			}),
 		});
-		Catalyst.start({ stores: { ssr }, reactions: [loop, events] });
+		Catalyst.init({ stores: { ssr }, reactions: [loop, events] });
 		await settle();
 
 		expect(document.querySelector("#placeholder")).toBeNull();

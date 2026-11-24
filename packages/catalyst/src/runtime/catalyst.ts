@@ -3,7 +3,7 @@ import type { CatalystRuntime } from "./types.js";
 
 const Catalyst: CatalystRuntime = {
 	options: DEFAULT_OPTIONS,
-	started: false,
+	initialised: false,
 	reactions: new Map(),
 	reactionAttributes: new Map(),
 	stores: new Map(),

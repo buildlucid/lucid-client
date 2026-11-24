@@ -1,6 +1,6 @@
 import { defineStore, viewTransition } from "@lucidclient/catalyst";
 import type { LoopItem } from "@lucidclient/catalyst/types";
-import { startCatalyst } from "../../lib/catalyst";
+import { initCatalyst } from "../../lib/catalyst";
 import { createLogger } from "../../lib/log";
 
 const log = createLogger("animations");
@@ -190,6 +190,6 @@ const cssPanel = defineStore({
 	}),
 });
 
-startCatalyst({
+initCatalyst({
 	stores: { support, gallery, layout, steps, banner, timing, cssPanel },
 });
