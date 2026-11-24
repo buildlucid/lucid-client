@@ -10,7 +10,7 @@ export const libraries: Library[] = [
 		id: "carousel",
 		name: "Lucid Carousel",
 		package: "@lucidclient/carousel",
-		homepage: "https://github.com/ProtoDigitalUK/lucid_client",
+		homepage: "https://github.com/buildlucid/lucid-client",
 		kind: "CSS scroll snap",
 	},
 	{

@@ -37,11 +37,11 @@
 		"vite-plus": "1.7.0",
 		"typescript": "^7.0.2"
 	},
-	"author": "Proto Digital",
+	"author": "Build Lucid Ltd",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/ProtoDigitalUK/lucid_client",
+		"url": "git+https://github.com/buildlucid/lucid-client.git",
 		"directory": "packages/carousel"
 	},
 	"keywords": [

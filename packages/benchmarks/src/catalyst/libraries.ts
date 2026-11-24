@@ -6,7 +6,7 @@ export const libraries: Library[] = [
 		id: "catalyst",
 		name: "Catalyst",
 		package: "@lucidclient/catalyst",
-		homepage: "https://github.com/ProtoDigitalUK/lucid_client",
+		homepage: "https://github.com/buildlucid/lucid-client",
 	},
 	{
 		id: "alpine",

@@ -22,8 +22,8 @@ A lightweight, bring your own markup and styles, cookie consent solution. Perfec
 
 ## Examples
 
-- [Basic](https://github.com/ProtoDigitalUK/lucid_client/blob/master/packages/cookie-controller/examples/basic.html)
-- [Tailwind](https://github.com/ProtoDigitalUK/lucid_client/blob/master/packages/cookie-controller/examples/tailwind.html)
+- [Basic](https://github.com/buildlucid/lucid-client/blob/master/packages/cookie-controller/examples/basic.html)
+- [Tailwind](https://github.com/buildlucid/lucid-client/blob/master/packages/cookie-controller/examples/tailwind.html)
 
 ## Getting Started
 

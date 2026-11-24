@@ -133,7 +133,7 @@ Note for additional DOM event handlers other than `onClick` you can register the
 
 #### Configuration Options
 
-To see the available config, checkout the `SpeculatorConfig` type [here](https://github.com/ProtoDigitalUK/lucid_client/blob/master/packages/speculate/src/types.d.ts).
+To see the available config, checkout the `SpeculatorConfig` type [here](https://github.com/buildlucid/lucid-client/blob/master/packages/speculate/src/types.d.ts).
 
 #### Public Methods
 
