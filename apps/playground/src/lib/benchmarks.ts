@@ -4,8 +4,24 @@ import results from "../../../../packages/benchmarks/results/catalyst.json";
 /** The latest Catalyst benchmark run, written by `npm run bench`. */
 export const benchmarks = results;
 
+type CarouselRun = typeof carousel;
+type CarouselScenario = CarouselRun["scenarios"][number];
+
+/**
+ * A library's result in a scenario. `note` says why it failed the scenario's
+ * check, and is left out of the JSON when every library passes, so it's typed
+ * here rather than inferred.
+ */
+export type CarouselResult = CarouselScenario["results"][number] & {
+	note?: string;
+};
+
 /** The latest carousel benchmark run, written by `npm run bench:carousel`. */
-export const carouselBenchmarks = carousel;
+export const carouselBenchmarks = carousel as Omit<CarouselRun, "scenarios"> & {
+	scenarios: Array<
+		Omit<CarouselScenario, "results"> & { results: CarouselResult[] }
+	>;
+};
 
 export type BenchmarkLibrary = {
 	id: string;

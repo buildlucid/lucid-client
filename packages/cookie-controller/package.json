@@ -1,6 +1,6 @@
 {
 	"name": "@lucidclient/cookie-controller",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"private": false,
 	"description": "A lightweight, bring your own markup and styles, cookie consent solution to help you comply with the EU Cookie Law and GDPR.",
 	"type": "module",

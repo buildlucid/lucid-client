@@ -1,6 +1,6 @@
 # @lucidclient/catalyst
 
-## v0.6.0 (unreleased)
+## v0.6.0
 
 ### Features:
 
@@ -88,7 +88,7 @@
 
 ## v0.5.0
 
-## Minor Changes
+### Minor Changes
 
 - Added support for the `data-loop` directive.
 - Fixed bug where data-bind directives wouldnt work for any state registered through the store modules as opposed to data-state.

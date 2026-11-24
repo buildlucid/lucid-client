@@ -1,6 +1,6 @@
 # @lucidclient/cookie-controller
 
-## v1.2.0 (unreleased)
+## v1.2.0
 
 ### Breaking Changes:
 
