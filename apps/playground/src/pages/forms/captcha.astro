@@ -1,0 +1,135 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/forms.css";
+
+const turnstileKeys = [
+	{
+		id: "turnstile",
+		title: "Turnstile",
+		key: "1x00000000000000000000AA",
+		description:
+			"Cloudflare's test key that always passes. The `turnstile` extension, from `@lucidclient/forms/turnstile`, draws the widget in the `data-form--captcha=\"turnstile\"` element once the form comes near the viewport or is first used.",
+		expect: [
+			"The widget appears as the form scrolls into view, and the provider's script loads once for the page.",
+			"Sending waits for the token, then the status shows the dummy token Cloudflare's test keys give.",
+			"Sending again works, as the widget is reset after each send and gets a new token.",
+		],
+	},
+	{
+		id: "turnstile-blocked",
+		title: "Turnstile that fails",
+		key: "2x00000000000000000000AB",
+		description:
+			"The test key that always fails. The widget reports the failure, so the send goes ahead without a token and the server's error shows.",
+		expect: [
+			"The widget shows its failure, and sending doesn't hang.",
+			"The error under the widget reads `Complete the security check and try again.`",
+		],
+	},
+	{
+		id: "turnstile-interactive",
+		title: "An interactive challenge",
+		key: "3x00000000000000000000FF",
+		description:
+			"The test key that always asks the visitor to tick a box. Sending before ticking it waits for the tick, for up to 30 seconds.",
+		expect: [
+			"Pressing `Send` before ticking the box waits, with the button `aria-disabled`, and sends once it is ticked.",
+		],
+	},
+];
+---
+
+<Playground title="Captcha">
+	<Fragment slot="intro">
+		<p>
+			A form asks each <code>data-form--captcha</code> element for a fresh token
+			before sending, and tells it when the send is finished, as tokens only work
+			once, with <code>captcha:token</code> and <code>captcha:reset</code> events,
+			so any widget can answer them.
+		</p>
+		<p>
+			The Turnstile and reCAPTCHA extensions draw the providers' widgets, reading the providers' own <code>data-sitekey</code>,
+			<code>data-action</code> and <code>data-theme</code> attributes. These forms
+			post to a mock endpoint that only checks a token arrived, so the test keys need
+			no secret.
+		</p>
+	</Fragment>
+
+	{
+		turnstileKeys.map((scenario) => (
+			<Scenario id={scenario.id} title={scenario.title} description={scenario.description} expect={scenario.expect}>
+				<form data-form={scenario.id} method="post" action="/mock/forms/captcha" class="form-stack">
+					<p data-form--status class="form-status"></p>
+					<div data-form--field="name" class="form-field">
+						<label class="label" for={`${scenario.id}-name`}>Name</label>
+						<input class="input" id={`${scenario.id}-name`} name="name" value="Ada" required />
+						<p class="error-text" data-form--error="name"></p>
+					</div>
+					<div data-form--captcha="turnstile" data-sitekey={scenario.key} data-action="contact" data-theme="dark"></div>
+					<p class="error-text" data-form--error="cf-turnstile-response"></p>
+					<div class="form-actions">
+						<button class="btn btn-primary form-submit">Send</button>
+					</div>
+				</form>
+			</Scenario>
+		))
+	}
+
+	<Scenario
+		id="recaptcha"
+		title="reCAPTCHA"
+		description={"Google's v2 test key, which shows the checkbox and always passes. The `recaptcha` extension also takes `data-size=\"invisible\"`, `data-score` for v3 keys and `data-enterprise`."}
+		expect={[
+			"The checkbox appears with Google's warning that it's a test key.",
+			"Sending before ticking it waits for the tick, then sends `g-recaptcha-response`.",
+			"After sending, the checkbox is reset for the next send.",
+		]}
+	>
+		<form data-form="recaptcha" method="post" action="/mock/forms/captcha" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="name" class="form-field">
+				<label class="label" for="recaptcha-name">Name</label>
+				<input class="input" id="recaptcha-name" name="name" value="Ada" required />
+				<p class="error-text" data-form--error="name"></p>
+			</div>
+			<div data-form--captcha="recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh4xEgAAAAAAAAAAAAAAAA" data-theme="dark"></div>
+			<p class="error-text" data-form--error="g-recaptcha-response"></p>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Send</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="protocol"
+		title="A widget of your own"
+		description={"Any `data-form--captcha` element takes part. This page's script answers `captcha:token` by handing the form a promise that writes a token after a second, and clears it on `captcha:reset`. It works offline, so the protocol can be tested without a provider."}
+		expect={[
+			"Sending waits a second while the widget reads `Checking…`, then sends `_captcha` and the status shows it.",
+			"The log shows `captcha:token` and then `captcha:reset` once the send has finished.",
+			"With `Fail the check` ticked, the token stays empty and the server's error shows under the widget.",
+		]}
+	>
+		<pg-controls class="mb-4 flex items-center gap-2">
+			<label class="form-option"><input class="check" type="checkbox" data-fail /> Fail the check</label>
+		</pg-controls>
+		<form data-form="protocol" method="post" action="/mock/forms/captcha" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="name" class="form-field">
+				<label class="label" for="protocol-name">Name</label>
+				<input class="input" id="protocol-name" name="name" value="Ada" required />
+				<p class="error-text" data-form--error="name"></p>
+			</div>
+			<div data-form--captcha id="protocol-widget" class="surface flex items-center gap-2 px-3 py-2 font-mono text-xs text-muted"><input type="hidden" name="_captcha" /><span data-widget-text>Ready</span></div>
+			<p class="error-text" data-form--error="_captcha"></p>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Send</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<script>
+		import "../../scripts/forms/captcha";
+	</script>
+</Playground>

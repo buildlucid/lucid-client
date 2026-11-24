@@ -14,6 +14,7 @@
 		"@lucidclient/carousel": "*",
 		"@lucidclient/catalyst": "*",
 		"@lucidclient/cookie-controller": "*",
+		"@lucidclient/forms": "*",
 		"@lucidclient/speculate": "*",
 		"@tailwindcss/vite": "^4.3.5",
 		"astro": "^7.4.13",

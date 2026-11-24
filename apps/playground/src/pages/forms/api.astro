@@ -1,0 +1,162 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/forms.css";
+---
+
+<Playground title="Events & API">
+	<Fragment slot="intro">
+		<p>
+			<code>forms.get()</code> returns a form by its <code>data-form</code> name, its
+			id or any element inside it. Each form has <code>submit</code>,
+			<code>validate</code>, <code>reset</code>, <code>setErrors</code>,
+			<code>clearErrors</code>, <code>subscribe</code>, <code>refresh</code> and
+			<code>destroy</code>, and dispatches <code>form-submit</code>,
+			<code>form-success</code>, <code>form-error</code> and
+			<code>form-invalid</code>, which bubble to the document.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="subscribe"
+		title="Following the state"
+		description="`subscribe` runs after every state change with a copy of the state: the status, each field's errors, the status message and whether the form has changed."
+		expect={[
+			"The readout starts at `idle`, and `dirty` turns `true` on the first edit.",
+			"Sending it empty fills `errors`, and fixing a field takes it out.",
+			"Sending it filled in shows `submitting`, then `success` with the server's message.",
+		]}
+	>
+		<div class="grid gap-5 sm:grid-cols-[1fr_16rem]">
+			<form data-form="subscribe" method="post" action="/mock/forms/success" class="form-stack">
+				<p data-form--status class="form-status"></p>
+				<div data-form--field="email" class="form-field">
+					<label class="label" for="subscribe-email">Email</label>
+					<input class="input" id="subscribe-email" name="email" type="email" required />
+					<p class="error-text" data-form--error="email"></p>
+				</div>
+				<div class="form-actions">
+					<button class="btn btn-primary form-submit">Subscribe</button>
+				</div>
+			</form>
+			<div class="space-y-1.5">
+				<p class="text-[11px] font-medium tracking-wide text-subtle uppercase">State</p>
+				<pre class="readout" data-state-readout></pre>
+			</div>
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="own-checks"
+		title="Checks of your own with setErrors"
+		description="A `form-submit` listener checks the username before it's sent, as a call to your own API would. A taken username cancels the send with `preventDefault()` and shows the error with `setErrors`."
+		expect={[
+			"`ada` or `admin` shows `That username is taken`, with focus on the field, and nothing is sent.",
+			"Any other username is sent.",
+			"The error clears as soon as the username changes, like any other.",
+		]}
+	>
+		<form data-form="username" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="username" class="form-field">
+				<label class="label" for="username-input">Username</label>
+				<input class="input" id="username-input" name="username" value="ada" required />
+				<p class="error-text" data-form--error="username"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Sign up</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="dynamic"
+		title="Fields added later"
+		description="Events are handled on the document and fields are found when they're checked, so a field added after `init` is checked straight away. A character count added later shows its count once its field is typed in, and `refresh()` writes it and links it to its field straight away."
+		expect={[
+			"`Add a phone field` adds a required field, and sending shows its error without a refresh.",
+			"`Add a character count` adds a field and a count that reads its no JavaScript text until you type in the field or press `Refresh`.",
+		]}
+	>
+		<form data-form="dynamic" method="post" action="/mock/forms/echo" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="name" class="form-field">
+				<label class="label" for="dynamic-name">Name</label>
+				<input class="input" id="dynamic-name" name="name" value="Ada" required />
+				<p class="error-text" data-form--error="name"></p>
+			</div>
+			<div class="form-stack" data-added></div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Send</button>
+			</div>
+		</form>
+		<pg-controls class="mt-4 flex flex-wrap gap-2">
+			<button type="button" class="btn" data-call="add-phone">Add a phone field</button>
+			<button type="button" class="btn" data-call="add-count">Add a character count</button>
+			<button type="button" class="btn" data-call="refresh-dynamic">Refresh</button>
+		</pg-controls>
+	</Scenario>
+
+	<Scenario
+		id="methods"
+		title="get, validate and submit"
+		description={"The buttons find this form with `get` by its name, its id and an element inside it, check one field with `validate(\"email\")`, and send it with `submit()`, which resolves with the result."}
+		expect={[
+			"`get` logs the same form all three ways.",
+			"`validate(\"email\")` shows only the email error and logs `false`. Other fields are left alone.",
+			"`submit()` logs `null` while a field is invalid, and the result once it's sent.",
+		]}
+	>
+		<form data-form="methods" id="api-methods" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div class="form-row">
+				<div data-form--field="name" class="form-field">
+					<label class="label" for="methods-name">Name</label>
+					<input class="input" id="methods-name" name="name" required />
+					<p class="error-text" data-form--error="name"></p>
+				</div>
+				<div data-form--field="email" class="form-field">
+					<label class="label" for="methods-email">Email</label>
+					<input class="input" id="methods-email" name="email" type="email" required />
+					<p class="error-text" data-form--error="email"></p>
+				</div>
+			</div>
+		</form>
+		<pg-controls class="mt-4 flex flex-wrap gap-2">
+			<button type="button" class="btn" data-call="get">get</button>
+			<button type="button" class="btn" data-call="validate">validate("email")</button>
+			<button type="button" class="btn" data-call="submit">submit()</button>
+			<button type="button" class="btn btn-ghost" data-call="clear">clearErrors()</button>
+		</pg-controls>
+	</Scenario>
+
+	<Scenario
+		id="lifecycle"
+		title="Destroy and init again"
+		description="`destroy()` removes every listener and everything the library added to the markup on this page. `init()` enhances the page again."
+		expect={[
+			"After `Destroy all`, the readout loses `novalidate`, `data-form--ready` and `data-form--state`, and every form on the page posts natively.",
+			"`Init again` brings them back, and the other scenarios work as before.",
+		]}
+	>
+		<form data-form="lifecycle" id="api-lifecycle" method="post" action="/mock/forms/success" class="form-stack">
+			<div data-form--field="email" class="form-field">
+				<label class="label" for="lifecycle-email">Email</label>
+				<input class="input" id="lifecycle-email" name="email" type="email" required />
+				<p class="error-text" data-form--error="email"></p>
+			</div>
+		</form>
+		<pg-controls class="mt-4 flex flex-wrap gap-2">
+			<button type="button" class="btn btn-danger" data-call="destroy">Destroy all</button>
+			<button type="button" class="btn" data-call="init">Init again</button>
+		</pg-controls>
+		<div class="mt-4">
+			<AttributeReadout target="#api-lifecycle" exclude={["id", "method", "action", "data-form"]} label="Form attributes" />
+		</div>
+	</Scenario>
+
+	<script>
+		import "../../scripts/forms/api";
+	</script>
+</Playground>

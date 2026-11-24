@@ -1,0 +1,183 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/forms.css";
+
+const exclude = ["id", "method", "data-form"];
+const responses = [
+	["success", "200 with a message, after 400ms"],
+	["empty", "204 with no body"],
+	["errors", "422 with field errors, an indexed name and an unknown name"],
+	["error-list", "400 with errors as a list"],
+	["html-error", "500 with an HTML page"],
+	["network", "The connection drops"],
+	["slow", "200 after 2.5 seconds"],
+];
+---
+
+<Playground title="Sending">
+	<Fragment slot="intro">
+		<p>
+			POST forms are sent with <code>fetch</code>, asking for JSON, to the same
+			<code>action</code> and with the same data the browser would send, including
+			the button that was pressed. GET forms are checked and then submitted by the
+			browser. <code>data-form--submit</code> chooses either way.
+		</p>
+		<p>
+			The default parser reads a JSON <code>message</code>, <code>redirect</code>,
+			and <code>errors</code> by field name or as a list.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="responses"
+		title="Every kind of response"
+		description="Choose a response, then send the form. The select sets the form's `action` to one of the dev server's mock endpoints, and the library reads it again on every send."
+		expect={[
+			"Success and 204: the form resets and the status reads the server's message, or `Thank you, your form has been sent.` for the 204.",
+			"Field errors: the email field shows `That email address is already registered.` and takes focus. `files.0` and `unknown` have no field here, so they join the server's message in the status.",
+			"Errors as a list: the email field shows `Use a work email address.`",
+			"HTML error and dropped connection: the status reads `Your form couldn't be sent. Try again.` and the values stay.",
+			"Slow: the button keeps focus with `aria-disabled` for 2.5 seconds, and pressing it again doesn't send twice.",
+		]}
+	>
+		<pg-controls class="mb-4 flex flex-wrap items-center gap-2">
+			<label class="label" for="sending-response">Response</label>
+			<select id="sending-response" class="input w-auto" data-response>
+				{responses.map(([value, label]) => <option value={value}>{label}</option>)}
+			</select>
+		</pg-controls>
+		<form data-form="responses" id="sending-responses" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div class="form-row">
+				<div data-form--field="name" class="form-field">
+					<label class="label" for="responses-name">Name</label>
+					<input class="input" id="responses-name" name="name" value="Ada Lovelace" required />
+					<p class="error-text" data-form--error="name"></p>
+				</div>
+				<div data-form--field="email" class="form-field">
+					<label class="label" for="responses-email">Email</label>
+					<input class="input" id="responses-email" name="email" type="email" value="ada@example.com" required />
+					<p class="error-text" data-form--error="email"></p>
+				</div>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Send</button>
+			</div>
+		</form>
+		<div class="mt-4">
+			<AttributeReadout target="#sending-responses" exclude={exclude} label="Form attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="search"
+		title="A GET form submits natively"
+		description="GET forms, such as search, are checked by the library and then submitted by the browser, so the results page loads as normal. This one comes back to this page."
+		expect={[
+			"Searching with nothing shows the field's error and stays on the page.",
+			"Searching for a word reloads the page with `?q=` in the address, and the readout shows it.",
+		]}
+	>
+		<form data-form="search" method="get" action="/forms/sending#search" class="form-stack" role="search">
+			<div data-form--field="q" class="form-field">
+				<label class="label" for="search-q">Search the shop</label>
+				<input class="input" id="search-q" name="q" type="search" required data-form--message-required="Enter something to search for" />
+				<p class="error-text" data-form--error="q"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary">Search</button>
+			</div>
+		</form>
+		<pre class="readout mt-4" data-search-result>No search yet</pre>
+	</Scenario>
+
+	<Scenario
+		id="draft"
+		title="Saving a draft without checking"
+		description={"A button with `formnovalidate` skips the checks, as it does natively, and its `formaction`, `name` and `value` are sent as the browser would send them."}
+		expect={[
+			"`Publish` with empty fields shows their errors.",
+			"`Save draft` sends straight away, to the echo endpoint, and the status lists `title`, `body` and `intent`.",
+		]}
+	>
+		<form data-form="draft" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="title" class="form-field">
+				<label class="label" for="draft-title">Title</label>
+				<input class="input" id="draft-title" name="title" required />
+				<p class="error-text" data-form--error="title"></p>
+			</div>
+			<div data-form--field="body" class="form-field">
+				<label class="label" for="draft-body">Post</label>
+				<textarea class="input" id="draft-body" name="body" rows="3" required></textarea>
+				<p class="error-text" data-form--error="body"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Publish</button>
+				<button class="btn" name="intent" value="draft" formnovalidate formaction="/mock/forms/echo">Save draft</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="extra-data"
+		title="Adding to what's sent"
+		description="A `form-submit` listener gets the `FormData` about to be sent, and can add to it, change it or cancel the send with `preventDefault()`. This one adds where the form was sent from."
+		expect={[
+			"The status lists `email`, `source` and `page`, which the listener added.",
+			"The log shows the data before it was sent.",
+		]}
+	>
+		<form data-form="extra" method="post" action="/mock/forms/echo" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="email" class="form-field">
+				<label class="label" for="extra-email">Email</label>
+				<input class="input" id="extra-email" name="email" type="email" value="ada@example.com" required />
+				<p class="error-text" data-form--error="email"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Subscribe</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="redirect"
+		title="Redirects"
+		description={"A response's `redirect` sends the visitor to another page. Without one, `data-form--redirect` names a page to go to after sending. Only `http` and `https` addresses are followed."}
+		expect={[
+			"The first form's response redirects back here with `?redirected=1`, and the readout shows it.",
+			"The second form gets a 204, and its `data-form--redirect` comes back here with `?redirected=2`.",
+		]}
+	>
+		<div class="grid gap-4 sm:grid-cols-2">
+			<form data-form="redirect-response" method="post" action="/mock/forms/redirect" class="form-stack surface p-3">
+				<p class="text-[13px] text-muted">From the response</p>
+				<p data-form--status class="form-status"></p>
+				<div class="form-actions">
+					<button class="btn btn-primary form-submit">Send</button>
+				</div>
+			</form>
+			<form
+				data-form="redirect-attribute"
+				method="post"
+				action="/mock/forms/empty"
+				data-form--redirect="/forms/sending?redirected=2#redirect"
+				class="form-stack surface p-3"
+			>
+				<p class="text-[13px] text-muted">From data-form--redirect</p>
+				<p data-form--status class="form-status"></p>
+				<div class="form-actions">
+					<button class="btn btn-primary form-submit">Send</button>
+				</div>
+			</form>
+		</div>
+		<pre class="readout mt-4" data-redirect-result>Not redirected yet</pre>
+	</Scenario>
+
+	<script>
+		import "../../scripts/forms/sending";
+	</script>
+</Playground>

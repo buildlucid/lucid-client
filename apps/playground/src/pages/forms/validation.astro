@@ -1,0 +1,278 @@
+---
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/forms.css";
+---
+
+<Playground title="Validation">
+	<Fragment slot="intro">
+		<p>
+			Checks come from the markup. The browser's own constraints, such as
+			<code>required</code>, <code>type</code>, <code>pattern</code>,
+			<code>minlength</code> and <code>min</code>, work the same without
+			JavaScript, and <code>data-form--*</code> attributes add groups, matching
+			fields, file limits and rules of your own.
+		</p>
+		<p>
+			Messages are the browser's own, in the visitor's language, until a
+			<code>data-form--message-{"{constraint}"}</code> attribute or the
+			<code>messages</code> option gives one. Templates take
+			<code>{"{label}"}</code> and <code>{"{limit}"}</code>.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="constraints"
+		title="Native constraints with your own messages"
+		description="Each control names its messages with `data-form--message-required`, `-type`, `-minlength`, `-min`, `-max` and `-pattern`. The website field has none, so it shows the browser's own."
+		expect={[
+			"Sending it empty shows each field's required message.",
+			"`A` as the name shows the `minlength` message, with its `{limit}` filled in.",
+			"An age of 12 or 130 shows the `min` or `max` message.",
+			"`ab12` as the code shows the `pattern` message, and `not a site` as the website shows the browser's message.",
+		]}
+	>
+		<form data-form="constraints" method="post" action="/mock/forms/echo" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div class="form-row">
+				<div data-form--field="name" class="form-field">
+					<label class="label" for="constraints-name">Name</label>
+					<input
+						class="input"
+						id="constraints-name"
+						name="name"
+						required
+						minlength="2"
+						data-form--message-required="Enter your name"
+						data-form--message-minlength="{label} must be at least {limit} characters"
+					/>
+					<p class="error-text" data-form--error="name"></p>
+				</div>
+				<div data-form--field="email" class="form-field">
+					<label class="label" for="constraints-email">Email</label>
+					<input
+						class="input"
+						id="constraints-email"
+						name="email"
+						type="email"
+						required
+						data-form--message-required="Enter your email address"
+						data-form--message-type="Enter an email address like name@example.com"
+					/>
+					<p class="error-text" data-form--error="email"></p>
+				</div>
+				<div data-form--field="age" class="form-field">
+					<label class="label" for="constraints-age">Age</label>
+					<input
+						class="input"
+						id="constraints-age"
+						name="age"
+						type="number"
+						min="18"
+						max="120"
+						required
+						data-form--message-required="Enter your age"
+						data-form--message-min="You must be {limit} or over"
+						data-form--message-max="Enter an age of {limit} or under"
+					/>
+					<p class="error-text" data-form--error="age"></p>
+				</div>
+				<div data-form--field="code" class="form-field">
+					<label class="label" for="constraints-code">Discount code</label>
+					<p class="hint" id="constraints-code-hint">Four capital letters, such as SAVE.</p>
+					<input
+						class="input"
+						id="constraints-code"
+						name="code"
+						pattern="[A-Z]{4}"
+						aria-describedby="constraints-code-hint"
+						data-form--message-pattern="Enter a code of four capital letters"
+					/>
+					<p class="error-text" data-form--error="code"></p>
+				</div>
+			</div>
+			<div data-form--field="website" class="form-field">
+				<label class="label" for="constraints-website">Website</label>
+				<input class="input" id="constraints-website" name="website" type="url" />
+				<p class="error-text" data-form--error="website"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Check</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="timing"
+		title="When fields are checked"
+		description={"`data-form--validate` chooses when. `submit`, the default, checks every field when sending and then each field with an error as it changes. `change` also checks a field when it changes, which for text is when you leave it. `off` leaves checking to the server, which refuses every email here."}
+		expect={[
+			"Submit: typing `nope` and leaving the field shows nothing until `Check` is pressed.",
+			"Change: typing `nope` and leaving the field shows its error straight away.",
+			"Off: `Check` sends anything, and the error comes back from the server.",
+			"In `submit` and `change`, an error shown clears as soon as the field is fixed. In `off`, the server's error stays until the next send.",
+		]}
+	>
+		<div class="grid gap-4 sm:grid-cols-3">
+			{
+				["submit", "change", "off"].map((mode) => (
+					<form
+						data-form={`timing-${mode}`}
+						data-form--validate={mode}
+						method="post"
+						action={mode === "off" ? "/mock/forms/errors" : "/mock/forms/success"}
+						class="form-stack surface p-3"
+					>
+						<p class="font-mono text-xs text-subtle">data-form--validate="{mode}"</p>
+						<p data-form--status class="form-status"></p>
+						<div data-form--field="email" class="form-field">
+							<label class="label" for={`timing-${mode}-email`}>Email</label>
+							<input class="input" id={`timing-${mode}-email`} name="email" type="email" required />
+							<p class="error-text" data-form--error="email"></p>
+						</div>
+						<div class="form-actions">
+							<button class="btn btn-sm btn-primary form-submit">Check</button>
+						</div>
+					</form>
+				))
+			}
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="groups"
+		title="Radio and checkbox groups"
+		description="Groups sit in a `<fieldset>` marked `data-form--field`, which their error describes. A required radio group works natively. Checkbox groups can't be required in HTML, so `data-form--min-checked` and `data-form--max-checked` on the fieldset count the ticked boxes."
+		expect={[
+			"Sending it empty shows `Choose a delivery option` and `Select at least 1 option`, and focus moves to the first radio.",
+			"Each fieldset gets `aria-describedby` pointing at its error, and each box `aria-invalid`.",
+			"Ticking a third topic and sending shows `Select no more than 2 options`.",
+			"Choosing a radio or unticking a box fixes the error straight away.",
+		]}
+	>
+		<form data-form="groups" method="post" action="/mock/forms/echo" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<fieldset data-form--field="delivery" class="form-group" data-form--message-required="Choose a delivery option">
+				<legend>Delivery</legend>
+				<label class="form-option"><input class="check" type="radio" id="groups-standard" name="delivery" value="standard" required /> Standard, 3 to 5 days</label>
+				<label class="form-option"><input class="check" type="radio" name="delivery" value="express" /> Express, next day</label>
+				<p class="error-text" data-form--error="delivery"></p>
+			</fieldset>
+			<fieldset data-form--field="topics" class="form-group" data-form--min-checked="1" data-form--max-checked="2">
+				<legend>Topics, choose 1 or 2</legend>
+				<label class="form-option"><input class="check" type="checkbox" name="topics[]" value="design" /> Design</label>
+				<label class="form-option"><input class="check" type="checkbox" name="topics[]" value="engineering" /> Engineering</label>
+				<label class="form-option"><input class="check" type="checkbox" name="topics[]" value="marketing" /> Marketing</label>
+				<p class="error-text" data-form--error="topics"></p>
+			</fieldset>
+			<div data-form--field="terms" class="form-field">
+				<label class="form-option"><input class="check" type="checkbox" id="groups-terms" name="terms" required data-form--message-required="Accept the terms to continue" /> I accept the terms</label>
+				<p class="error-text" data-form--error="terms"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Check</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="match"
+		title="Matching fields"
+		description={"`data-form--match=\"password\"` checks a field against another. When the password changes, the confirmation is checked again if it shows an error."}
+		expect={[
+			"Different passwords show `Confirm password must match Password` under the confirmation.",
+			"Changing the password to match the confirmation clears that error.",
+		]}
+	>
+		<form data-form="match" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div class="form-row">
+				<div data-form--field="password" class="form-field">
+					<label class="label" for="match-password">Password</label>
+					<input class="input" id="match-password" name="password" type="password" autocomplete="new-password" required minlength="8" />
+					<p class="error-text" data-form--error="password"></p>
+				</div>
+				<div data-form--field="confirm" class="form-field">
+					<label class="label" for="match-confirm">Confirm password</label>
+					<input class="input" id="match-confirm" name="confirm" type="password" autocomplete="new-password" required data-form--match="password" />
+					<p class="error-text" data-form--error="confirm"></p>
+				</div>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Check</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="rules"
+		title="Rules of your own"
+		description={"`data-form--rule` names rules passed to `init`. A rule returns a message, or `false` to use the field's `data-form--message-{rule}`. Rules skip empty fields, so pair them with `required` when needed."}
+		expect={[
+			"`nope` as the postcode shows `Enter a real UK postcode, such as SW1A 1AA`, the rule's own message.",
+			"A gmail.com address shows `Use your work email address`, from `data-form--message-work-email`.",
+			"Leaving the postcode empty passes, as it isn't required.",
+		]}
+	>
+		<form data-form="rules" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div class="form-row">
+				<div data-form--field="postcode" class="form-field">
+					<label class="label" for="rules-postcode">Postcode</label>
+					<input class="input" id="rules-postcode" name="postcode" autocomplete="postal-code" data-form--rule="postcode" />
+					<p class="error-text" data-form--error="postcode"></p>
+				</div>
+				<div data-form--field="email" class="form-field">
+					<label class="label" for="rules-email">Work email</label>
+					<input
+						class="input"
+						id="rules-email"
+						name="email"
+						type="email"
+						required
+						data-form--rule="work-email"
+						data-form--message-work-email="Use your work email address"
+					/>
+					<p class="error-text" data-form--error="email"></p>
+				</div>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Check</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="count"
+		title="Character counts"
+		description={"A `data-form--count` element counts a field's characters. With `data-form--maxlength` you can type past the limit and get an error, as GOV.UK recommends, and native `maxlength` stops typing at the limit. The count's own text is for visitors without JavaScript."}
+		expect={[
+			"The counts read `You have 120 characters remaining` and `You have 40 characters remaining`, and each field is described by its count.",
+			"Typing past 120 in the message reads `You have 3 characters too many` and gets `data-form--over`. Sending shows the field's error.",
+			"The headline stops at 40 characters.",
+			"With a screen reader, the count is announced once typing pauses, rather than on every key.",
+		]}
+	>
+		<form data-form="count" method="post" action="/mock/forms/echo" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="headline" class="form-field">
+				<label class="label" for="count-headline">Headline</label>
+				<input class="input" id="count-headline" name="headline" maxlength="40" />
+				<p class="hint" data-form--count="headline">You can enter up to 40 characters</p>
+			</div>
+			<div data-form--field="message" class="form-field">
+				<label class="label" for="count-message">Message</label>
+				<textarea class="input" id="count-message" name="message" rows="3" data-form--maxlength="120"></textarea>
+				<p class="hint" data-form--count="message">You can enter up to 120 characters</p>
+				<p class="error-text" data-form--error="message"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Send</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<script>
+		import "../../scripts/forms/validation";
+	</script>
+</Playground>

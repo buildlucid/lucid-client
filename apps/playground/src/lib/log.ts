@@ -25,6 +25,7 @@ const LIBRARY_PREFIXES: Array<[prefix: string, source: string]> = [
 	["[Catalyst]", "catalyst"],
 	["[Cookie Controller]", "cookie-controller"],
 	["[Carousel]", "carousel"],
+	["[Forms]", "forms"],
 ];
 
 const original = {

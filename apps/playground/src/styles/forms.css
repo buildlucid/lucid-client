@@ -1,0 +1,202 @@
+/*
+ * The forms pages' styles. The first block is the CSS a site needs: the
+ * library brings none, so hiding the form once it's sent, error styles and
+ * drop zone states all live here.
+ */
+
+/* Once sent, a form with a sent message shows only that message. */
+[data-form--state="success"]:has(> [data-form--sent]) > :not([data-form--sent]) {
+	display: none;
+}
+
+/* Focus and summary links scroll a field's label to the top, clear of anything sticky. */
+[data-form--field],
+[data-form--summary] {
+	scroll-margin-top: 1.5rem;
+}
+
+/* A field with an error. Controls are styled from aria-invalid by the .input class. */
+[data-form--field][data-form--invalid] > .label,
+[data-form--field][data-form--invalid] > legend {
+	color: oklch(0.82 0.1 15);
+}
+
+/* A character count over its limit. */
+[data-form--count][data-form--over] {
+	color: oklch(0.8 0.12 15);
+}
+
+/* A drop zone while files are dragged over it, and once it has files. */
+[data-form--dropzone][data-form--dragging] {
+	border-color: var(--color-accent);
+	background: color-mix(in oklch, var(--color-accent) 10%, transparent);
+}
+[data-form--dropzone][data-form--has-files] {
+	border-style: solid;
+}
+
+/* A spinner on the submit button while the form is sending. */
+[data-form--state="submitting"] .form-submit::after {
+	content: "";
+	width: 0.75rem;
+	height: 0.75rem;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	border-radius: 999px;
+	animation: form-spin 700ms linear infinite;
+}
+@keyframes form-spin {
+	to {
+		rotate: 1turn;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-form--state="submitting"] .form-submit::after {
+		animation-duration: 2s;
+	}
+}
+
+/* --------------------------------------------------------
+ * Playground looks */
+
+.form-stack {
+	display: grid;
+	gap: 1rem;
+}
+
+.form-row {
+	display: grid;
+	gap: 1rem;
+}
+@media (width >= 40rem) {
+	.form-row {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.form-field {
+	display: grid;
+	gap: 0.375rem;
+	align-content: start;
+}
+
+.form-group {
+	display: grid;
+	gap: 0.5rem;
+	border: 1px solid var(--color-line);
+	border-radius: 0.5rem;
+	padding: 0.75rem 1rem 1rem;
+}
+.form-group > legend {
+	padding-inline: 0.25rem;
+	font-size: 13px;
+	font-weight: 500;
+}
+.form-group[data-form--invalid] {
+	border-color: oklch(0.7 0.14 15 / 0.6);
+}
+
+.form-option {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 13px;
+	color: var(--color-muted);
+	cursor: pointer;
+}
+
+.form-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.form-status:empty {
+	display: none;
+}
+.form-status {
+	border-radius: 0.375rem;
+	border: 1px solid var(--color-line);
+	background: var(--color-raised);
+	padding: 0.5rem 0.75rem;
+	font-size: 13px;
+	color: var(--color-muted);
+}
+[data-form--state="error"] .form-status,
+[data-form--invalid] > .form-status {
+	border-color: oklch(0.7 0.14 15 / 0.45);
+	background: oklch(0.7 0.14 15 / 0.08);
+	color: oklch(0.88 0.06 15);
+}
+[data-form--state="success"] .form-status {
+	border-color: oklch(0.72 0.12 160 / 0.45);
+	background: oklch(0.72 0.12 160 / 0.08);
+	color: oklch(0.9 0.06 160);
+}
+
+.form-summary {
+	border-radius: 0.5rem;
+	border: 1px solid oklch(0.7 0.14 15 / 0.55);
+	background: oklch(0.7 0.14 15 / 0.08);
+	padding: 0.75rem 1rem;
+}
+.form-summary h3 {
+	font-size: 14px;
+	font-weight: 600;
+}
+.form-summary ul {
+	margin-top: 0.375rem;
+	display: grid;
+	gap: 0.25rem;
+	font-size: 13px;
+}
+.form-summary a {
+	color: oklch(0.85 0.09 15);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.form-sent {
+	display: grid;
+	gap: 0.75rem;
+	justify-items: start;
+	border-radius: 0.5rem;
+	border: 1px solid oklch(0.72 0.12 160 / 0.45);
+	background: oklch(0.72 0.12 160 / 0.08);
+	padding: 1rem;
+	font-size: 14px;
+}
+
+.form-dropzone {
+	display: grid;
+	gap: 0.5rem;
+	justify-items: start;
+	border: 1px dashed var(--color-line-strong);
+	border-radius: 0.5rem;
+	padding: 1rem;
+	cursor: pointer;
+	transition:
+		border-color 150ms,
+		background-color 150ms;
+}
+
+.form-files {
+	display: grid;
+	gap: 0.375rem;
+	font-size: 13px;
+}
+.form-files li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	border: 1px solid var(--color-line);
+	border-radius: 0.375rem;
+	background: var(--color-raised);
+	padding: 0.375rem 0.375rem 0.375rem 0.75rem;
+}
+
+.form-submit {
+	gap: 0.5rem;
+}

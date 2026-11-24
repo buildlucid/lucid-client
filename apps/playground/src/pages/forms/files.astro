@@ -1,0 +1,132 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/forms.css";
+---
+
+<Playground title="Files">
+	<Fragment slot="intro">
+		<p>
+			File inputs are checked by the core: <code>accept</code> is enforced for
+			every file, including dropped ones, and <code>data-form--max-size</code>,
+			<code>data-form--min-size</code> and <code>data-form--max-files</code> set
+			limits. Empty file inputs aren't sent.
+		</p>
+		<p>
+			Drop zones and file lists come from the <code>files</code> extension, imported
+			from <code>@lucidclient/forms/files</code> and passed to <code>init</code>. The
+			file input stays the control people focus and use with a keyboard.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="dropzone"
+		title="A drop zone with a file list"
+		description={"`data-form--dropzone` adds drag and drop to the file input inside it, and `data-form--files=\"documents\"` lists the field's files from its `<template>`, with `{name}` and `{size}`. A `multiple` input with a list keeps its files across picks and drops, as each can be removed."}
+		expect={[
+			"Dragging files over the zone gives it `data-form--dragging`, and dropping them lists them.",
+			"Picking more files adds to the list rather than replacing it.",
+			"Each remove button is labelled `Remove {name}`. Removing a file moves focus to the next one, or the input once none are left, and is announced.",
+			"Sending shows `notes.txt is not an accepted file type` for a text file, a size error for files over 1 MB, and `Select up to 3 files` for a fourth.",
+			"A valid send lists each file and its size in the status.",
+		]}
+	>
+		<form data-form="documents" method="post" action="/mock/forms/echo" enctype="multipart/form-data" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="documents" class="form-field">
+				<div data-form--dropzone id="files-zone" class="form-dropzone">
+					<label class="label" for="files-documents">Supporting documents</label>
+					<p class="hint" id="files-documents-hint">PDF or images, up to 3 files of 1 MB each.</p>
+					<input
+						id="files-documents"
+						name="documents"
+						type="file"
+						multiple
+						accept=".pdf,image/*"
+						data-form--max-size="1MB"
+						data-form--max-files="3"
+						required
+						aria-describedby="files-documents-hint"
+						class="text-[13px] text-muted file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-line file:bg-raised file:px-2 file:py-1 file:text-xs file:font-medium file:text-fg"
+					/>
+					<p class="text-xs text-subtle">or drop files here</p>
+				</div>
+				<ul data-form--files="documents" class="form-files">
+					<template>
+						<li>
+							<span>{"{name}"} <span class="text-subtle">({"{size}"})</span></span>
+							<button class="btn btn-sm btn-ghost" data-form--remove>Remove</button>
+						</li>
+					</template>
+				</ul>
+				<p class="error-text" data-form--error="documents"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Upload</button>
+			</div>
+		</form>
+		<div class="mt-4">
+			<AttributeReadout target="#files-zone" exclude={["id"]} label="Drop zone attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="single"
+		title="One file"
+		description="Without `multiple`, a new pick or drop replaces the file, and a drop of several keeps the first."
+		expect={[
+			"Picking or dropping a file lists it, and picking another replaces it.",
+			"Dropping two files keeps the first.",
+			"An image over 500 KB shows `photo.jpg must be smaller than 500 KB`.",
+		]}
+	>
+		<form data-form="avatar" method="post" action="/mock/forms/echo" enctype="multipart/form-data" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="avatar" class="form-field">
+				<div data-form--dropzone class="form-dropzone">
+					<label class="label" for="files-avatar">Profile photo</label>
+					<input id="files-avatar" name="avatar" type="file" accept="image/*" data-form--max-size="500KB" class="text-[13px] text-muted" />
+					<ul data-form--files class="form-files w-full">
+						<template>
+							<li>
+								<span>{"{name}"} <span class="text-subtle">({"{size}"})</span></span>
+								<button class="btn btn-sm btn-ghost" data-form--remove>Remove</button>
+							</li>
+						</template>
+					</ul>
+				</div>
+				<p class="error-text" data-form--error="avatar"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Save</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="server"
+		title="File errors from the server"
+		description="Servers often key errors on each file, such as `files.0`. The library shows them on the `files` field. The response's other errors have no field here, so they join its message in the status."
+		expect={[
+			"Uploading any file shows `Each file must be smaller than 1 MB.` under the field.",
+			"The status reads the server's message with the errors for `email` and `unknown`.",
+		]}
+	>
+		<form data-form="server-files" method="post" action="/mock/forms/errors" enctype="multipart/form-data" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="files" class="form-field">
+				<label class="label" for="files-server">Files</label>
+				<input id="files-server" name="files[]" type="file" multiple required class="text-[13px] text-muted" />
+				<p class="error-text" data-form--error="files"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Upload</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<script>
+		import "../../scripts/forms/files";
+	</script>
+</Playground>

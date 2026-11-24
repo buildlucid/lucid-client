@@ -1,6 +1,7 @@
 import carousel from "../../../packages/carousel/package.json";
 import catalyst from "../../../packages/catalyst/package.json";
 import cookieController from "../../../packages/cookie-controller/package.json";
+import forms from "../../../packages/forms/package.json";
 import speculate from "../../../packages/speculate/package.json";
 
 export type NavPage = {
@@ -97,6 +98,57 @@ const nav: NavGroup[] = [
 				href: "/carousel/benchmarks",
 				description:
 					"Work, memory and size compared with Embla, Swiper, Splide, Swiper's CSS mode, Blossom and Swiffy Slider.",
+				isNew: true,
+			},
+		],
+	},
+	{
+		title: "Forms",
+		package: forms.name,
+		version: forms.version,
+		description:
+			"Forms that work without JavaScript, enhanced with accessible validation, error summaries, sending in place, files and captchas.",
+		pages: [
+			{
+				title: "Basics",
+				href: "/forms/basics",
+				description:
+					"Inline errors, a status, a sent message, an error summary, the form without JavaScript and errors the server rendered.",
+				isNew: true,
+			},
+			{
+				title: "Validation",
+				href: "/forms/validation",
+				description:
+					"Native constraints with your own messages, when fields are checked, groups, matching fields, custom rules and character counts.",
+				isNew: true,
+			},
+			{
+				title: "Sending",
+				href: "/forms/sending",
+				description:
+					"Every kind of response, native GET forms, formnovalidate, adding data before sending and redirects.",
+				isNew: true,
+			},
+			{
+				title: "Files",
+				href: "/forms/files",
+				description:
+					"Drop zones, file lists with remove buttons, type and size checks, and file errors from the server.",
+				isNew: true,
+			},
+			{
+				title: "Captcha",
+				href: "/forms/captcha",
+				description:
+					"Turnstile and reCAPTCHA with their test keys, and the captcha widget protocol with a widget of your own.",
+				isNew: true,
+			},
+			{
+				title: "Events & API",
+				href: "/forms/api",
+				description:
+					"subscribe, setErrors from your own checks, fields added later, refresh, destroy and get.",
 				isNew: true,
 			},
 		],

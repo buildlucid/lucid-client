@@ -1,0 +1,175 @@
+---
+import AttributeReadout from "../../components/AttributeReadout.astro";
+import Scenario from "../../components/Scenario.astro";
+import Playground from "../../layouts/Playground.astro";
+import "../../styles/forms.css";
+
+const exclude = ["id", "method", "action", "data-form"];
+---
+
+<Playground title="Basics">
+	<Fragment slot="intro">
+		<p>
+			A form is a plain <code>&lt;form data-form&gt;</code> that posts on its own
+			without JavaScript, with the browser checking its <code>required</code>,
+			<code>type</code> and other constraints. The library takes over those checks
+			to show accessible errors beside each field, sends the form in place and
+			announces the result.
+		</p>
+		<p>
+			It brings no styles: this page's CSS is the README's snippet plus the
+			playground's looks. These forms post to mock endpoints in the dev server, and
+			every submit, success, error and failed check is logged.
+		</p>
+	</Fragment>
+
+	<Scenario
+		id="contact"
+		title="Inline errors and a sent message"
+		description={"Each field has a `data-form--field` wrapper and a `data-form--error` element. The `data-form--status` element announces the result, and the `data-form--sent` element replaces the form once it's sent. Its `type=\"reset\"` button brings the form back."}
+		expect={[
+			"Sending it empty shows an error under each field, and focus moves to the first. The status says how many answers need fixing.",
+			"Errors don't appear while you type. Once a field shows one, it clears as soon as the field is fixed.",
+			"Each control gets `aria-invalid` and `aria-describedby` pointing at its error, and the wrapper `data-form--invalid`.",
+			"While sending, the button keeps focus and gets `aria-disabled`, and the status reads `Sending…`. Pressing it again does nothing.",
+			"Once sent, the thank you message shows and takes focus. `Send another` hides it and moves focus to the first field.",
+		]}
+	>
+		<form data-form="contact" id="basics-contact" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div class="form-row">
+				<div data-form--field="name" class="form-field">
+					<label class="label" for="contact-name">Name</label>
+					<input class="input" id="contact-name" name="name" autocomplete="name" required />
+					<p class="error-text" data-form--error="name"></p>
+				</div>
+				<div data-form--field="email" class="form-field">
+					<label class="label" for="contact-email">Email</label>
+					<input class="input" id="contact-email" name="email" type="email" autocomplete="email" required />
+					<p class="error-text" data-form--error="email"></p>
+				</div>
+			</div>
+			<div data-form--field="message" class="form-field">
+				<label class="label" for="contact-message">Message</label>
+				<p class="hint" id="contact-message-hint">Tell us what you need help with.</p>
+				<textarea class="input" id="contact-message" name="message" rows="3" required minlength="10" aria-describedby="contact-message-hint"></textarea>
+				<p class="error-text" data-form--error="message"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Send</button>
+			</div>
+			<div data-form--sent class="form-sent">
+				<p>Thanks for getting in touch. We'll reply within a day.</p>
+				<button type="reset" class="btn btn-sm">Send another</button>
+			</div>
+		</form>
+		<div class="mt-4">
+			<AttributeReadout target="#basics-contact" exclude={exclude} label="Form attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="summary"
+		title="An error summary"
+		description="A `data-form--summary` element lists the errors from its `<template>`, with `{message}` and `{id}` for a link to the field. It takes focus when sending fails, as GOV.UK's error summary does."
+		expect={[
+			"Sending it empty shows the summary with a link per error, and focus moves to it.",
+			"Choosing a link moves focus to its field and scrolls its label into view.",
+			"The summary updates as fields are fixed, and hides once none are left.",
+		]}
+	>
+		<form data-form="summary" method="post" action="/mock/forms/success" class="form-stack">
+			<div data-form--summary class="form-summary" aria-labelledby="summary-title">
+				<h3 id="summary-title">There is a problem</h3>
+				<ul>
+					<template><li><a href="#{id}">{"{message}"}</a></li></template>
+				</ul>
+			</div>
+			<p data-form--status class="form-status"></p>
+			<div class="form-row">
+				<div data-form--field="name" class="form-field">
+					<label class="label" for="summary-name">Name</label>
+					<input class="input" id="summary-name" name="name" required data-form--message-required="Enter your name" />
+					<p class="error-text" data-form--error="name"></p>
+				</div>
+				<div data-form--field="email" class="form-field">
+					<label class="label" for="summary-email">Email</label>
+					<input class="input" id="summary-email" name="email" type="email" required data-form--message-required="Enter your email address" data-form--message-type="Enter an email address like name@example.com" />
+					<p class="error-text" data-form--error="email"></p>
+				</div>
+			</div>
+			<fieldset data-form--field="reason" class="form-group" data-form--message-required="Choose why you're getting in touch">
+				<legend>Why are you getting in touch?</legend>
+				<label class="form-option"><input class="check" type="radio" name="reason" value="quote" required /> A quote</label>
+				<label class="form-option"><input class="check" type="radio" name="reason" value="support" /> Support</label>
+				<p class="error-text" data-form--error="reason"></p>
+			</fieldset>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Send</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<Scenario
+		id="no-js"
+		title="Without JavaScript"
+		description="`Destroy` puts the form back as it was rendered, so it behaves as it would without JavaScript: the browser checks it and posts it, which leaves this page. `Enhance again` calls `refresh()`, which picks it up again."
+		expect={[
+			"After `Destroy`, `novalidate`, `data-form--ready` and the state attributes are gone, and sending it empty shows the browser's own messages.",
+			"`Enhance again` brings back the library's checks and in-place sending.",
+		]}
+	>
+		<form data-form="nojs" id="basics-nojs" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div data-form--field="email" class="form-field">
+				<label class="label" for="nojs-email">Email</label>
+				<input class="input" id="nojs-email" name="email" type="email" required />
+				<p class="error-text" data-form--error="email"></p>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Subscribe</button>
+			</div>
+		</form>
+		<pg-controls class="mt-4 flex flex-wrap gap-2">
+			<button type="button" class="btn btn-danger" data-call="destroy">Destroy</button>
+			<button type="button" class="btn" data-call="enhance">Enhance again</button>
+		</pg-controls>
+		<div class="mt-4">
+			<AttributeReadout target="#basics-nojs" exclude={exclude} label="Form attributes" />
+		</div>
+	</Scenario>
+
+	<Scenario
+		id="rendered"
+		title="Errors the server rendered"
+		description="After a post without JavaScript, the server renders the page again with its errors in the `data-form--error` elements. The library reads them on load and links them to their fields."
+		expect={[
+			"The email field loads with `aria-invalid` and `aria-describedby` pointing at its error.",
+			"The error clears once the email is changed to a valid one, as if the library had shown it.",
+			"The empty error element under the name field is hidden.",
+		]}
+	>
+		<form data-form="rendered" method="post" action="/mock/forms/success" class="form-stack">
+			<p data-form--status class="form-status"></p>
+			<div class="form-row">
+				<div data-form--field="name" class="form-field">
+					<label class="label" for="rendered-name">Name</label>
+					<input class="input" id="rendered-name" name="name" value="Ada" required />
+					<p class="error-text" data-form--error="name"></p>
+				</div>
+				<div data-form--field="email" class="form-field">
+					<label class="label" for="rendered-email">Email</label>
+					<input class="input" id="rendered-email" name="email" type="email" value="ada@" required />
+					<p class="error-text" data-form--error="email">Enter an email address like name@example.com</p>
+				</div>
+			</div>
+			<div class="form-actions">
+				<button class="btn btn-primary form-submit">Save</button>
+			</div>
+		</form>
+	</Scenario>
+
+	<script>
+		import "../../scripts/forms/basics";
+	</script>
+</Playground>
