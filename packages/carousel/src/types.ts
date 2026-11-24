@@ -1,27 +1,44 @@
-export type Labels = {
+/** The values a message can use. Templates write them as `{n}` and `{count}`. */
+export type MessageTokens = {
+	/** The slide or page number, from 1 */
+	n: number;
+	/** The number of slides or pages */
+	count: number;
+};
+
+/** A template such as `"Slide {n} of {count}"`, or a function for text that changes with a number */
+export type Message = string | ((tokens: MessageTokens) => string);
+
+export type Messages = {
 	/** The carousel's `aria-roledescription`. Defaults to `"carousel"` */
-	carouselRole: string;
+	carouselRole: Message;
 	/** The `aria-roledescription` of slides that get slide semantics. Defaults to `"slide"` */
-	slideRole: string;
+	slideRole: Message;
 	/**
 	 * The `aria-label` given to slides without a name of their own. List items are left alone, so lists keep their semantics.
 	 * - Defaults to `"{n} of {count}"`, where `{n}` is the slide number and `{count}` the number of slides
 	 */
-	slide: string;
+	slide: Message;
 	/**
-	 * The `aria-label` given to generated markers without a name of their own
-	 * - Defaults to `"Go to slide {n}"`, where `{n}` is the page number
+	 * The `aria-label` given to markers without a name of their own
+	 * - Defaults to `"Go to slide {n}"`, where `{n}` is the page number for generated markers, or the slide number for your own
 	 */
-	marker: string;
+	marker: Message;
+	/** The `aria-label` of a markers container that gets `role="group"`. Defaults to `"Choose a slide"` */
+	markers: Message;
 	/**
 	 * What the `data-carousel--status` element announces after a visitor moves the carousel
 	 * - Defaults to `"Slide {n} of {count}"`, where `{n}` is the page number and `{count}` the number of pages
 	 */
-	status: string;
+	status: Message;
+	/** The `aria-label` of an icon-only `prev` control. Defaults to `"Previous slide"` */
+	prev: Message;
+	/** The `aria-label` of an icon-only `next` control. Defaults to `"Next slide"` */
+	next: Message;
 	/** The `aria-label` of an icon-only toggle while autoplay is stopped. Defaults to `"Start automatic slide show"` */
-	play: string;
+	play: Message;
 	/** The `aria-label` of an icon-only toggle while autoplay is running. Defaults to `"Stop automatic slide show"` */
-	pause: string;
+	pause: Message;
 };
 
 declare const dragBrand: unique symbol;
@@ -31,9 +48,9 @@ export type Drag = { readonly [dragBrand]: true };
 
 export type Options = {
 	/**
-	 * Text the library writes for assistive technology, for translating or rewording
+	 * The text the library writes, for translating or rewording. A carousel's own `data-carousel--message-{name}` attributes win over these.
 	 */
-	labels?: Partial<Labels>;
+	messages?: Partial<Messages>;
 	/** Mouse dragging for carousels with `data-carousel--drag`, from `@lucidclient/carousel/drag` */
 	drag?: Drag;
 };

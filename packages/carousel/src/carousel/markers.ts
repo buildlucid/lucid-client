@@ -1,7 +1,8 @@
 import C from "../constants.js";
-import format from "../lib/format.js";
+import { fill as fillTemplate } from "../lib/messages.js";
+import named from "../lib/named.js";
 import owned from "../lib/owned.js";
-import type { Context } from "./context.js";
+import { type Context, message } from "./context.js";
 import { clamp, type Page } from "./layout.js";
 
 const A = C.attributes;
@@ -50,21 +51,15 @@ const fill = (element: Element, n: number, count: number) => {
 	for (const target of [element, ...element.querySelectorAll("*")]) {
 		for (const attribute of Array.from(target.attributes)) {
 			if (attribute.value.includes("{"))
-				attribute.value = format(attribute.value, n, count);
+				attribute.value = fillTemplate(attribute.value, n, count);
 		}
 	}
 	const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
 	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
 		if (node.nodeValue?.includes("{"))
-			node.nodeValue = format(node.nodeValue, n, count);
+			node.nodeValue = fillTemplate(node.nodeValue, n, count);
 	}
 };
-
-/** Whether an element has a name for assistive technology, from its text or an aria attribute */
-const hasName = (element: Element) =>
-	element.hasAttribute("aria-label") ||
-	element.hasAttribute("aria-labelledby") ||
-	(element.textContent ?? "").trim() !== "";
 
 /**
  * Clones a markers container's `<template>` once per page
@@ -75,7 +70,7 @@ const cloneMarkers = (
 	container: Element,
 	template: HTMLTemplateElement,
 	pages: Page[],
-	label: string,
+	label: (n: number, count: number) => string,
 	track: string,
 ) => {
 	const first = template.content.firstElementChild;
@@ -88,7 +83,7 @@ const cloneMarkers = (
 	if (source instanceof HTMLButtonElement && !source.hasAttribute("type"))
 		source.type = "button";
 	if (track) source.setAttribute("aria-controls", track);
-	const named = hasName(source);
+	const hasName = named(source);
 
 	const markers: HTMLElement[] = [];
 	const fragment = document.createDocumentFragment();
@@ -96,8 +91,8 @@ const cloneMarkers = (
 		const clone = source.cloneNode(true) as HTMLElement;
 		if (placeholders) fill(clone, index + 1, pages.length);
 		clone.setAttribute(A.marker, String(page.slide));
-		if (!named)
-			clone.setAttribute("aria-label", format(label, index + 1, pages.length));
+		if (!hasName)
+			clone.setAttribute("aria-label", label(index + 1, pages.length));
 		markers.push(clone);
 		fragment.append(clone);
 	});
@@ -184,7 +179,7 @@ const renderContainer = (
 		container,
 		template,
 		pages,
-		ctx.labels.marker,
+		(n, count) => message(ctx, "marker", n, count),
 		ctx.track.id,
 	);
 	markers.forEach((marker, page) => {

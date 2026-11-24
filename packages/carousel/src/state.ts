@@ -1,6 +1,6 @@
 import type { Context } from "./carousel/context.js";
 import C from "./constants.js";
-import type { Carousel, CarouselState, Labels } from "./types.js";
+import type { Carousel, CarouselState, Messages } from "./types.js";
 
 /** A carousel as the library keeps it, with the parts the public API doesn't expose */
 export type Instance = {
@@ -28,7 +28,8 @@ export const emptyState = (): CarouselState => ({
 });
 
 const S: {
-	labels: Labels;
+	/** The messages passed to `init`, over the English defaults */
+	messages: Messages;
 	instances: Map<HTMLElement, Instance>;
 	abortController: AbortController;
 	initialised: boolean;
@@ -37,7 +38,7 @@ const S: {
 	/** Counts the ids generated for tracks without one */
 	ids: number;
 } = {
-	labels: { ...C.labels },
+	messages: { ...C.messages },
 	instances: new Map(),
 	abortController: new AbortController(),
 	initialised: false,

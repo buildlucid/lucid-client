@@ -10,9 +10,8 @@ import { emptyLayout } from "./layout.js";
 import registerListeners from "./listeners.js";
 import { centreCurrent } from "./loop.js";
 import {
-	checkAutoplayControl,
+	checkControls,
 	readConfig,
-	readLabels,
 	readMarkup,
 	rescan,
 	resetMarkup,
@@ -46,7 +45,6 @@ const createContext = (root: HTMLElement, track: HTMLElement): Context => {
 		subscribers: new Set(),
 
 		config: readConfig(root),
-		labels: readLabels(root),
 		slides: [],
 		controls: [],
 		markers: [],
@@ -92,7 +90,7 @@ const start = (ctx: Context) => {
 	applyLayout(ctx, true);
 	update(ctx, true, ctx.layout.scroll);
 	applyInert(ctx);
-	checkAutoplayControl(ctx);
+	checkControls(ctx);
 
 	if (ctx.looping && centreCurrent(ctx) !== 0) {
 		update(ctx);

@@ -246,13 +246,13 @@ describe("markers", () => {
 		const { track, instance } = setup(
 			10,
 			{
-				extra: `<div data-carousel--markers><template><button class="dot" title="Page {n} of {count}"></button></template></div>`,
+				extra: `<div data-carousel--markers><template><button class="dot" data-page="Page {n} of {count}"></button></template></div>`,
 			},
 			{ size: 300, slide: 100 },
 		);
 		const dots = $$(".dot");
 		expect(dots).toHaveLength(8);
-		expect(dots[2]?.getAttribute("title")).toBe("Page 3 of 8");
+		expect(dots[2]?.getAttribute("data-page")).toBe("Page 3 of 8");
 		expect(dots[2]?.getAttribute("aria-label")).toBe("Go to slide 3");
 		expect(dots[2]?.getAttribute("type")).toBe("button");
 		expect(dots[2]?.getAttribute("aria-controls")).toBe(track.id);
@@ -480,15 +480,15 @@ describe("status", () => {
 		expect(status.textContent).toBe("Slide 3 of 3");
 	});
 
-	it("uses the labels passed to init", async () => {
+	it("uses the messages passed to init", async () => {
 		document.body.innerHTML =
 			snapStyles +
 			carouselMarkup(3, { extra: `<p data-carousel--status></p>` });
 		fakeLayout($(".track"), { size: 400, slide: 400 });
 		carousel.init({
-			labels: {
+			messages: {
 				status: "Diapositive {n} sur {count}",
-				slide: "{n} sur {count}",
+				slide: ({ n, count }) => `${n} sur ${count}`,
 			},
 		});
 		expect($("#slide-0").getAttribute("aria-label")).toBe("1 sur 3");
@@ -503,7 +503,7 @@ describe("status", () => {
 		document.body.innerHTML = snapStyles + carouselMarkup(3);
 		fakeLayout($(".track"), { size: 400, slide: 400 });
 		carousel.init({
-			labels: { carouselRole: "carrousel", slideRole: "diapositive" },
+			messages: { carouselRole: "carrousel", slideRole: "diapositive" },
 		});
 		expect($("[data-carousel]").getAttribute("aria-roledescription")).toBe(
 			"carrousel",
@@ -513,11 +513,11 @@ describe("status", () => {
 		);
 	});
 
-	it("uses a carousel's own labels from data-carousel--label attributes", async () => {
+	it("uses a carousel's own messages from data-carousel--message attributes", async () => {
 		document.body.innerHTML = `${snapStyles}
 			${carouselMarkup(3, {
 				attributes:
-					'id="own" data-carousel--label-status="Photo {n} of {count}" data-carousel--label-slide-role="photo"',
+					'id="own" data-carousel--message-status="Photo {n} of {count}" data-carousel--message-slide-role="photo"',
 				extra: `<p data-carousel--status></p>`,
 			})}
 			<section data-carousel aria-label="Other" id="other">
@@ -525,7 +525,7 @@ describe("status", () => {
 			</section>`;
 		for (const track of $$(".track"))
 			fakeLayout(track, { size: 400, slide: 400 });
-		carousel.init({ labels: { slide: "{n} sur {count}" } });
+		carousel.init({ messages: { slide: "{n} sur {count}" } });
 		expect($("#slide-0").getAttribute("aria-roledescription")).toBe("photo");
 		expect($("#slide-0").getAttribute("aria-label")).toBe("1 sur 3");
 		expect($("#other .slide").getAttribute("aria-roledescription")).toBe(
@@ -534,6 +534,73 @@ describe("status", () => {
 		$("#next").click();
 		await frame();
 		expect($("[data-carousel--status]").textContent).toBe("Photo 2 of 3");
+	});
+});
+
+describe("names and messages", () => {
+	it("picks a plural form of a message attribute in the carousel's language", () => {
+		document.body.innerHTML = `${snapStyles}
+			<div lang="pl">${carouselMarkup(2, {
+				attributes:
+					'data-carousel--message-slide="{count} slajdów, slajd {n}" data-carousel--message-slide-few="{count} slajdy, slajd {n}"',
+			})}</div>`;
+		fakeLayout($(".track"), { size: 400, slide: 400 });
+		carousel.init();
+		expect($("#slide-0").getAttribute("aria-label")).toBe("2 slajdy, slajd 1");
+	});
+
+	it("ignores an empty message attribute", () => {
+		setup(2, { attributes: 'data-carousel--message-slide=""' });
+		expect($("#slide-0").getAttribute("aria-label")).toBe("1 of 2");
+	});
+
+	it("names icon-only prev and next controls, and keeps names of their own", () => {
+		setup(3, {
+			controls: false,
+			extra: `<button id="back" data-carousel--action="prev"><svg aria-hidden="true"></svg></button>
+				<button id="on" data-carousel--action="next"><span aria-hidden="true">›</span></button>
+				<button id="text" data-carousel--action="next">Next photo</button>
+				<button id="image" data-carousel--action="prev"><img src="x.svg" alt="Back" /></button>`,
+		});
+		expect($("#back").getAttribute("aria-label")).toBe("Previous slide");
+		expect($("#on").getAttribute("aria-label")).toBe("Next slide");
+		expect($("#text").hasAttribute("aria-label")).toBe(false);
+		expect($("#image").hasAttribute("aria-label")).toBe(false);
+	});
+
+	it("names authored markers without a name after the slide they show", () => {
+		setup(3, {
+			extra: `<button id="dot" data-carousel--marker="2"></button>`,
+		});
+		expect($("#dot").getAttribute("aria-label")).toBe("Go to slide 3");
+	});
+
+	it("makes a generic markers container a named group, and leaves lists alone", () => {
+		document.body.innerHTML = `${snapStyles}${carouselMarkup(3, {
+			extra: `<div id="dots" data-carousel--markers><template><button>{n}</button></template></div>
+				<ol id="list" data-carousel--markers><template><li><button>{n}</button></li></template></ol>`,
+		})}`;
+		fakeLayout($(".track"), { size: 400, slide: 400 });
+		carousel.init({ messages: { markers: "Choisir une diapositive" } });
+		expect($("#dots").getAttribute("role")).toBe("group");
+		expect($("#dots").getAttribute("aria-label")).toBe(
+			"Choisir une diapositive",
+		);
+		expect($("#list").hasAttribute("role")).toBe(false);
+		expect($("#list").hasAttribute("aria-label")).toBe(false);
+		carousel.destroy();
+		expect($("#dots").hasAttribute("role")).toBe(false);
+		expect($("#dots").hasAttribute("aria-label")).toBe(false);
+	});
+
+	it("warns when a carousel that scrolls has no way to move it", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		setup(3, { controls: false });
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining(
+				'has no data-carousel--action="prev" or "next" controls',
+			),
+		);
 	});
 });
 

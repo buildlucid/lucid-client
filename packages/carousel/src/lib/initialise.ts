@@ -12,7 +12,7 @@ import lib from "./index.js";
 const initialise = (options?: Options) => {
 	if (S.initialised) lib.destroy();
 
-	S.labels = { ...C.labels, ...options?.labels };
+	S.messages = { ...C.messages, ...options?.messages };
 	S.drag = options?.drag as ((ctx: Context) => void) | undefined;
 	S.abortController = new AbortController();
 	S.initialised = true;

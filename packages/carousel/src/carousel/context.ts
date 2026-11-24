@@ -1,5 +1,8 @@
+import C from "../constants.js";
 import log from "../lib/log.js";
-import type { CarouselState, Labels } from "../types.js";
+import { attributeMessage, fill, format } from "../lib/messages.js";
+import S from "../state.js";
+import type { CarouselState, Messages } from "../types.js";
 import type { Autoplay } from "./autoplay.js";
 import type { Drag } from "./drag.js";
 import type { Layout } from "./layout.js";
@@ -53,8 +56,6 @@ export type Context = {
 	// What the markup holds
 
 	config: Config;
-	/** The labels passed to `init`, with the carousel's own `data-carousel--label-{name}` attributes */
-	labels: Labels;
 	slides: HTMLElement[];
 	controls: HTMLElement[];
 	/** Every marker: the author's own, then the generated ones */
@@ -121,4 +122,22 @@ export const warnOnce = (ctx: Context, message: string) => {
 	if (ctx.warnings.has(message)) return;
 	ctx.warnings.add(message);
 	log("warn", message);
+};
+
+/**
+ * One of the library's messages, with `{n}` and `{count}` filled in: the
+ * carousel's own `data-carousel--message-{name}` attribute, or else the one
+ * passed to `init`, or else the English default. Plural forms of the
+ * attribute, such as `data-carousel--message-status-one`, are picked by `count`.
+ */
+export const message = (
+	ctx: Context,
+	key: keyof Messages,
+	n = 0,
+	count = 0,
+) => {
+	const name = `${C.attributes.message}-${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
+	const own = attributeMessage(ctx.root, name, count);
+	if (own !== null) return fill(own, n, count);
+	return format(S.messages[key] ?? C.messages[key], n, count);
 };

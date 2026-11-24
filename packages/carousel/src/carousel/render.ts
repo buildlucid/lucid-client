@@ -1,8 +1,8 @@
 import C from "../constants.js";
-import format from "../lib/format.js";
+import named from "../lib/named.js";
 import type { CarouselChange, CarouselState } from "../types.js";
 import { isAutoplayAction } from "./autoplay.js";
-import type { Context } from "./context.js";
+import { type Context, message } from "./context.js";
 import { type Box, clamp, nearestPage } from "./layout.js";
 import { wraps } from "./loop.js";
 import { position } from "./scroll.js";
@@ -126,9 +126,7 @@ export const writeProperties = ({ rec, root, state }: Context) => {
 
 /** Whether a control has a name of its own, rather than one the library gave it */
 const hasOwnName = (ctx: Context, element: Element) =>
-	(element.textContent ?? "").trim() !== "" ||
-	element.hasAttribute("aria-labelledby") ||
-	(element.hasAttribute("aria-label") && !ctx.rec.added(element, "aria-label"));
+	named(element, !ctx.rec.added(element, "aria-label"));
 
 /** Disables `prev` and `next` at the ends, and labels icon-only autoplay controls */
 const renderControls = (ctx: Context) => {
@@ -148,11 +146,7 @@ const renderControls = (ctx: Context) => {
 		if (!isAutoplayAction(action) || hasOwnName(ctx, control)) continue;
 		const playing =
 			action === C.actions.toggle ? state.playing : action === C.actions.pause;
-		rec.attr(
-			control,
-			"aria-label",
-			playing ? ctx.labels.pause : ctx.labels.play,
-		);
+		rec.attr(control, "aria-label", message(ctx, playing ? "pause" : "play"));
 	}
 };
 
@@ -180,7 +174,7 @@ export const announce = (ctx: Context) => {
 	ctx.announced = state.index;
 	if (ctx.fromAutoplay || state.count === 0) return;
 
-	const text = format(ctx.labels.status, state.index + 1, state.count);
+	const text = message(ctx, "status", state.index + 1, state.count);
 	for (const status of ctx.statuses) {
 		if (!statusNodes.has(status))
 			statusNodes.set(status, Array.from(status.childNodes));

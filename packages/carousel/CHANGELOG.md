@@ -12,5 +12,6 @@
 - Added `data-carousel--autoplay`, which follows the WAI-ARIA carousel pattern and holds while out of view, while the tab is hidden and for visitors who prefer reduced motion.
 - Added carousel and slide semantics, `aria-disabled` controls, `aria-current` markers, a `data-carousel--status` live region, and `data-carousel--inert` for slides out of view.
 - Added the `carousel-change` event, `subscribe`, and state attributes and CSS variables for styling.
-- Added `labels` for translating the text the library writes, including the carousel and slide role descriptions, and `data-carousel--label-{name}` for one carousel's own.
+- Added `messages` for translating the text the library writes, including the carousel and slide role descriptions, and `data-carousel--message-{name}` for one carousel's own, with plural forms picked by the carousel's language.
+- Icon-only `prev` and `next` controls and markers without a name get a label, and `div` markers containers become a group named "Choose a slide".
 - Warnings only log in the development build, which bundlers pick through the `development` export condition.

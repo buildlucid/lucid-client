@@ -1,12 +1,12 @@
 import C from "../constants.js";
 import controlledRoot from "../lib/controlled-root.js";
-import format from "../lib/format.js";
+import named from "../lib/named.js";
 import owned from "../lib/owned.js";
 import S from "../state.js";
-import type { Labels } from "../types.js";
 import {
 	type Config,
 	type Context,
+	message,
 	type Operated,
 	warnOnce,
 } from "./context.js";
@@ -41,17 +41,6 @@ export const readConfig = (root: HTMLElement): Config => {
 	};
 };
 
-/** The labels passed to `init`, with any the carousel sets with `data-carousel--label-{name}` */
-export const readLabels = (root: HTMLElement): Labels => {
-	const labels = { ...S.labels };
-	for (const key of Object.keys(labels) as Array<keyof Labels>) {
-		const name = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-		const value = root.getAttribute(`${A.label}-${name}`);
-		if (value !== null) labels[key] = value;
-	}
-	return labels;
-};
-
 /** Slides are the track's element children, other than templates, scripts and styles */
 const readSlides = (track: HTMLElement) =>
 	Array.from(track.children).filter(
@@ -78,20 +67,20 @@ const findOperated = (root: HTMLElement): Operated => {
 	};
 };
 
+/** Whether an element has no meaning of its own: a `div`, `span` or custom element without a role */
+const isGeneric = (element: HTMLElement) =>
+	!element.hasAttribute("role") &&
+	(element.localName === "div" ||
+		element.localName === "span" ||
+		element.localName.includes("-"));
+
 /**
- * Whether a slide gets carousel slide semantics: generic elements, such as a
- * `div` or a custom element, or one the markup already made a group. Others,
- * such as list items, links and articles, keep their own.
+ * Whether a slide gets carousel slide semantics: a generic element, or one the
+ * markup already made a group. Others, such as list items, links and
+ * articles, keep their own.
  */
-const takesSlideRole = (slide: HTMLElement) => {
-	const role = slide.getAttribute("role");
-	if (role !== null) return role === "group";
-	return (
-		slide.localName === "div" ||
-		slide.localName === "span" ||
-		slide.localName.includes("-")
-	);
-};
+const takesSlideRole = (slide: HTMLElement) =>
+	isGeneric(slide) || slide.getAttribute("role") === "group";
 
 // ----------------------------------------------------------------
 // Adding what the markup leaves out
@@ -103,10 +92,10 @@ const setButtonType = (rec: Recorder, element: HTMLElement) => {
 };
 
 const describeCarousel = (ctx: Context) => {
-	const { labels, rec, root, track } = ctx;
+	const { rec, root, track } = ctx;
 	if (!track.id) rec.attr(track, "id", `carousel-${++S.ids}-track`);
 	rec.fallback(root, "role", "region");
-	rec.fallback(root, "aria-roledescription", labels.carouselRole);
+	rec.fallback(root, "aria-roledescription", message(ctx, "carouselRole"));
 	if (
 		__DEV__ &&
 		!root.hasAttribute("aria-label") &&
@@ -119,21 +108,25 @@ const describeCarousel = (ctx: Context) => {
 };
 
 const describeSlides = (ctx: Context) => {
-	const { labels, rec, slides } = ctx;
+	const { rec, slides } = ctx;
+	const role = message(ctx, "slideRole");
 	slides.forEach((slide, i) => {
 		if (!takesSlideRole(slide)) return;
 		rec.fallback(slide, "role", "group");
-		rec.fallback(slide, "aria-roledescription", labels.slideRole);
+		rec.fallback(slide, "aria-roledescription", role);
 		if (!slide.hasAttribute("aria-labelledby"))
 			rec.fallback(
 				slide,
 				"aria-label",
-				format(labels.slide, i + 1, slides.length),
+				message(ctx, "slide", i + 1, slides.length),
 			);
 	});
 };
 
-/** Takes on the controls and markers that operate this carousel */
+/**
+ * Takes on the controls and markers that operate this carousel. Icon-only
+ * `prev` and `next` controls and markers without a name get an `aria-label`.
+ */
 const describeOperated = (ctx: Context, found: Operated) => {
 	const { markerSlides, rec, root, slides, track } = ctx;
 	ctx.controls = found.controls;
@@ -141,6 +134,12 @@ const describeOperated = (ctx: Context, found: Operated) => {
 		if (root.contains(control))
 			rec.fallback(control, "aria-controls", track.id);
 		setButtonType(rec, control);
+		const action = control.getAttribute(A.action);
+		if (
+			(action === C.actions.prev || action === C.actions.next) &&
+			!named(control)
+		)
+			rec.fallback(control, "aria-label", message(ctx, action));
 	}
 
 	markerSlides.clear();
@@ -150,11 +149,28 @@ const describeOperated = (ctx: Context, found: Operated) => {
 	// The generated markers join again once they are rendered for the new layout.
 	ctx.markers = found.markers.filter((marker) => !isGenerated(ctx, marker));
 	ctx.markers.forEach((marker, order) => {
-		markerSlides.set(marker, markerTarget(marker, order, slides));
+		const slide = markerTarget(marker, order, slides);
+		markerSlides.set(marker, slide);
 		if (root.contains(marker) && !(marker instanceof HTMLAnchorElement))
 			rec.fallback(marker, "aria-controls", track.id);
 		setButtonType(rec, marker);
+		if (!named(marker))
+			rec.fallback(
+				marker,
+				"aria-label",
+				message(ctx, "marker", slide + 1, slides.length),
+			);
 	});
+};
+
+/** Makes generic markers containers a group named for choosing a slide, as the WAI-ARIA carousel pattern does */
+const describeMarkerGroups = (ctx: Context) => {
+	for (const container of owned(ctx.root, `[${A.markers}]`)) {
+		if (!isGeneric(container)) continue;
+		ctx.rec.fallback(container, "role", "group");
+		if (!container.hasAttribute("aria-labelledby"))
+			ctx.rec.fallback(container, "aria-label", message(ctx, "markers"));
+	}
 };
 
 const describeStatuses = (ctx: Context) => {
@@ -165,17 +181,33 @@ const describeStatuses = (ctx: Context) => {
 	}
 };
 
-/** Warns when autoplay has no control to stop it, as WCAG requires one */
-export const checkAutoplayControl = (ctx: Context) => {
-	if (!__DEV__ || ctx.config.autoplay === null) return;
-	const stoppable = ctx.controls.some((control) => {
-		const action = control.getAttribute(A.action);
-		return action === C.actions.toggle || action === C.actions.pause;
-	});
-	if (!stoppable)
+/**
+ * Warns when autoplay has no control to stop it, as WCAG requires one, and
+ * when a carousel that scrolls has no controls or markers to move it
+ */
+export const checkControls = (ctx: Context) => {
+	if (!__DEV__) return;
+	const actions = new Set(
+		ctx.controls.map((control) => control.getAttribute(A.action)),
+	);
+	if (
+		ctx.config.autoplay !== null &&
+		!actions.has(C.actions.toggle) &&
+		!actions.has(C.actions.pause)
+	)
 		warnOnce(
 			ctx,
 			'An autoplaying carousel has no data-carousel--action="toggle" or "pause" control. Add one so visitors can stop it.',
+		);
+	if (
+		ctx.state.scrollable &&
+		!actions.has(C.actions.prev) &&
+		!actions.has(C.actions.next) &&
+		ctx.markers.length === 0
+	)
+		warnOnce(
+			ctx,
+			'A carousel that scrolls has no data-carousel--action="prev" or "next" controls, and no markers. Add some, as visitors using a mouse or keyboard may have no other way to move it.',
 		);
 };
 
@@ -183,13 +215,12 @@ export const checkAutoplayControl = (ctx: Context) => {
 // Scanning
 
 /**
- * Reads the options, labels, slides, controls, markers and status elements,
+ * Reads the options, slides, controls, markers and status elements,
  * and adds the attributes they leave out, without measuring
  * - `found` is passed when the controls and markers were already found, for carousels starting together
  */
 export const readMarkup = (ctx: Context, found = findOperated(ctx.root)) => {
 	ctx.config = readConfig(ctx.root);
-	ctx.labels = readLabels(ctx.root);
 	if (ctx.config.drag) {
 		if (S.drag) S.drag(ctx);
 		else if (__DEV__)
@@ -204,6 +235,7 @@ export const readMarkup = (ctx: Context, found = findOperated(ctx.root)) => {
 	describeCarousel(ctx);
 	describeSlides(ctx);
 	describeOperated(ctx, found);
+	describeMarkerGroups(ctx);
 	describeStatuses(ctx);
 
 	ctx.resize.disconnect();
@@ -229,5 +261,5 @@ export const rescan = (ctx: Context) => {
 	remeasure(ctx, true, true);
 	update(ctx, true);
 	applyInert(ctx);
-	checkAutoplayControl(ctx);
+	checkControls(ctx);
 };

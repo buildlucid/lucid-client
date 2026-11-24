@@ -1,3 +1,5 @@
+import type { Messages } from "./types.js";
+
 export default {
 	/**
 	 * Every attribute follows the suite's `data-{namespace}--{specifier}` grammar, with `carousel` as the namespace
@@ -15,8 +17,8 @@ export default {
 		autoplay: "data-carousel--autoplay",
 		drag: "data-carousel--drag",
 		inert: "data-carousel--inert",
-		/** The prefix of the per carousel labels, such as `data-carousel--label-status` */
-		label: "data-carousel--label",
+		/** The prefix of a carousel's own messages, such as `data-carousel--message-status` */
+		message: "data-carousel--message",
 		// State, written by the library
 		ready: "data-carousel--ready",
 		index: "data-carousel--index",
@@ -49,13 +51,17 @@ export default {
 	dragThreshold: 5,
 	/** Milliseconds without a scroll event before a scroll counts as finished, when `scrollend` can't be relied on */
 	settleDelay: 200,
-	labels: {
+	/** The text the library writes, in English */
+	messages: {
 		carouselRole: "carousel",
 		slideRole: "slide",
 		slide: "{n} of {count}",
 		marker: "Go to slide {n}",
+		markers: "Choose a slide",
 		status: "Slide {n} of {count}",
+		prev: "Previous slide",
+		next: "Next slide",
 		play: "Start automatic slide show",
 		pause: "Stop automatic slide show",
-	},
+	} satisfies Messages as Messages,
 } as const;

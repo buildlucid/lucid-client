@@ -5,7 +5,9 @@ export type {
 	CarouselChange,
 	CarouselState,
 	Drag,
-	Labels,
+	Message,
+	Messages,
+	MessageTokens,
 	Options,
 } from "./types.js";
 

@@ -13,7 +13,8 @@ A carousel for your own markup and styles, built on CSS scroll snapping. The tra
 - Infinite Looping: Loops without cloning slides, so there are no duplicate ids or form fields.
 - Mouse Drag: Drag the track with a mouse, from its own import. Touch already works natively.
 - Accessible Autoplay: Pauses on hover and out of view, stops on focus, and respects reduced motion.
-- Accessibility: Adds roles, labels, `aria-current`, a live status and optional `inert`.
+- Accessibility: Adds roles, labels, `aria-current`, a live status and optional `inert`. See [Accessibility](#accessibility).
+- Translatable: Every message the library writes can be set in `init` or with attributes, including plural forms. See [Messages](#messages).
 - Right to Left and Vertical: Follows your CSS.
 - Dynamic Markup: Slides added or removed are picked up automatically.
 - Development Warnings: Markup mistakes are pointed out while you develop, and left out of production builds.
@@ -109,11 +110,7 @@ The library ships no CSS. This is the minimum you need:
 
 Controls and markers work on the carousel they sit inside. To put one elsewhere on the page, point its `aria-controls` at the id of the carousel or its track.
 
-The library fills in the accessibility the markup leaves out. Anything you set yourself is kept:
-
-- The carousel gets `role="region"` and `aria-roledescription="carousel"`.
-- `div`, `span` and custom element slides get `role="group"`, `aria-roledescription="slide"` and a label such as "2 of 5". List items, links and other elements keep their own meaning.
-- Buttons get `type="button"`, and the status gets `aria-live="polite"`.
+The library fills in the accessibility the markup leaves out. See [Accessibility](#accessibility).
 
 ### Options
 
@@ -167,7 +164,7 @@ A `<template>` inside `data-carousel--markers` is copied once per page. `{n}` an
 </div>
 ```
 
-Markers without a label get one, such as "Go to slide 2".
+Markers without a name get one, such as "Go to slide 2".
 
 You can also write your own markers. Each scrolls to the slide numbered in its value (from 0), the slide its link points to, or else the slide matching its position among the markers:
 
@@ -185,6 +182,7 @@ Links like these still work without JavaScript. With it, they scroll the track w
 
 - The track must be a flex or grid container with 3 or more slides, and room to scroll at least one slide. Otherwise it rewinds instead and logs a warning.
 - `prev` and `next` are never disabled, and markers take the shortest way round.
+- The slides look reordered, but the tab order doesn't change. With one slide in view, add `data-carousel--inert` so keyboard users only reach the slide on screen.
 
 ### Mouse Drag
 
@@ -224,6 +222,72 @@ Always include a `toggle` or `pause` button, as WCAG requires a way to stop movi
 
 `data-carousel--inert` makes slides out of view `inert`, so keyboard and screen reader users only reach the slide on screen. Use it when one slide fills the view. Carousels with several slides in view are easier to browse without it.
 
+## Accessibility
+
+The library follows the [WAI-ARIA carousel pattern](https://www.w3.org/WAI/ARIA/apg/patterns/carousel/) and fills in what the markup leaves out. Anything you set yourself is kept, and `destroy` removes what the library added.
+
+- The carousel gets `role="region"` and `aria-roledescription="carousel"`.
+- `div`, `span` and custom element slides get `role="group"`, `aria-roledescription="slide"` and a label such as "2 of 5". List items, links and other elements keep their own meaning.
+- Icon-only `prev` and `next` buttons get a label such as "Previous slide", and markers without a name get one such as "Go to slide 2". Text, an image's `alt`, `aria-label`, `aria-labelledby` and `title` all count as a name, apart from anything inside `aria-hidden="true"`.
+- A `div` markers container becomes a group named "Choose a slide". Lists keep their own meaning.
+- `prev` and `next` get `aria-disabled="true"` at the ends rather than `disabled`, so they keep focus. The current marker gets `aria-current="true"`.
+- Buttons get `type="button"`, and the status gets `aria-live="polite"`. It announces the moves a visitor makes but not autoplay, so screen readers aren't interrupted every few seconds.
+
+Your markup and CSS still need to:
+
+- Name the carousel after its content with `aria-label` or `aria-labelledby`.
+- Give an autoplaying carousel a visible `toggle` or `pause` button, first in the carousel.
+- Make buttons and markers at least 24 by 24 pixels, or space them so a 24 pixel circle around each doesn't overlap another (WCAG 2.5.8).
+- Show a focus style on every control and marker.
+- Wrap `scroll-behavior: smooth` in `prefers-reduced-motion: no-preference`.
+
+The [development build](#development-build) warns about a carousel without a name, an autoplaying carousel without a way to stop it, and a carousel that scrolls without controls or markers to move it.
+
+## Messages
+
+Translate or reword the text the library writes. `init` sets the messages for every carousel:
+
+```typescript
+carousel.init({
+  messages: {
+    carouselRole: "carrousel",
+    slideRole: "diapositive",
+    slide: "{n} sur {count}",
+    marker: "Aller à la diapositive {n}",
+    markers: "Choisir une diapositive",
+    status: "Diapositive {n} sur {count}",
+    prev: "Diapositive précédente",
+    next: "Diapositive suivante",
+    play: "Démarrer le diaporama",
+    pause: "Arrêter le diaporama",
+  },
+});
+```
+
+A carousel can set its own with `data-carousel--message-{name}` attributes, with the names in kebab case. These win over `init`:
+
+```html
+<section
+  data-carousel
+  aria-label="Team photos"
+  data-carousel--message-status="Photo {n} of {count}"
+  data-carousel--message-slide-role="photo"
+>
+```
+
+`{n}` and `{count}` are filled in. In `init`, a message can also be a function, such as `({ n, count }) => …`. For words that change with the number, an attribute can have plural forms, such as `data-carousel--message-slide-few`. The suffix is a plural category for the carousel's `lang` (`zero`, `one`, `two`, `few`, `many` or `other`) and is picked by `{count}`. The attribute without a suffix covers any form not given. Empty attributes are ignored.
+
+| Message | Default | Used for |
+| --- | --- | --- |
+| `carouselRole` | `carousel` | The carousel's `aria-roledescription`. |
+| `slideRole` | `slide` | The `aria-roledescription` of `div`, `span` and custom element slides. |
+| `slide` | `{n} of {count}` | Slides without a label. |
+| `marker` | `Go to slide {n}` | Markers without a name. |
+| `markers` | `Choose a slide` | A `div` markers container's group. |
+| `status` | `Slide {n} of {count}` | The status announcement. |
+| `prev`, `next` | `Previous slide`, `Next slide` | `prev` and `next` buttons without a name. |
+| `play`, `pause` | `Start automatic slide show`, `Stop automatic slide show` | Autoplay buttons without a name. |
+
 ## API
 
 ```typescript
@@ -246,7 +310,7 @@ document.addEventListener("carousel-change", (event) => {
 
 | Method | Description |
 | --- | --- |
-| `init(options?)` | Sets up every `data-carousel` element. Calling it again starts over. Takes `labels` and `drag`. |
+| `init(options?)` | Sets up every `data-carousel` element. Calling it again starts over. Takes `messages` and `drag`. |
 | `refresh()` | Picks up new carousels, controls, markers and option changes, and removes carousels that left the page. |
 | `destroy()` | Removes every carousel's listeners, and every attribute and style the library added. |
 | `get(target)` | Returns the carousel for an element inside it, or for the id of the carousel or its track. |
@@ -269,47 +333,9 @@ Slides added or removed are picked up automatically, and the slide in view stays
 
 `carousel-change` fires on the `data-carousel` element whenever the page changes, with `{ index, previousIndex, count }` as its `detail`. It bubbles, and doesn't fire on load.
 
-### Labels
-
-Translate or reword the text the library writes for screen readers. `init` sets the labels for every carousel:
-
-```typescript
-carousel.init({
-  labels: {
-    carouselRole: "carrousel",
-    slideRole: "diapositive",
-    slide: "{n} sur {count}",
-    marker: "Aller à la diapositive {n}",
-    status: "Diapositive {n} sur {count}",
-    play: "Démarrer le diaporama",
-    pause: "Arrêter le diaporama",
-  },
-});
-```
-
-A carousel can set its own with `data-carousel--label-{name}` attributes, with the names in kebab case:
-
-```html
-<section
-  data-carousel
-  aria-label="Team photos"
-  data-carousel--label-status="Photo {n} of {count}"
-  data-carousel--label-slide-role="photo"
->
-```
-
-| Label | Default | Used for |
-| --- | --- | --- |
-| `carouselRole` | `carousel` | The carousel's `aria-roledescription`. |
-| `slideRole` | `slide` | The `aria-roledescription` of `div`, `span` and custom element slides. |
-| `slide` | `{n} of {count}` | Slides without a label. |
-| `marker` | `Go to slide {n}` | Template markers without a label. |
-| `status` | `Slide {n} of {count}` | The status announcement. |
-| `play`, `pause` | `Start automatic slide show`, `Stop automatic slide show` | Autoplay buttons without text. |
-
 ### Development Build
 
-The library warns about markup it can't work with, such as a carousel without a name, an autoplaying carousel without a stop control, or looping without room to loop. Warnings only log in the development build, which bundlers such as Vite and webpack pick through the `development` export condition while you develop. Production builds leave them out.
+The library warns about markup it can't work with, such as a carousel without a name, an autoplaying carousel without a stop control, a carousel that scrolls without controls or markers, or looping without room to loop. Warnings only log in the development build, which bundlers such as Vite and webpack pick through the `development` export condition while you develop. Production builds leave them out.
 
 ## Browser Support
 
