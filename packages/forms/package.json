@@ -1,6 +1,6 @@
 {
 	"name": "@lucidclient/forms",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"private": false,
 	"description": "Bring your own markup forms that work without JavaScript, enhanced with accessible validation, error summaries, in-place sending, character counts, file drop zones and captcha support.",
 	"type": "module",
