@@ -2,21 +2,19 @@ import C from "../constants.js";
 import S from "../state.js";
 import type { Message, Messages, MessageTokens } from "../types.js";
 import { type Context, warnOnce } from "./context.js";
-import { fill } from "./dom.js";
+import { fill, formAttr } from "./dom.js";
 
 const A = C.attributes;
-
-/** Writes a message from a template or function */
-export const format = (message: Message, tokens: MessageTokens = {}) =>
-	typeof message === "function" ? message(tokens) : fill(message, tokens);
 
 /** `maxSize` is written `max-size` in attributes */
 const kebab = (key: string) =>
 	key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 
 /** The language an element is in, from the closest `lang` attribute */
-const langOf = (element: Element) =>
-	element.closest("[lang]")?.getAttribute("lang") ?? "";
+const langOf = (element: Element) => {
+	const found = Element.prototype.closest.call(element, "[lang]");
+	return found ? (formAttr(found, "lang") ?? "") : "";
+};
 
 const PLURALS = new Map<string, Intl.PluralRules>();
 
@@ -43,6 +41,23 @@ const pluralNumber = ({ count, limit }: MessageTokens) => {
 };
 
 /**
+ * Writes a message from a template, plural forms or a function. Plural forms
+ * are picked by the tokens' number in `element`'s language, or else `other`.
+ */
+export const format = (
+	message: Message,
+	tokens: MessageTokens,
+	element: Element,
+) => {
+	if (typeof message === "function") return message(tokens);
+	if (typeof message === "string") return fill(message, tokens);
+	const value = pluralNumber(tokens);
+	const form =
+		value === undefined ? undefined : message[pluralOf(element, value)];
+	return fill(form ?? message.other, tokens);
+};
+
+/**
  * A message written in an attribute: the plural form for the tokens' number in
  * the element's language, such as `data-form--message-remaining-one`, or else
  * the attribute without a suffix. Empty attributes are ignored.
@@ -54,10 +69,10 @@ const attributeMessage = (
 ) => {
 	const value = pluralNumber(tokens);
 	if (value !== undefined) {
-		const plural = element.getAttribute(`${name}-${pluralOf(element, value)}`);
+		const plural = formAttr(element, `${name}-${pluralOf(element, value)}`);
 		if (plural) return plural;
 	}
-	return element.getAttribute(name) || null;
+	return formAttr(element, name) || null;
 };
 
 /** `from` and the elements around it inside the form, then the form, where message attributes are looked for */
@@ -65,7 +80,9 @@ const around = (ctx: Context, from: Element | null) => {
 	const elements: Element[] = [];
 	for (
 		let element = from;
-		element && element !== ctx.form && ctx.form.contains(element);
+		element &&
+		element !== ctx.form &&
+		Node.prototype.contains.call(ctx.form, element);
 		element = element.parentElement
 	)
 		elements.push(element);
@@ -104,7 +121,7 @@ export const message = (
 	);
 	if (own !== null) return own;
 	const value = S.settings.messages[key] ?? C.messages[key];
-	return value === null ? "" : format(value, tokens);
+	return value === null ? "" : format(value, tokens, from ?? ctx.form);
 };
 
 /** A check that failed, before its message is chosen */
@@ -149,7 +166,7 @@ export const failureMessage = (
 
 	if (failure.text) return failure.text;
 	const configured = S.settings.messages[failure.key as keyof Messages];
-	if (configured) return format(configured, failure.tokens);
+	if (configured) return format(configured, failure.tokens, control);
 	if (failure.native) {
 		const page = primary(langOf(control));
 		const browser = primary(navigator.language ?? "");
@@ -165,5 +182,5 @@ export const failureMessage = (
 		C.fallbacks[failure.key as keyof typeof C.fallbacks] ??
 		C.messages[failure.key as keyof Messages] ??
 		C.messages.rule;
-	return format(fallback, failure.tokens);
+	return format(fallback, failure.tokens, control);
 };

@@ -1,3 +1,4 @@
+import { formConnected } from "../form/dom.js";
 import S from "../state.js";
 import lib from "./index.js";
 
@@ -13,7 +14,7 @@ const refresh = () => {
 		return;
 	}
 	for (const [form, instance] of Array.from(S.instances)) {
-		if (form.isConnected) instance.api.refresh();
+		if (formConnected(form)) instance.api.refresh();
 		else instance.api.destroy();
 	}
 	lib.scan();

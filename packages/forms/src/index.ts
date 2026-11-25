@@ -16,6 +16,7 @@ export type {
 	Messages,
 	MessageTokens,
 	Options,
+	PluralMessage,
 	Rule,
 	RuleContext,
 } from "./types.js";

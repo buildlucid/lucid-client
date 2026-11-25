@@ -1,4 +1,5 @@
 import C from "../constants.js";
+import { formAttr, listen } from "../form/dom.js";
 import log from "../lib/log.js";
 import type { Extension } from "../types.js";
 
@@ -132,7 +133,7 @@ export const defineCaptcha = (
 				: null;
 		observer?.observe(form.element);
 		for (const type of ["focusin", "pointerenter", "input"] as const)
-			form.element.addEventListener(type, start, { once: true, signal });
+			listen(form.element, type, start, { once: true, signal });
 		scan();
 
 		return {
@@ -146,8 +147,11 @@ export const defineCaptcha = (
 });
 
 /** The language of the page around a captcha, such as `fr` or `en-GB`, or `""` when it has none */
-export const pageLanguage = (slot: Element) =>
-	slot.closest("[lang]")?.getAttribute("lang")?.trim() ?? "";
+export const pageLanguage = (slot: Element) => {
+	// The closest element with a language can be the form.
+	const found = slot.closest("[lang]");
+	return found ? (formAttr(found, "lang")?.trim() ?? "") : "";
+};
 
 /** Reads a slot's site key, warning when it has none */
 export const siteKey = (slot: HTMLElement, provider: string) => {

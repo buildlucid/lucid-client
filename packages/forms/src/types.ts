@@ -9,8 +9,23 @@ export type MessageTokens = {
 	count?: number;
 };
 
-/** A template such as `"Enter {label}"`, or a function for text that changes with a number */
-export type Message = string | ((tokens: MessageTokens) => string);
+/**
+ * A message's plural forms, by the category `Intl.PluralRules` gives its number in the element's
+ * language, such as `one` or `few`. `other` is used when the number's own form isn't given.
+ * The number is `{count}`, or else a numeric `{limit}`.
+ */
+export type PluralMessage = { other: string } & Partial<
+	Record<"zero" | "one" | "two" | "few" | "many", string>
+>;
+
+/**
+ * A template such as `"Enter {label}"`, plural forms such as
+ * `{ one: "{count} file", other: "{count} files" }`, or a function for text that changes another way
+ */
+export type Message =
+	| string
+	| PluralMessage
+	| ((tokens: MessageTokens) => string);
 
 export type Messages = {
 	/** `null` uses the browser's own message for the constraint, which is in the visitor's language */

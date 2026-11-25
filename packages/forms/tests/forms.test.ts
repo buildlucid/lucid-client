@@ -451,6 +451,37 @@ describe("sending", () => {
 		expect(new URL(requestOf(fetch).url).pathname).toBe("/submit");
 	});
 
+	it("sends forms whose fields are named after the form's methods", async () => {
+		const fetch = mockFetch(() =>
+			Response.json({ errors: { name: "Taken" } }, { status: 422 }),
+		);
+		const names = [
+			"querySelectorAll",
+			"addEventListener",
+			"setAttribute",
+			"contains",
+		];
+		document.body.innerHTML = contactForm({
+			extra: names
+				.map((name) => `<input type="hidden" name="${name}">`)
+				.join(""),
+		});
+		// Browsers put named fields on the form in place of its methods, which happy-dom doesn't.
+		// `dispatchEvent` is left out, as happy-dom calls it on the form itself.
+		const form = $<HTMLFormElement>("form");
+		for (const name of names)
+			Object.defineProperty(form, name, {
+				value: form.elements.namedItem(name),
+			});
+		forms.init();
+		fill();
+		submit();
+		await settle();
+		expect(fetch).toHaveBeenCalledTimes(1);
+		expect($("form").getAttribute("data-form--state")).toBe("error");
+		expect($('[data-form--error="name"]').textContent).toBe("Error: Taken");
+	});
+
 	it("follows a redirect from the response or data-form--redirect, but only to web pages", async () => {
 		const assign = vi.fn();
 		vi.stubGlobal("location", { href: window.location.href, assign });
@@ -757,6 +788,49 @@ describe("messages from the markup", () => {
 		expect(count.textContent).toBe("Pozostał 1 znak");
 		type("#message", "a".repeat(17));
 		expect(count.textContent).toBe("Pozostało 5 znaków");
+	});
+
+	it("picks plural forms given to init by the count, in the page's language", () => {
+		document.body.innerHTML = contactForm({
+			attributes: 'lang="pl"',
+			extra: `
+				<label for="message">Message</label>
+				<textarea id="message" name="message" maxlength="22"></textarea>
+				<p data-form--count="message"></p>`,
+		});
+		forms.init({
+			messages: {
+				remaining: {
+					one: "Pozostał {count} znak",
+					few: "Pozostały {count} znaki",
+					other: "Pozostało {count} znaków",
+				},
+			},
+		});
+		const count = $("[data-form--count]");
+		expect(count.textContent).toBe("Pozostały 22 znaki");
+		type("#message", "a".repeat(21));
+		expect(count.textContent).toBe("Pozostał 1 znak");
+		type("#message", "a".repeat(17));
+		expect(count.textContent).toBe("Pozostało 5 znaków");
+	});
+
+	it("uses a plural message's other form when the number's own isn't given", () => {
+		document.body.innerHTML = contactForm({
+			extra: `
+				<fieldset data-form--field="topics" data-form--min-checked="1">
+					<legend>Topics</legend>
+					<input type="checkbox" id="topic-a" name="topics" value="a">
+					<p data-form--error="topics"></p>
+				</fieldset>`,
+		});
+		forms.init({
+			messages: { minChecked: { other: "Choose {limit} or more" } },
+		});
+		submit();
+		expect($('[data-form--error="topics"]').textContent).toBe(
+			"Error: Choose 1 or more",
+		);
 	});
 
 	it("picks a plural form of a check's message by its limit", () => {

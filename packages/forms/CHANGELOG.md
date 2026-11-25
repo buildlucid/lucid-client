@@ -1,5 +1,15 @@
 # @lucidclient/forms
 
+## Unreleased
+
+### Features:
+
+- The `messages` option takes plural forms as plain text, such as `{ one: "{count} file", other: "{count} files" }`, picked by the element's language, so translated messages can come from JSON.
+
+### Bug Fixes:
+
+- Fields named like the form's own methods, such as `dispatchEvent`, `querySelectorAll` or `setAttribute`, no longer stop the form from being enhanced or sent.
+
 ## v0.1.0
 
 ### Features:

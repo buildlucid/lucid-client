@@ -29,15 +29,22 @@ import { checkFields, releaseValidity } from "./validate.js";
 
 const A = C.attributes;
 
+/**
+ * Fires one of the library's events on the form. The prototype's `dispatchEvent` is used when a
+ * field named `dispatchEvent` replaces the form's own, which is otherwise called, as test DOMs
+ * such as happy-dom wrap forms in proxies that the prototype's can't be called on.
+ */
 const emit = (
 	ctx: Context,
 	type: string,
 	detail: unknown,
 	cancelable = false,
-) =>
-	ctx.form.dispatchEvent(
-		new CustomEvent(type, { bubbles: true, cancelable, detail }),
-	);
+) => {
+	const event = new CustomEvent(type, { bubbles: true, cancelable, detail });
+	return typeof ctx.form.dispatchEvent === "function"
+		? ctx.form.dispatchEvent(event)
+		: HTMLFormElement.prototype.dispatchEvent.call(ctx.form, event);
+};
 
 /** Whether checks are run: not with `data-form--validate="off"`, or for a submitter with `formnovalidate` */
 const runsChecks = (ctx: Context, submitter: HTMLElement | null) =>

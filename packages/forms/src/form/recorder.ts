@@ -22,6 +22,8 @@ type Entry = {
  * Tracks every attribute and piece of content the library changes, so
  * destroying a form leaves the markup as it was rendered. Attributes changed
  * by something else since the library wrote them are left as they are.
+ * Attributes are read and written through the prototype, as the form is one
+ * of the elements and a field can be named like those methods.
  */
 const createRecorder = (): Recorder => {
 	const attributes = new Map<Element, Map<string, Entry>>();
@@ -30,7 +32,7 @@ const createRecorder = (): Recorder => {
 
 	const attr: Recorder["attr"] = (element, name, value) => {
 		if (closed) return;
-		const current = element.getAttribute(name);
+		const current = Element.prototype.getAttribute.call(element, name);
 		let entries = attributes.get(element);
 		const existing = entries?.get(name);
 		if (existing) existing.written = value;
@@ -42,8 +44,8 @@ const createRecorder = (): Recorder => {
 			}
 			entries.set(name, { value: current, written: value });
 		}
-		if (value === null) element.removeAttribute(name);
-		else element.setAttribute(name, value);
+		if (value === null) Element.prototype.removeAttribute.call(element, name);
+		else Element.prototype.setAttribute.call(element, name, value);
 	};
 
 	/** Whether the recorder added an attribute the markup didn't have, and it still has the recorder's value */
@@ -53,14 +55,18 @@ const createRecorder = (): Recorder => {
 			entry !== undefined &&
 			entry.value === null &&
 			entry.written !== null &&
-			element.getAttribute(name) === entry.written
+			Element.prototype.getAttribute.call(element, name) === entry.written
 		);
 	};
 
 	return {
 		attr,
 		fallback: (element, name, value) => {
-			if (element.hasAttribute(name) && !added(element, name)) return;
+			if (
+				Element.prototype.hasAttribute.call(element, name) &&
+				!added(element, name)
+			)
+				return;
 			attr(element, name, value);
 		},
 		content: (element, ...nodes) => {
@@ -74,9 +80,13 @@ const createRecorder = (): Recorder => {
 				element.replaceChildren(...nodes);
 			for (const [element, entries] of attributes) {
 				for (const [name, entry] of entries) {
-					if (element.getAttribute(name) !== entry.written) continue;
-					if (entry.value === null) element.removeAttribute(name);
-					else element.setAttribute(name, entry.value);
+					if (
+						Element.prototype.getAttribute.call(element, name) !== entry.written
+					)
+						continue;
+					if (entry.value === null)
+						Element.prototype.removeAttribute.call(element, name);
+					else Element.prototype.setAttribute.call(element, name, entry.value);
 				}
 			}
 			contents.clear();

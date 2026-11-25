@@ -5,17 +5,39 @@ import type { Context } from "./context.js";
 
 const A = C.attributes;
 
-// A field named like a form property, such as `action`, `method` or `reset`,
-// replaces that property on the form, so those are read through the form's
-// prototypes.
+// A field named like a form property or method, such as `action`, `reset` or
+// `dispatchEvent`, replaces it on the form, so anything that can run on the
+// form is read or called through the form's prototypes.
 const elements = Object.getOwnPropertyDescriptor(
 	HTMLFormElement.prototype,
 	"elements",
 );
+const connected = Object.getOwnPropertyDescriptor(
+	Node.prototype,
+	"isConnected",
+);
 
-/** Reads an attribute of the form, even when a field shares the property's name */
-export const formAttr = (form: HTMLFormElement, name: string) =>
-	Element.prototype.getAttribute.call(form, name);
+/** Reads an attribute of the form, or of an element that may be the form, even when a field shares the method's name */
+export const formAttr = (element: Element, name: string) =>
+	Element.prototype.getAttribute.call(element, name);
+
+/** Whether the form is still in a document */
+export const formConnected = (form: HTMLFormElement) =>
+	connected?.get?.call(form) === true;
+
+/** Listens to an event on the form */
+export const listen = <K extends keyof HTMLElementEventMap>(
+	form: HTMLFormElement,
+	type: K,
+	listener: (event: HTMLElementEventMap[K]) => void,
+	options?: AddEventListenerOptions,
+) =>
+	HTMLFormElement.prototype.addEventListener.call(
+		form,
+		type,
+		listener as EventListener,
+		options,
+	);
 
 /** Every control that belongs to the form, including ones outside it with a `form` attribute */
 export const formElements = (form: HTMLFormElement): Element[] =>
@@ -35,7 +57,13 @@ export const requestSubmit = (
 export const owned = <E extends Element = HTMLElement>(
 	ctx: Context,
 	selector: string,
-) => Array.from(ctx.form.querySelectorAll<E>(selector));
+) =>
+	Array.from(
+		Element.prototype.querySelectorAll.call(
+			ctx.form,
+			selector,
+		) as NodeListOf<E>,
+	);
 
 /** A value from a record by its own key, so names such as `constructor` aren't read from the prototype */
 export const own = <T>(record: Record<string, T>, key: string): T | undefined =>

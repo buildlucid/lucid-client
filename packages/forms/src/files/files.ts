@@ -1,5 +1,5 @@
 import C from "../constants.js";
-import { baseName, fill, formElements } from "../form/dom.js";
+import { baseName, fill, formElements, listen } from "../form/dom.js";
 import { formatSize } from "../form/file-checks.js";
 import type { Extension, ExtensionContext, Form } from "../types.js";
 
@@ -170,7 +170,8 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 	for (const type of ["input", "change"])
 		document.addEventListener(type, onPick, { signal, capture: true });
 
-	root.addEventListener(
+	listen(
+		root,
 		"reset",
 		() => {
 			// The browser empties file inputs once the reset event has been handled, so a pick
@@ -189,7 +190,8 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 		{ signal },
 	);
 
-	root.addEventListener(
+	listen(
+		root,
 		"click",
 		(event) => {
 			if (!(event.target instanceof Element)) return;
@@ -243,7 +245,8 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 		zone.toggleAttribute(A.dragging, (depth.get(zone) ?? 0) > 0);
 	};
 
-	root.addEventListener(
+	listen(
+		root,
 		"dragenter",
 		(event) => {
 			const found = zoneFor(event);
@@ -253,7 +256,8 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 		},
 		{ signal },
 	);
-	root.addEventListener(
+	listen(
+		root,
 		"dragover",
 		(event) => {
 			const found = zoneFor(event);
@@ -264,7 +268,8 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 		},
 		{ signal },
 	);
-	root.addEventListener(
+	listen(
+		root,
 		"dragleave",
 		(event) => {
 			const found = zoneFor(event);
@@ -272,7 +277,8 @@ const createFiles = (form: Form, context: ExtensionContext) => {
 		},
 		{ signal },
 	);
-	root.addEventListener(
+	listen(
+		root,
 		"drop",
 		(event) => {
 			const found = zoneFor(event);

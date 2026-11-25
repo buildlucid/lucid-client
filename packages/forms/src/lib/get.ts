@@ -1,3 +1,5 @@
+import C from "../constants.js";
+import { formAttr } from "../form/dom.js";
 import S from "../state.js";
 import type { Form } from "../types.js";
 
@@ -11,7 +13,7 @@ const get = (target: Element | string): Form | undefined => {
 		if (!(element instanceof HTMLFormElement))
 			element =
 				Array.from(S.instances.keys()).find(
-					(form) => form.getAttribute("data-form") === target,
+					(form) => formAttr(form, C.attributes.root) === target,
 				) ?? null;
 	} else element = target;
 
