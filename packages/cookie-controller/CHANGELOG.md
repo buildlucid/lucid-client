@@ -1,5 +1,12 @@
 # @lucidclient/cookie-controller
 
+## Unreleased
+
+### Bug Fixes:
+
+- A `data-cookie--status` element styled to hide while it is empty now takes focus when the same message is written twice in a row, rather than focus being lost.
+- With more than one `data-cookie--status` element, a decision made straight after a repeated one no longer leaves a status showing the earlier message.
+
 ## v1.2.0
 
 ### Breaking Changes:

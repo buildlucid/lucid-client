@@ -132,6 +132,24 @@ describe("focus", () => {
 		expect(document.activeElement).toBe(status);
 	});
 
+	it("moves focus to a status that hides while it is empty, once a repeated message is back", async () => {
+		vi.useFakeTimers();
+		document.body.innerHTML = `${dialog}<p data-cookie--status></p>`;
+		cookieController.init();
+		const status = $("[data-cookie--status]");
+		// As `[data-cookie--status]:empty { display: none }` hides it
+		status.checkVisibility = () => status.textContent !== "";
+		cookieController.rejectAll();
+		expect(document.activeElement).toBe(status);
+		cookieController.rejectAll();
+		// A browser takes focus from an element that stops being shown
+		status.blur();
+		expect(document.activeElement).toBe(document.body);
+		await vi.advanceTimersByTimeAsync(100);
+		expect(document.activeElement).toBe(status);
+		vi.useRealTimers();
+	});
+
 	it("leaves focus on a trigger that is still showing", () => {
 		document.body.innerHTML = `${dialog}<button id="footer" data-cookie--action="details">Cookie settings</button><p data-cookie--status></p>`;
 		cookieController.init();
@@ -187,6 +205,24 @@ describe("status messages", () => {
 		expect(status.textContent).toBe("");
 		await vi.advanceTimersByTimeAsync(100);
 		expect(status.textContent).toBe("You've rejected optional cookies.");
+		vi.useRealTimers();
+	});
+
+	it("leaves every status on the latest decision when another follows a repeated one", async () => {
+		vi.useFakeTimers();
+		document.body.innerHTML = `${dialog}<p data-cookie--status></p><p data-cookie--status></p>`;
+		cookieController.init();
+		const statuses = Array.from(
+			document.querySelectorAll("[data-cookie--status]"),
+		);
+		cookieController.rejectAll();
+		cookieController.rejectAll();
+		cookieController.acceptAll();
+		await vi.advanceTimersByTimeAsync(100);
+		expect(statuses.map((status) => status.textContent)).toEqual([
+			"You've accepted all cookies.",
+			"You've accepted all cookies.",
+		]);
 		vi.useRealTimers();
 	});
 });
